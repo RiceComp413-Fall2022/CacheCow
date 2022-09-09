@@ -13,6 +13,9 @@ repositories {
 
 dependencies {
     testImplementation(kotlin("test"))
+    implementation("io.javalin:javalin:4.6.4")
+    implementation("org.slf4j:slf4j-simple:1.8.0-beta4")
+    implementation("org.slf4j:slf4j-api:1.8.0-beta4")
 }
 
 tasks.test {
