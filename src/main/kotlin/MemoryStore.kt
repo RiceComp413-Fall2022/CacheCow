@@ -1,13 +1,11 @@
-import jdk.nashorn.internal.objects.Global.print
-
 class MemoryStore : ICacheStore {
 
     override fun store(key: String) {
-        print("Storing: $key")
+        print("Storing: $key\n")
     }
 
     override fun fetch(key: String) {
-        print("Fetching: $key")
+        print("Fetching: $key\n")
     }
 
 }
