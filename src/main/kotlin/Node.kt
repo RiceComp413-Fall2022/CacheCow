@@ -1,9 +1,14 @@
 import io.javalin.Javalin
-import MemoryStore
 
+/**
+ * Node class that contains the receiver, sender and memory cache.
+ */
+class Node {
+
+}
 fun main() {
     val app = Javalin.create().start(7070)
-    val memoryStore = MemoryStore()
+    val memoryStore = Cache()
 
     app.get("/") { ctx ->
         ctx.result(
