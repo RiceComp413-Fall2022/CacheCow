@@ -1,5 +1,4 @@
 import interfaces.ICache
-import interfaces.IReceiver
 import interfaces.ISender
 
 /**
@@ -8,7 +7,7 @@ import interfaces.ISender
 class Node {
 
     private val cache: ICache
-    private val receiver : IReceiver
+    private val receiver : Receiver
     private val sender : ISender
 
     init {

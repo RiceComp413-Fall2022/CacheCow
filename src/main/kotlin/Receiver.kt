@@ -1,5 +1,4 @@
 import interfaces.ICache
-import interfaces.IReceiver
 import io.javalin.Javalin
 import io.javalin.http.Handler
 import util.makeKey
@@ -7,9 +6,9 @@ import util.makeKey
 /**
  * HTTP receiver to accept user API calls.
  */
-class Receiver(private val cache: ICache) : IReceiver {
+class Receiver(private val cache: ICache) {
 
-    override val helpMessageHandler: Handler = Handler { ctx ->
+    val helpMessageHandler: Handler = Handler { ctx ->
         ctx.result(
             // TODO: Ensure that help message corresponds to the correct commands.
 "Invalid Request.\n\n" +
@@ -27,13 +26,19 @@ class Receiver(private val cache: ICache) : IReceiver {
         initReceiver()
     }
 
-    override fun initializeHelloWorld() {
+    fun initReceiver() {
+        initializeHelloWorld()
+        initializeStore()
+        initializeFetch()
+    }
+
+    fun initializeHelloWorld() {
         app.get("/hello_world") { ctx ->
             ctx.result("Hello World!")
         }
     }
 
-    override fun initializeStore() {
+    fun initializeStore() {
         app.get("/store/{key}/{version}/{value}") { ctx ->
             val key: String = makeKey(ctx.pathParam("key"), ctx.pathParam("version"))
             val value: String = ctx.pathParam("value")
@@ -43,7 +48,7 @@ class Receiver(private val cache: ICache) : IReceiver {
         }
     }
 
-    override fun initializeFetch() {
+    fun initializeFetch() {
         app.get("/fetch/{key}/{version}") { ctx ->
             val key: String = makeKey(ctx.pathParam("key"), ctx.pathParam("version"))
             ctx.result("Fetching: <$key>...")
