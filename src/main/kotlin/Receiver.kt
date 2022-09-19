@@ -44,7 +44,7 @@ class Receiver(private val cache: ICache) {
             val value: String = ctx.pathParam("value")
             ctx.result("Storing: <$key, $value>")
 
-            cache.store(key = key)
+            cache.store(key = key, value = value)
         }
     }
 
@@ -53,7 +53,7 @@ class Receiver(private val cache: ICache) {
             val key: String = makeKey(ctx.pathParam("key"), ctx.pathParam("version"))
             ctx.result("Fetching: <$key>...")
 
-            val value: String = cache.fetch(key = key)
+            val value: String? = cache.fetch(key = key)
             ctx.result("Result: <$key, $value>")
         }
     }

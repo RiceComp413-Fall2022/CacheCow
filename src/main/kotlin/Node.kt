@@ -13,11 +13,11 @@ class Node {
     init {
         cache = Cache()
         receiver = Receiver(object : ICache {
-            override fun store(key: String) {
-                cache.store(key)
+            override fun store(key: String, value: String) {
+                cache.store(key, value)
             }
 
-            override fun fetch(key: String): String {
+            override fun fetch(key: String): String? {
                 return cache.fetch(key)
             }
 
