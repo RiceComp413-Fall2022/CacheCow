@@ -1,3 +1,3 @@
 fun main() {
-    Node()
+    Node(0)
 }

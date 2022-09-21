@@ -2,6 +2,10 @@ import interfaces.ICache
 import io.javalin.Javalin
 import io.javalin.http.Handler
 import util.makeKey
+import java.net.URI
+import java.net.http.HttpClient
+import java.net.http.HttpRequest
+import java.net.http.HttpResponse.BodyHandlers
 
 /**
  * HTTP receiver to accept user API calls.
@@ -30,6 +34,8 @@ class Receiver(private val cache: ICache) {
         initializeHelloWorld()
         initializeStore()
         initializeFetch()
+        initializeRequestNode()
+        initializeResponseNode()
     }
 
     fun initializeHelloWorld() {
@@ -51,10 +57,32 @@ class Receiver(private val cache: ICache) {
     fun initializeFetch() {
         app.get("/fetch/{key}/{version}") { ctx ->
             val key: String = makeKey(ctx.pathParam("key"), ctx.pathParam("version"))
-            ctx.result("Fetching: <$key>...")
 
             val value: String? = cache.fetch(key = key)
             ctx.result("Result: <$key, $value>")
+        }
+    }
+
+    fun initializeRequestNode() {
+        app.get("/request") { ctx ->
+
+            val client = HttpClient.newBuilder().build()
+            val request = HttpRequest.newBuilder()
+                .uri(URI.create("http://localhost:7070/response"))
+                .build()
+            val response = client.send(request, BodyHandlers.ofString())
+            println(response.body())
+            if (response.statusCode() in 200..299) {
+                ctx.result("Successful HTTP Request")
+            }
+            else {
+                ctx.result("Unsuccessful HTTP Request")
+            }
+        }
+    }
+
+    fun initializeResponseNode() {
+        app.get("/response") {
         }
     }
 }
