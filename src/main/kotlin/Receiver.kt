@@ -10,7 +10,7 @@ import java.net.http.HttpResponse.BodyHandlers
 /**
  * HTTP receiver to accept user API calls.
  */
-class Receiver(private val cache: ICache) {
+class Receiver(private val nodeID: Int, private val cache: ICache) {
 
     val helpMessageHandler: Handler = Handler { ctx ->
         ctx.result(
@@ -23,7 +23,7 @@ class Receiver(private val cache: ICache) {
         )
     }
 
-    private val app: Javalin = Javalin.create().start(7070)
+    private val app: Javalin = Javalin.create().start(7070 + this.nodeID)
         .error(404, helpMessageHandler)
 
     init {

@@ -14,7 +14,7 @@ class Node(nodeID: Int) {
     init {
         this.nodeID = nodeID
         cache = Cache()
-        receiver = Receiver(object : ICache {
+        receiver = Receiver(this.nodeID, object : ICache {
             override fun store(key: String, value: String) {
                 cache.store(key, value)
             }
