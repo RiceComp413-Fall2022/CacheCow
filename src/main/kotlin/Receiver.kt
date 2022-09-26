@@ -1,7 +1,6 @@
 import interfaces.ICache
 import io.javalin.Javalin
 import io.javalin.http.Handler
-import util.makeKey
 import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
@@ -46,19 +45,21 @@ class Receiver(private val nodeID: Int, private val cache: ICache) {
 
     fun initializeStore() {
         app.get("/store/{key}/{version}/{value}") { ctx ->
-            val key: String = makeKey(ctx.pathParam("key"), ctx.pathParam("version"))
+            val key: String = ctx.pathParam("key")
+            val version: Int = Integer.parseInt(ctx.pathParam("version"))
             val value: String = ctx.pathParam("value")
-            ctx.json(KeyValueReply(key, value))
 
-            cache.store(key = key, value = value)
+            cache.store(key, version, value)
+            ctx.json(KeyValueReply(key, value))
         }
     }
 
     fun initializeFetch() {
         app.get("/fetch/{key}/{version}") { ctx ->
-            val key: String = makeKey(ctx.pathParam("key"), ctx.pathParam("version"))
+            val key: String = ctx.pathParam("key")
+            val version: Int = Integer.parseInt(ctx.pathParam("version"))
 
-            val value: String? = cache.fetch(key = key)
+            val value: String? = cache.fetch(key, version)
             ctx.json(KeyValueReply(key, value))
         }
     }

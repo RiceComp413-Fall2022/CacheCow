@@ -5,8 +5,10 @@ package interfaces
  */
 interface ICache {
 
-    fun store(key: String, value: String)
+    fun store(key: String, version: Int, value: String)
 
     // TODO: Make this return json or agreed upon object.
-    fun fetch(key: String) : String?
+    fun fetch(key: String, version: Int) : String?
+
+    fun isFull(): Boolean
 }
