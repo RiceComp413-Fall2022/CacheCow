@@ -49,7 +49,8 @@ class Receiver(private val nodeID: Int, private val cache: ICache) {
             val version: Int = Integer.parseInt(ctx.pathParam("version"))
             val value: String = ctx.pathParam("value")
 
-            cache.store(key, version, value)
+            cache.store(KeyVersionPair(key, version), value)
+
             ctx.json(KeyValueReply(key, value))
         }
     }
@@ -59,7 +60,8 @@ class Receiver(private val nodeID: Int, private val cache: ICache) {
             val key: String = ctx.pathParam("key")
             val version: Int = Integer.parseInt(ctx.pathParam("version"))
 
-            val value: String? = cache.fetch(key, version)
+            val value: String? = cache.fetch(KeyVersionPair(key, version))
+
             ctx.json(KeyValueReply(key, value))
         }
     }

@@ -12,16 +12,16 @@ class Cache(private var maxCapacity: Int = 100) : ICache {
     // TODO: Implement LRU Replacement?
     // TODO: Determine stored object type.
 
-    override fun store(key: String, version: Int, value: String) {
+    override fun store(key: KeyVersionPair, value: String) {
         print("Storing: $key\n")
         if (cache.size < maxCapacity) {
-            cache[KeyVersionPair(key, version)] = value
+            cache[key] = value
         }
     }
 
-    override fun fetch(key: String, version: Int): String? {
+    override fun fetch(key: KeyVersionPair): String? {
         print("Fetching: $key\n")
-        return cache[KeyVersionPair(key, version)]
+        return cache[key]
     }
 
     override fun isFull(): Boolean {

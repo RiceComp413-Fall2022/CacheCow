@@ -1,14 +1,16 @@
 package interfaces
 
+import KeyVersionPair
+
 /**
  * Interface for caching data.
  */
 interface ICache {
 
-    fun store(key: String, version: Int, value: String)
+    fun store(key: KeyVersionPair, value: String)
 
     // TODO: Make this return json or agreed upon object.
-    fun fetch(key: String, version: Int) : String?
+    fun fetch(key: KeyVersionPair) : String?
 
     fun isFull(): Boolean
 }
