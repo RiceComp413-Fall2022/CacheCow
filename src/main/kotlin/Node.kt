@@ -16,18 +16,18 @@ class Node(nodeID: Int) {
         cache = Cache()
         sender = Sender()
         receiver = Receiver(this.nodeID, object : ICache {
-            override fun store(key: String, version: Int, value: String) {
+            override fun store(key: KeyVersionPair, value: String) {
                 if (!cache.isFull()) {
-                    cache.store(key, version, value)
+                    cache.store(key, value)
                 } else {
-                    sender.storeToNode(key, version, value, 1 - nodeID)
+                    sender.storeToNode(key, value, 1 - nodeID)
                 }
             }
 
-            override fun fetch(key: String, version: Int): String {
-                var result: String? = cache.fetch(key, version)
+            override fun fetch(key: KeyVersionPair): String {
+                var result: String? = cache.fetch(key)
                 if (result == null) {
-                    result = sender.fetchFromNode(key, version, 1 - nodeID)
+                    result = sender.fetchFromNode(key, 1 - nodeID)
                 }
                 return result
             }

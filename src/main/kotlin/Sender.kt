@@ -11,10 +11,13 @@ import java.net.http.HttpResponse
  */
 class Sender : ISender {
 
-    override fun fetchFromNode(key: String, version: Int, nodeId: Int): String {
+    override fun fetchFromNode(key: KeyVersionPair, nodeId: NodeId): String {
+        val baseKey = key.key
+        val version = key.version.toString()
+
         val client = HttpClient.newBuilder().build()
         val request = HttpRequest.newBuilder()
-            .uri(URI.create("http://localhost:${7070 + nodeId}/fetch/$key/$version"))
+            .uri(URI.create("http://localhost:${7070 + nodeId}/fetch/$baseKey/$version"))
             .build()
         val response = client.send(request, HttpResponse.BodyHandlers.ofString())
         val mapper = ObjectMapper()
@@ -22,10 +25,13 @@ class Sender : ISender {
         return jsonResponse.get("value").textValue()
     }
 
-    override fun storeToNode(key: String, version: Int, value: String, nodeId: Int) {
+    override fun storeToNode(key: KeyVersionPair, value: String, nodeId: NodeId) {
+        val baseKey = key.key
+        val version = key.version.toString()
+
         val client = HttpClient.newBuilder().build()
         val request = HttpRequest.newBuilder()
-            .uri(URI.create("http://localhost:${7070 + nodeId}/store/$key/$version/$value"))
+            .uri(URI.create("http://localhost:${7070 + nodeId}/store/$baseKey/$version/$value"))
             .build()
         client.send(request, HttpResponse.BodyHandlers.ofString())
     }
