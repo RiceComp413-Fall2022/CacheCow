@@ -15,22 +15,35 @@ class CacheTest {
 
     @Test
     internal fun testHit() {
-        this.cache.store("key1", 0,"value1")
-        assertEquals("value1", this.cache.fetch("key1", 0))
+        val key = KeyVersionPair("key1", 0)
+
+        this.cache.store(key,"value1")
+
+        assertEquals("value1", this.cache.fetch(key))
     }
 
     @Test
     internal fun testMiss() {
-        this.cache.store("key1", 0, "value1")
-        assertNull(this.cache.fetch("key2", 0))
+        val key = KeyVersionPair("key1", 0)
+        val invalidKey = KeyVersionPair("key2", 0)
+
+        this.cache.store(key, "value1")
+
+        assertNull(this.cache.fetch(invalidKey))
     }
 
     @Test
     internal fun testCapacity() {
+        val maxCapacityKey = KeyVersionPair("key$maxCapacity", 0)
+        val overMaxCapacityKey = KeyVersionPair("key" + (maxCapacity + 1).toString(), 0)
+
+        var key: KeyVersionPair?
         for (i in 1..maxCapacity + 1) {
-            this.cache.store("key$i", 0, "value$i")
+            key = KeyVersionPair("key$i", 0)
+            this.cache.store(key, "value$i")
         }
-        assertEquals("value$maxCapacity", this.cache.fetch("key$maxCapacity", 0))
-        assertNull(this.cache.fetch("key" + (maxCapacity + 1).toString(), 0))
+
+        assertEquals("value$maxCapacity", this.cache.fetch(maxCapacityKey))
+        assertNull(this.cache.fetch(overMaxCapacityKey))
     }
 }
