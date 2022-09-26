@@ -48,7 +48,7 @@ class Receiver(private val nodeID: Int, private val cache: ICache) {
         app.get("/store/{key}/{version}/{value}") { ctx ->
             val key: String = makeKey(ctx.pathParam("key"), ctx.pathParam("version"))
             val value: String = ctx.pathParam("value")
-            ctx.result("Storing: <$key, $value>")
+            ctx.json(KeyValueReply(key, value))
 
             cache.store(key = key, value = value)
         }
@@ -59,7 +59,7 @@ class Receiver(private val nodeID: Int, private val cache: ICache) {
             val key: String = makeKey(ctx.pathParam("key"), ctx.pathParam("version"))
 
             val value: String? = cache.fetch(key = key)
-            ctx.result("Result: <$key, $value>")
+            ctx.json(KeyValueReply(key, value))
         }
     }
 
@@ -86,3 +86,5 @@ class Receiver(private val nodeID: Int, private val cache: ICache) {
         }
     }
 }
+
+data class KeyValueReply(val key: String?, val value: String?)
