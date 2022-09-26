@@ -87,5 +87,3 @@ class Receiver(private val nodeID: Int, private val cache: ICache) {
         }
     }
 }
-
-data class KeyValueReply(val key: String?, val value: String?)
