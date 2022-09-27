@@ -10,9 +10,14 @@ class NodeHasher(nodeCount: Int) {
     }
 
     /**
-     * Get designated node for key, version pair
+     * Get designated node for key-version pair
+     * @param kvPair the key version pair
+     * @return the id of the node designated for the key version pair
      */
-    public fun hash(key: String, version: String): Int {
-        return 0
+    fun hash(kvPair: KeyVersionPair): NodeId {
+        // TODO: how to handle collisions? Closed hashing? Do we do that here?
+        //  Should we have access to sender and currend node here to check if the
+        //  hashed node is full
+        return kvPair.key.hashCode() % nodeCount    // TODO: fix this hash function
     }
 }

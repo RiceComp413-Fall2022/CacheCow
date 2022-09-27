@@ -7,10 +7,10 @@ import KeyVersionPair
  */
 interface ICache {
 
-    fun store(key: KeyVersionPair, value: String)
+    fun store(kvPair: KeyVersionPair, value: String)
 
     // TODO: Make this return json or agreed upon object.
-    fun fetch(key: KeyVersionPair) : String?
+    fun fetch(kvPair: KeyVersionPair) : String?
 
     fun isFull(): Boolean
 }
