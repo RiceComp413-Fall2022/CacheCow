@@ -1,6 +1,17 @@
+package service
+
+import Cache
+import KeyVersionPair
+import NodeHasher
+import NodeId
+import Sender
 import interfaces.IReceiverService
 import org.eclipse.jetty.http.HttpStatus
 
+/**
+ * Implementation of IReceiverService that fetches and stores cache data by delegating to
+ * the first and second storing nodes.
+ */
 class RoundRobinService(nodeId: NodeId, nodeCount: Int, cache: Cache, sender: Sender, nodeHasher: NodeHasher) : IReceiverService {
 
     private val nodeId: NodeId
@@ -31,7 +42,6 @@ class RoundRobinService(nodeId: NodeId, nodeCount: Int, cache: Cache, sender: Se
         }
         return fetchNode(kvPair, senderId)
     }
-
 
     private fun storeClient(kvPair: KeyVersionPair, value: String) {
         val primaryNodeId = nodeHasher.primaryHash(kvPair)
@@ -64,7 +74,6 @@ class RoundRobinService(nodeId: NodeId, nodeCount: Int, cache: Cache, sender: Se
                 nodeHasher.secondaryHash(kvPair)
             )
         }
-
         throw io.javalin.http.HttpResponseException(HttpStatus.CONFLICT_409, "No space available")
     }
 
@@ -99,7 +108,6 @@ class RoundRobinService(nodeId: NodeId, nodeCount: Int, cache: Cache, sender: Se
         if (senderId != primaryNodeId) {
             return sender.fetchFromNode(kvPair, nodeHasher.secondaryHash(kvPair))
         }
-
         throw io.javalin.http.HttpResponseException(HttpStatus.NOT_FOUND_404, "Value not found")
     }
 }
