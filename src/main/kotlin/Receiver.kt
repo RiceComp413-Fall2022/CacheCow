@@ -1,6 +1,9 @@
 import interfaces.ICache
+import interfaces.IReceiverService
 import io.javalin.Javalin
 import io.javalin.http.Handler
+import io.javalin.http.HttpResponseException
+import org.eclipse.jetty.http.HttpStatus
 import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
@@ -9,11 +12,11 @@ import java.net.http.HttpResponse.BodyHandlers
 /**
  * HTTP receiver to accept user API calls.
  */
-class Receiver(private val nodeID: Int, private val cache: ICache) {
+class Receiver(private val nodeID: Int, private val receiverService: IReceiverService) {
 
-    val helpMessageHandler: Handler = Handler { ctx ->
+    // TODO: Ensure that help message corresponds to the correct commands.
+    private val helpMessageHandler: Handler = Handler { ctx ->
         ctx.result(
-            // TODO: Ensure that help message corresponds to the correct commands.
 "Invalid Request.\n\n" +
         "Valid Requests:\n" +
         "/hello_world: Prints 'Hello World!'. Useful for testing.\n" +
@@ -29,44 +32,82 @@ class Receiver(private val nodeID: Int, private val cache: ICache) {
         initReceiver()
     }
 
-    fun initReceiver() {
+    private fun initReceiver() {
         initializeHelloWorld()
         initializeStore()
-        initializeFetch()
+        initializeClientFetch()
+        initializeNodeFetch()
         initializeRequestNode()
         initializeResponseNode()
     }
 
-    fun initializeHelloWorld() {
+    private fun initializeHelloWorld() {
         app.get("/hello_world") { ctx ->
             ctx.result("Hello World!")
         }
     }
 
-    fun initializeStore() {
-        app.get("/store/{key}/{version}/{value}") { ctx ->
+    private fun initializeStore() {
+        app.post("/store/{key}/{version}") { ctx ->
             val key: String = ctx.pathParam("key")
             val version: Int = Integer.parseInt(ctx.pathParam("version"))
-            val value: String = ctx.pathParam("value")
+            val value: String? = ctx.formParam("value")
+            val senderId: String? = ctx.formParam("senderId")
 
-            cache.store(KeyVersionPair(key, version), value)
+            // TODO: Look into Javalin validators
+            if (value == null) {
+                ctx.json(HttpResponseException(HttpStatus.BAD_REQUEST_400, "Expecting form key 'value' but none found"))
+                return@post
+            }
 
-            ctx.json(KeyValueReply(key, value))
+            try {
+                if (senderId != null) {
+                    receiverService.storeNode(KeyVersionPair(key, version), value, Integer.parseInt(senderId))
+                } else {
+                    receiverService.storeClient(KeyVersionPair(key, version), value)
+                }
+                ctx.json(KeyValueReply(key, value))
+            } catch (e: HttpResponseException) {
+                ctx.json(e.message!!).status(e.status)
+            }
         }
     }
 
-    fun initializeFetch() {
+    private fun initializeClientFetch() {
         app.get("/fetch/{key}/{version}") { ctx ->
             val key: String = ctx.pathParam("key")
             val version: Int = Integer.parseInt(ctx.pathParam("version"))
 
-            val value: String? = cache.fetch(KeyVersionPair(key, version))
-
-            ctx.json(KeyValueReply(key, value))
+            try {
+                val value: String = receiverService.fetchClient(KeyVersionPair(key, version))
+                ctx.json(KeyValueReply(key, value))
+            } catch (e: HttpResponseException) {
+                ctx.json(e.message!!).status(e.status)
+            }
         }
     }
 
-    fun initializeRequestNode() {
+    private fun initializeNodeFetch() {
+        app.post("/fetch/{key}/{version}") { ctx ->
+            val key: String = ctx.pathParam("key")
+            val version: Int = Integer.parseInt(ctx.pathParam("version"))
+            val senderId: String? = ctx.formParam("senderId")
+
+            if (senderId == null) {
+                ctx.json(HttpResponseException(HttpStatus.BAD_REQUEST_400, "Expecting form key 'senderId' but none found"))
+                return@post
+            }
+
+            try {
+                val value: String = receiverService.fetchNode(KeyVersionPair(key, version), Integer.parseInt(senderId))
+                ctx.json(KeyValueReply(key, value))
+            } catch (e: HttpResponseException) {
+                ctx.json(e.message!!).status(e.status)
+            }
+        }
+    }
+
+    private fun initializeRequestNode() {
         app.get("/request") { ctx ->
 
             val client = HttpClient.newBuilder().build()
@@ -84,7 +125,7 @@ class Receiver(private val nodeID: Int, private val cache: ICache) {
         }
     }
 
-    fun initializeResponseNode() {
+    private fun initializeResponseNode() {
         app.get("/response") {
         }
     }

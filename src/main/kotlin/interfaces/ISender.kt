@@ -12,8 +12,8 @@ interface ISender {
     // TODO: Add API methods as appropriate.
     // TODO: Determine Node Ids.
 
-    fun fetchFromNode(key: KeyVersionPair, nodeId: NodeId): String
+    fun fetchFromNode(key: KeyVersionPair, destNodeId: NodeId): String
 
-    fun storeToNode(key: KeyVersionPair, value: String, nodeId: NodeId)
+    fun storeToNode(key: KeyVersionPair, value: String, destNodeId: NodeId)
 
 }
