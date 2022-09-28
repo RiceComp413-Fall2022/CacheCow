@@ -1,4 +1,4 @@
-import interfaces.IReceiverService
+import interfaces.IDistributedCache
 import io.javalin.Javalin
 import io.javalin.http.Handler
 import io.javalin.http.HttpResponseException
@@ -11,7 +11,7 @@ import java.net.http.HttpResponse.BodyHandlers
 /**
  * HTTP receiver to accept user API calls.
  */
-class Receiver(private val nodeID: Int, private val receiverService: IReceiverService) {
+class Receiver(private val nodeID: Int, private val receiverService: IDistributedCache) {
 
     // TODO: Ensure that help message corresponds to the correct commands.
     private val helpMessageHandler: Handler = Handler { ctx ->

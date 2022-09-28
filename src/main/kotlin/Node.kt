@@ -1,7 +1,7 @@
 import interfaces.ICache
 import interfaces.ISender
-import service.RoundRobinService
-import service.SingleNodeService
+import service.RoundRobinCache
+import service.SingleNodeCache
 
 /**
  * Node class that contains the receiver, sender and memory cache.
@@ -22,7 +22,7 @@ class Node(nodeId: NodeId, nodeCount: Int) {
         sender = Sender(nodeId)
         nodeHasher = NodeHasher(nodeCount)
         receiver = Receiver(this.nodeId, if (nodeCount == 1)
-            SingleNodeService(cache) else RoundRobinService(nodeId, nodeCount, cache, sender, nodeHasher)
+            SingleNodeCache(cache) else RoundRobinCache(nodeId, nodeCount, cache, sender, nodeHasher)
         )
     }
 }

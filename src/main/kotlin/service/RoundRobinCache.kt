@@ -5,14 +5,14 @@ import KeyVersionPair
 import NodeHasher
 import NodeId
 import Sender
-import interfaces.IReceiverService
+import interfaces.IDistributedCache
 import org.eclipse.jetty.http.HttpStatus
 
 /**
  * Implementation of IReceiverService that fetches and stores cache data by delegating to
  * the first and second storing nodes.
  */
-class RoundRobinService(nodeId: NodeId, nodeCount: Int, cache: Cache, sender: Sender, nodeHasher: NodeHasher) : IReceiverService {
+class RoundRobinCache(nodeId: NodeId, nodeCount: Int, cache: Cache, sender: Sender, nodeHasher: NodeHasher): IDistributedCache {
 
     private val nodeId: NodeId
     private val nodeCount: Int

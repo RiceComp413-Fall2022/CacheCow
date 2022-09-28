@@ -7,7 +7,7 @@ import NodeId
  * Interface describing actions supported by the receiver. Implementing classes will
  * elect caching policies across nodes in the system.
  */
-interface IReceiverService {
+interface IDistributedCache {
 
     /**
      * Store the given key value pair in the distributed cache.

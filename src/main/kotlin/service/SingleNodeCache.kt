@@ -3,13 +3,13 @@ package service
 import Cache
 import KeyVersionPair
 import NodeId
-import interfaces.IReceiverService
+import interfaces.IDistributedCache
 import org.eclipse.jetty.http.HttpStatus
 
 /**
  * Implementation of IReceiverService that only uses local cache.
  */
-class SingleNodeService(cache: Cache): IReceiverService {
+class SingleNodeCache(cache: Cache): IDistributedCache {
 
     private val cache: Cache
 
