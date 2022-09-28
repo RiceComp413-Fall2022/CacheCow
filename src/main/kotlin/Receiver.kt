@@ -1,4 +1,3 @@
-import interfaces.ICache
 import interfaces.IReceiverService
 import io.javalin.Javalin
 import io.javalin.http.Handler
@@ -35,8 +34,7 @@ class Receiver(private val nodeID: Int, private val receiverService: IReceiverSe
     private fun initReceiver() {
         initializeHelloWorld()
         initializeStore()
-        initializeClientFetch()
-        initializeNodeFetch()
+        initializeFetch()
         initializeRequestNode()
         initializeResponseNode()
     }
@@ -52,7 +50,7 @@ class Receiver(private val nodeID: Int, private val receiverService: IReceiverSe
             val key: String = ctx.pathParam("key")
             val version: Int = Integer.parseInt(ctx.pathParam("version"))
             val value: String? = ctx.formParam("value")
-            val senderId: String? = ctx.formParam("senderId")
+            val senderId: String? = ctx.queryParam("senderId")
 
             // TODO: Look into Javalin validators
             if (value == null) {
@@ -61,11 +59,8 @@ class Receiver(private val nodeID: Int, private val receiverService: IReceiverSe
             }
 
             try {
-                if (senderId != null) {
-                    receiverService.storeNode(KeyVersionPair(key, version), value, Integer.parseInt(senderId))
-                } else {
-                    receiverService.storeClient(KeyVersionPair(key, version), value)
-                }
+                val senderNum = if (senderId == null) null else Integer.parseInt(senderId)
+                receiverService.store(KeyVersionPair(key, version), value, senderNum)
                 ctx.json(KeyValueReply(key, value))
             } catch (e: HttpResponseException) {
                 ctx.json(e.message!!).status(e.status)
@@ -73,33 +68,15 @@ class Receiver(private val nodeID: Int, private val receiverService: IReceiverSe
         }
     }
 
-    private fun initializeClientFetch() {
+    private fun initializeFetch() {
         app.get("/fetch/{key}/{version}") { ctx ->
             val key: String = ctx.pathParam("key")
             val version: Int = Integer.parseInt(ctx.pathParam("version"))
+            val senderId: String? = ctx.queryParam("senderId")
 
             try {
-                val value: String = receiverService.fetchClient(KeyVersionPair(key, version))
-                ctx.json(KeyValueReply(key, value))
-            } catch (e: HttpResponseException) {
-                ctx.json(e.message!!).status(e.status)
-            }
-        }
-    }
-
-    private fun initializeNodeFetch() {
-        app.post("/fetch/{key}/{version}") { ctx ->
-            val key: String = ctx.pathParam("key")
-            val version: Int = Integer.parseInt(ctx.pathParam("version"))
-            val senderId: String? = ctx.formParam("senderId")
-
-            if (senderId == null) {
-                ctx.json(HttpResponseException(HttpStatus.BAD_REQUEST_400, "Expecting form key 'senderId' but none found"))
-                return@post
-            }
-
-            try {
-                val value: String = receiverService.fetchNode(KeyVersionPair(key, version), Integer.parseInt(senderId))
+                val senderNum = if (senderId == null) null else Integer.parseInt(senderId)
+                val value: String = receiverService.fetch(KeyVersionPair(key, version), senderNum)
                 ctx.json(KeyValueReply(key, value))
             } catch (e: HttpResponseException) {
                 ctx.json(e.message!!).status(e.status)
