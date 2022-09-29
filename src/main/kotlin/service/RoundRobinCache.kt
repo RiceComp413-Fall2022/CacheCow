@@ -29,6 +29,7 @@ class RoundRobinCache(nodeId: NodeId, nodeCount: Int, cache: Cache, sender: Send
     }
 
     override fun store(kvPair: KeyVersionPair, value: String, senderId: NodeId?) {
+        print("DISTRIBUTED CACHE: Hash value of key ${kvPair.key} is ${nodeHasher.primaryHash(kvPair)}\n")
         if (senderId == null) {
             storeClient(kvPair, value)
         } else {
@@ -37,6 +38,7 @@ class RoundRobinCache(nodeId: NodeId, nodeCount: Int, cache: Cache, sender: Send
     }
 
     override fun fetch(kvPair: KeyVersionPair, senderId: NodeId?): String {
+        print("DISTRIBUTED CACHE: Hash value of key ${kvPair.key} is ${nodeHasher.primaryHash(kvPair)}\n")
         if (senderId == null) {
             return fetchClient(kvPair)
         }
@@ -44,6 +46,8 @@ class RoundRobinCache(nodeId: NodeId, nodeCount: Int, cache: Cache, sender: Send
     }
 
     private fun storeClient(kvPair: KeyVersionPair, value: String) {
+        print("DISTRIBUTED CACHE: Received store key ${kvPair.key} from client\n")
+
         val primaryNodeId = nodeHasher.primaryHash(kvPair)
 
         if (primaryNodeId == nodeId && !cache.isFull()) {
@@ -60,6 +64,8 @@ class RoundRobinCache(nodeId: NodeId, nodeCount: Int, cache: Cache, sender: Send
     }
 
     private fun storeNode(kvPair: KeyVersionPair, value: String, senderId: NodeId) {
+        print("DISTRIBUTED CACHE: Received store key ${kvPair.key} from node $senderId\n")
+
         if (!cache.isFull()) {
             cache.store(kvPair, value)
             return
@@ -78,6 +84,8 @@ class RoundRobinCache(nodeId: NodeId, nodeCount: Int, cache: Cache, sender: Send
     }
 
     private fun fetchClient(kvPair: KeyVersionPair): String {
+        print("DISTRIBUTED CACHE: Received fetch key ${kvPair.key} from client\n")
+
         val primaryNodeId = nodeHasher.primaryHash(kvPair)
         val value: String?
 
@@ -97,6 +105,8 @@ class RoundRobinCache(nodeId: NodeId, nodeCount: Int, cache: Cache, sender: Send
     }
 
     private fun fetchNode(kvPair: KeyVersionPair, senderId: NodeId): String {
+        print("DISTRIBUTED CACHE: Received fetch key ${kvPair.key} from node $senderId\n")
+
         val value = cache.fetch(kvPair)
 
         if (value != null) {

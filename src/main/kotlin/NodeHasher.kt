@@ -20,8 +20,8 @@ class NodeHasher(nodeCount: Int) {
         // TODO: how to handle collisions? Closed hashing? Do we do that here?
         //  Should we have access to sender and currend node here to check if the
         //  hashed node is full
-
-        return MurmurHash3.hash32x86(encodeKeyAsBytes(kvPair.key)) % nodeCount
+        val bytes = encodeKeyAsBytes(kvPair.key)
+        return ((MurmurHash3.hash32x86(bytes, 0, bytes.size, 0) % nodeCount) + nodeCount) % nodeCount
     }
 
     fun secondaryHash(kvPair: KeyVersionPair): NodeId {

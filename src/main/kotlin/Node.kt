@@ -8,6 +8,7 @@ import service.SingleNodeCache
  */
 class Node(nodeId: NodeId, nodeCount: Int) {
 
+    private val capacity = 1
     private val nodeId: NodeId
     private val nodeCount: Int
     private val cache: ICache
@@ -16,9 +17,10 @@ class Node(nodeId: NodeId, nodeCount: Int) {
     private val nodeHasher: NodeHasher
 
     init {
+        print("Initializing node $nodeId\n")
         this.nodeId = nodeId
         this.nodeCount = nodeCount
-        cache = Cache()
+        cache = Cache(capacity)
         sender = Sender(nodeId)
         nodeHasher = NodeHasher(nodeCount)
         receiver = Receiver(this.nodeId, if (nodeCount == 1)
