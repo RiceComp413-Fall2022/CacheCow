@@ -1,3 +1,5 @@
+import org.apache.commons.codec.digest.MurmurHash3
+
 /**
  * Class for determining the same node consistently for a given key,version pair
  */
@@ -14,10 +16,19 @@ class NodeHasher(nodeCount: Int) {
      * @param kvPair the key version pair
      * @return the id of the node designated for the key version pair
      */
-    fun hash(kvPair: KeyVersionPair): NodeId {
+    fun primaryHash(kvPair: KeyVersionPair): NodeId {
         // TODO: how to handle collisions? Closed hashing? Do we do that here?
         //  Should we have access to sender and currend node here to check if the
         //  hashed node is full
-        return kvPair.key.hashCode() % nodeCount    // TODO: fix this hash function
+        val bytes = encodeKeyAsBytes(kvPair.key)
+        return ((MurmurHash3.hash32x86(bytes, 0, bytes.size, 0) % nodeCount) + nodeCount) % nodeCount
+    }
+
+    fun secondaryHash(kvPair: KeyVersionPair): NodeId {
+        return (primaryHash(kvPair) + 1) % nodeCount
+    }
+
+    private fun encodeKeyAsBytes(key: String): ByteArray {
+        return key.encodeToByteArray()
     }
 }

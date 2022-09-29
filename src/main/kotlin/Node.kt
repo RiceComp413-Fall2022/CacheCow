@@ -1,56 +1,30 @@
 import interfaces.ICache
 import interfaces.ISender
+import service.RoundRobinCache
+import service.SingleNodeCache
 
 /**
  * Node class that contains the receiver, sender and memory cache.
  */
-class Node(nodeID: Int, private val nodeHasher: NodeHasher) {
+class Node(nodeId: NodeId, nodeCount: Int) {
 
-    private val nodeID: Int
+    private val capacity = 1
+    private val nodeId: NodeId
+    private val nodeCount: Int
     private val cache: ICache
     private val receiver: Receiver
     private val sender: ISender
+    private val nodeHasher: NodeHasher
 
     init {
-        this.nodeID = nodeID
-        cache = Cache()
-        sender = Sender()
-        receiver = Receiver(this.nodeID, object : ICache {
-            override fun store(kvPair: KeyVersionPair, value: String) {
-                val goalNodeID = nodeHasher.hash(kvPair)
-                // TODO: hash collision handling might have to be done here, because
-                //  nodeHasher does not know whether a node is full. We might want to
-                //  add that functionality in nodeHasher if don't want to handle that here
-                //  We will most likely want to have the sender ask other nodes if they're
-                //  full
-
-                if (goalNodeID == nodeID) {
-                    cache.store(kvPair, value)
-                } else {
-                    sender.storeToNode(kvPair, value, goalNodeID)
-                }
-            }
-
-            override fun fetch(kvPair: KeyVersionPair): String {
-                val goalNodeID = nodeHasher.hash(kvPair)
-                // TODO: see above todo
-
-                val result: String? =
-                    if (goalNodeID == nodeID) {
-                        cache.fetch(kvPair)
-                    } else {
-                        sender.fetchFromNode(kvPair, goalNodeID)
-                    }
-
-                if (result == null) {
-                    throw Exception("Key-version pair not found")
-                }
-                return result
-            }
-
-            override fun isFull(): Boolean {
-                return cache.isFull()
-            }
-        })
+        print("Initializing node $nodeId\n")
+        this.nodeId = nodeId
+        this.nodeCount = nodeCount
+        cache = Cache(capacity)
+        sender = Sender(nodeId)
+        nodeHasher = NodeHasher(nodeCount)
+        receiver = Receiver(this.nodeId, if (nodeCount == 1)
+            SingleNodeCache(cache) else RoundRobinCache(nodeId, nodeCount, cache, sender, nodeHasher)
+        )
     }
 }
