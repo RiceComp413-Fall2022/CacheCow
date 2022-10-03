@@ -29,102 +29,38 @@ class SimpleDistributedCache(nodeId: NodeId, nodeCount: Int, cache: Cache, sende
     }
 
     override fun store(kvPair: KeyVersionPair, value: String, senderId: NodeId?) {
-        print("DISTRIBUTED CACHE: Hash value of key ${kvPair.key} is ${nodeHasher.primaryHash(kvPair)}\n")
-        if (senderId == null) {
-            storeClient(kvPair, value)
-        } else {
-            storeNode(kvPair, value, senderId)
-        }
-    }
-
-    override fun fetch(kvPair: KeyVersionPair, senderId: NodeId?): String {
-        print("DISTRIBUTED CACHE: Hash value of key ${kvPair.key} is ${nodeHasher.primaryHash(kvPair)}\n")
-        if (senderId == null) {
-            return fetchClient(kvPair)
-        }
-        return fetchNode(kvPair, senderId)
-    }
-
-    private fun storeClient(kvPair: KeyVersionPair, value: String) {
-        print("DISTRIBUTED CACHE: Received store key ${kvPair.key} from client\n")
-
         val primaryNodeId = nodeHasher.primaryHash(kvPair)
 
-        if (primaryNodeId == nodeId) {
+        print("DISTRIBUTED CACHE: Hash value of key ${kvPair.key} is ${primaryNodeId}\n")
+        if (nodeId == primaryNodeId) {
             if (cache.isFull()) {
-
+                throw io.javalin.http.HttpResponseException(HttpStatus.CONFLICT_409, "No space available")
             }
-        }
-
-
-            && !cache.isFull()) {
             cache.store(kvPair, value)
             return
         }
-
-        val destNodeId = if (primaryNodeId == nodeId) nodeHasher.secondaryHash(kvPair) else primaryNodeId
         sender.storeToNode(
             kvPair,
             value,
-            destNodeId
+            primaryNodeId
         )
     }
 
-    private fun storeNode(kvPair: KeyVersionPair, value: String, senderId: NodeId) {
-        print("DISTRIBUTED CACHE: Received store key ${kvPair.key} from node $senderId\n")
-
-        if (!cache.isFull()) {
-            cache.store(kvPair, value)
-            return
-        }
-
-        val primaryNodeId = nodeHasher.primaryHash(kvPair)
-
-        if (senderId != primaryNodeId) {
-            sender.storeToNode(
-                kvPair,
-                value,
-                nodeHasher.secondaryHash(kvPair)
-            )
-        }
-        throw io.javalin.http.HttpResponseException(HttpStatus.CONFLICT_409, "No space available")
-    }
-
-    private fun fetchClient(kvPair: KeyVersionPair): String {
-        print("DISTRIBUTED CACHE: Received fetch key ${kvPair.key} from client\n")
-
+    override fun fetch(kvPair: KeyVersionPair, senderId: NodeId?): String {
         val primaryNodeId = nodeHasher.primaryHash(kvPair)
         val value: String?
 
-        if (primaryNodeId == nodeId) {
+        print("DISTRIBUTED CACHE: Hash value of key ${kvPair.key} is ${primaryNodeId}\n")
+        if (nodeId == primaryNodeId) {
             value = cache.fetch(kvPair)
-            if (value != null) {
-                return value
+            if (value == null) {
+                throw io.javalin.http.HttpResponseException(HttpStatus.NOT_FOUND_404, "Value not found")
             }
-        }
-
-        val destNodeId = if (primaryNodeId == nodeId) nodeHasher.secondaryHash(kvPair) else primaryNodeId
-
-        return sender.fetchFromNode(
-            kvPair,
-            destNodeId
-        )
-    }
-
-    private fun fetchNode(kvPair: KeyVersionPair, senderId: NodeId): String {
-        print("DISTRIBUTED CACHE: Received fetch key ${kvPair.key} from node $senderId\n")
-
-        val value = cache.fetch(kvPair)
-
-        if (value != null) {
             return value
         }
-
-        val primaryNodeId = nodeHasher.primaryHash(kvPair)
-
-        if (senderId != primaryNodeId) {
-            return sender.fetchFromNode(kvPair, nodeHasher.secondaryHash(kvPair))
-        }
-        throw io.javalin.http.HttpResponseException(HttpStatus.NOT_FOUND_404, "Value not found")
+        return sender.fetchFromNode(
+            kvPair,
+            primaryNodeId
+        )
     }
 }

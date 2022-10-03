@@ -9,9 +9,6 @@ import NodeId
  */
 interface ISender {
 
-    // TODO: Add API methods as appropriate.
-    // TODO: Determine Node Ids.
-
     fun fetchFromNode(kvPair: KeyVersionPair, destNodeId: NodeId): String
 
     fun storeToNode(kvPair: KeyVersionPair, value: String, destNodeId: NodeId)

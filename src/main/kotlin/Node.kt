@@ -1,6 +1,7 @@
 import interfaces.ICache
 import interfaces.ISender
 import service.RoundRobinCache
+import service.SimpleDistributedCache
 import service.SingleNodeCache
 
 /**
@@ -8,7 +9,7 @@ import service.SingleNodeCache
  */
 class Node(nodeId: NodeId, nodeCount: Int) {
 
-    private val capacity = 1
+    private val capacity = 3
     private val nodeId: NodeId
     private val nodeCount: Int
     private val cache: ICache
@@ -24,7 +25,7 @@ class Node(nodeId: NodeId, nodeCount: Int) {
         sender = Sender(nodeId)
         nodeHasher = NodeHasher(nodeCount)
         receiver = Receiver(this.nodeId, if (nodeCount == 1)
-            SingleNodeCache(cache) else RoundRobinCache(nodeId, nodeCount, cache, sender, nodeHasher)
+            SingleNodeCache(cache) else SimpleDistributedCache(nodeId, nodeCount, cache, sender, nodeHasher)
         )
     }
 }

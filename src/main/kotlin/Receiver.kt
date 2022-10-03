@@ -60,7 +60,7 @@ class Receiver(private val nodeID: Int, private val receiverService: IDistribute
             try {
                 val senderNum = if (senderId == null) null else Integer.parseInt(senderId)
                 val value: String = receiverService.fetch(KeyVersionPair(key, version), senderNum)
-                ctx.json(KeyValueReply(key, value)).status(HttpStatus.OK_200)
+                ctx.json(KeyValueReply(key, version, value)).status(HttpStatus.OK_200)
             } catch (e: HttpResponseException) {
                 ctx.json(e.message!!).status(e.status)
             }
@@ -85,7 +85,7 @@ class Receiver(private val nodeID: Int, private val receiverService: IDistribute
             try {
                 val senderNum = if (senderId == null) null else Integer.parseInt(senderId)
                 receiverService.store(KeyVersionPair(key, version), value, senderNum)
-                ctx.json(KeyValueReply(key, value)).status(HttpStatus.CREATED_201)
+                ctx.json(KeyValueReply(key, version, value)).status(HttpStatus.CREATED_201)
             } catch (e: HttpResponseException) {
                 ctx.json(e.message!!).status(e.status)
             }
