@@ -9,7 +9,7 @@ import service.SingleNodeCache
  */
 class Node(nodeId: NodeId, nodeCount: Int) {
 
-    private val capacity = 3
+    private val capacity = 2
     private val nodeId: NodeId
     private val nodeCount: Int
     private val cache: ICache
@@ -18,7 +18,7 @@ class Node(nodeId: NodeId, nodeCount: Int) {
     private val nodeHasher: NodeHasher
 
     init {
-        print("Initializing node $nodeId\n")
+        print("Initializing node $nodeId on port ${7070 + nodeId} with cache capacity $capacity\n")
         this.nodeId = nodeId
         this.nodeCount = nodeCount
         cache = Cache(capacity)
