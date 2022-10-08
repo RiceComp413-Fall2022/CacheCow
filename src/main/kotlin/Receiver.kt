@@ -16,21 +16,23 @@ import java.util.logging.Logger
  */
 class Receiver(private val nodeID: Int, private val receiverService: IDistributedCache) {
 
-    // TODO: Ensure that help message corresponds to the correct commands.
-    private val helpMessageHandler: Handler = Handler { ctx ->
-        ctx.result(
-"Invalid Request.\n\n" +
-        "Valid Requests:\n" +
-        "GET /hello_world: Prints 'Hello World!'. Useful for testing.\n" +
-        "GET /fetch/{key}/{version}: Fetch the value corresponding to key: '{key}|{version}'." +
-        "POST /store/{key}/{version} with request body {value}: Stores the key-value pair: '<{key}|{version}, {value}>'.\n"
-        )
+    private val defaultResponseString =
+            "Invalid Request.\n\n" +
+            "Valid Requests:\n" +
+            "GET /hello_world: Prints 'Hello World!'. Useful for testing.\n" +
+            "GET /fetch/{key}/{version}: Fetch the value corresponding to key: '{key}|{version}'.\n" +
+            "POST /store/{key}/{version} with request body {value}: Stores the key-value pair: '<{key}|{version}, {value}>'.\n"
+
+    private val badRequestHandler: Handler = Handler { ctx ->
+        if (ctx.resultString() == "Not found") {
+            ctx.result(defaultResponseString)
+        }
     }
 
     private val mapper: ObjectMapper = ObjectMapper()
 
     private val app: Javalin = Javalin.create().start(7070 + this.nodeID)
-        .error(404, helpMessageHandler)
+        .error(404, badRequestHandler)
 
     init {
         initReceiver()
@@ -52,7 +54,7 @@ class Receiver(private val nodeID: Int, private val receiverService: IDistribute
 
     private fun initializeFetch() {
         app.get("/fetch/{key}/{version}") { ctx ->
-            print("*********FETCH REQUEST*********\n")
+            print("\n*********FETCH REQUEST*********\n")
             val key: String = ctx.pathParam("key")
             val version: Int = Integer.parseInt(ctx.pathParam("version"))
             val senderId: String? = ctx.queryParam("senderId")
@@ -69,7 +71,7 @@ class Receiver(private val nodeID: Int, private val receiverService: IDistribute
 
     private fun initializeStore() {
         app.post("/store/{key}/{version}") { ctx ->
-            print("*********STORE REQUEST*********\n")
+            print("\n*********STORE REQUEST*********\n")
             val key: String = ctx.pathParam("key")
             val version: Int = Integer.parseInt(ctx.pathParam("version"))
             val senderId: String? = ctx.queryParam("senderId")

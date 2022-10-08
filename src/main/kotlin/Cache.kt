@@ -27,7 +27,7 @@ class Cache(private var maxCapacity: Int = 100) : ICache {
         if (cache[kvPair] != null) {
             print("CACHE: Found value ${cache[kvPair]}\n")
         } else {
-            print("CACHE: Value not found\n")
+            print("CACHE: Key not found\n")
         }
         return cache[kvPair]
     }
