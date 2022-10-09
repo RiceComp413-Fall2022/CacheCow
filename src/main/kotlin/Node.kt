@@ -9,7 +9,7 @@ import service.SingleNodeCache
  */
 class Node(nodeId: NodeId, nodeCount: Int) {
 
-    private val capacity = 2
+    private val capacity = 5
     private val nodeId: NodeId
     private val nodeCount: Int
     private val cache: ICache

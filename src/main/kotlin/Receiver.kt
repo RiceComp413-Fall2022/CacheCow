@@ -16,6 +16,9 @@ import java.util.logging.Logger
  */
 class Receiver(private val nodeID: Int, private val receiverService: IDistributedCache) {
 
+    private val map = HashMap<Int, String>()
+    private var count = 0
+
     private val defaultResponseString =
             "Invalid Request.\n\n" +
             "Valid Requests:\n" +
@@ -42,6 +45,8 @@ class Receiver(private val nodeID: Int, private val receiverService: IDistribute
         initializeHelloWorld()
         initializeStore()
         initializeFetch()
+        initializeMemory()
+        increaseMemoryUsage()
         initializeRequestNode()
         initializeResponseNode()
     }
@@ -80,7 +85,7 @@ class Receiver(private val nodeID: Int, private val receiverService: IDistribute
             // TODO: Look into Javalin validators
             if (value == null) {
                 print(ctx.body())
-                ctx.json("Expecting request body but none found").status(HttpCode.BAD_REQUEST)
+                ctx.json("Expecting request body but none found").status(HttpStatus.BAD_REQUEST_400)
                 return@post
             }
 
@@ -91,6 +96,27 @@ class Receiver(private val nodeID: Int, private val receiverService: IDistribute
             } catch (e: HttpResponseException) {
                 ctx.json(e.message!!).status(e.status)
             }
+        }
+    }
+
+    private fun initializeMemory() {
+        app.get("/memory") { ctx ->
+            val runtime = Runtime.getRuntime()
+            val allocatedMemory = runtime.totalMemory() - runtime.freeMemory()
+            val maxMemory = runtime.maxMemory()
+            val usage = allocatedMemory/(maxMemory * 1.0)
+            ctx.json(MemoryUsageReply(allocatedMemory, maxMemory, usage)).status(HttpStatus.OK_200)
+        }
+    }
+
+    private fun increaseMemoryUsage() {
+        val longString = "asdlkfjasdfasdfasdfasdfasdfasdfasdfasdfasfasdfasdfasdfasdgasdfgasdga"
+        app.post("/memory") {ctx ->
+            for (i in 1..500000) {
+                map[count] = longString
+                count++
+            }
+            ctx.result("Success").status(HttpStatus.CREATED_201)
         }
     }
 

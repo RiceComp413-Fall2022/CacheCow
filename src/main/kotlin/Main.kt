@@ -1,4 +1,4 @@
-const val nodeCount = 3
+const val nodeCount = 1
 
 fun main(args: Array<String>) {
     if (args.isNotEmpty()) {

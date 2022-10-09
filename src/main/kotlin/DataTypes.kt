@@ -1,4 +1,4 @@
-/*
+/**
  * Defines project-wide data types.
  */
 
@@ -18,3 +18,8 @@ data class KeyVersionPair(val key: String, val version: Int)
  * Class is used to print a representation of data received from the user.
  */
 data class KeyValueReply(val key: String?, val version: Int, val value: String?)
+
+/**
+ * Client response giving memory usage of the JVM.
+ */
+data class MemoryUsageReply(val allocated: Long, val max: Long, val usage: Double)
