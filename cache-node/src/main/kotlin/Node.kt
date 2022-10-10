@@ -1,6 +1,5 @@
 import interfaces.ICache
 import interfaces.ISender
-import service.RoundRobinCache
 import service.SimpleDistributedCache
 import service.SingleNodeCache
 
