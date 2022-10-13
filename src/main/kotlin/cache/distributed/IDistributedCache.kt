@@ -1,4 +1,4 @@
-package interfaces
+package cache.distributed
 
 import KeyVersionPair
 import NodeId
@@ -12,10 +12,11 @@ interface IDistributedCache {
     /**
      * Store the given key value pair in the distributed cache.
      */
-    fun store(kvPair: KeyVersionPair, value: String, senderId: NodeId?)
+    fun store(kvPair: KeyVersionPair, value: String, senderId: NodeId?): Boolean
 
     /**
      * Fetch the value corresponding to the given key from the distributed cache.
      */
-    fun fetch(kvPair: KeyVersionPair, senderId: NodeId?): String
+    fun fetch(kvPair: KeyVersionPair, senderId: NodeId?): String?
+
 }

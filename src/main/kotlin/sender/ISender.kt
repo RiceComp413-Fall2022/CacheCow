@@ -1,4 +1,4 @@
-package interfaces
+package sender
 
 import KeyVersionPair
 import NodeId
@@ -9,8 +9,8 @@ import NodeId
  */
 interface ISender {
 
-    fun fetchFromNode(kvPair: KeyVersionPair, destNodeId: NodeId): String
+    fun fetchFromNode(kvPair: KeyVersionPair, destNodeId: NodeId): String?
 
-    fun storeToNode(kvPair: KeyVersionPair, value: String, destNodeId: NodeId)
+    fun storeToNode(kvPair: KeyVersionPair, value: String, destNodeId: NodeId): Boolean
 
 }
