@@ -29,7 +29,7 @@ class Receiver(private val nodeId: NodeId, private val distributedCache: IDistri
             print("\n*********STORE REQUEST*********\n")
             val key = ctx.pathParam("key")
             val version = Integer.parseInt(ctx.pathParam("version"))
-            val value = if (ctx.body() == "") null else mapper.readTree(ctx.body()).textValue()
+            val value = if (ctx.body() == "") null else mapper.readTree(ctx.body()).textValue() // TODO: eventually use ctx.bodyAsClass() instead
             val senderId = ctx.queryParam("senderId")
 
             if (value == null) { // TODO: Look into Javalin validators
