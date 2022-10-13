@@ -11,13 +11,29 @@ import receiver.Receiver
 import sender.Sender
 
 /**
- * Node class that contains the receiver, sender and memory cache.
+ * Node class that intermediates between the receiver, sender, local cache, and
+ * distributed cache.
  */
 class Node(nodeId: NodeId, nodeCount: Int, capacity: Int) {
 
+    /**
+     * The local cache
+     */
     private val localCache: ILocalCache
+
+    /**
+     * The distributed cache
+     */
     private val distributedCache: IDistributedCache
+
+    /**
+     * The sender, used to send requests to other nodes
+     */
     private val sender: ISender
+
+    /**
+     * The receiver, used to receive requests from users and other nodes
+     */
     private val receiver: IReceiver
 
     init {
@@ -28,6 +44,9 @@ class Node(nodeId: NodeId, nodeCount: Int, capacity: Int) {
         receiver = Receiver(nodeId, distributedCache)
     }
 
+    /**
+     * Start the node
+     */
     fun start() {
         receiver.start()
     }

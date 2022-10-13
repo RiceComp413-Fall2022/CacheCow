@@ -9,11 +9,13 @@ import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 
 /**
- * The sender sends HTTP requests to other nodes. It is our form of communication
- * between nodes in our distributed system.
+ * A concrete sender that sends HTTP requests.
  */
 class Sender(private val nodeId: NodeId) : ISender {
 
+    /**
+     * The ObjectMapper used to encode JSON data
+     */
     private val mapper: ObjectMapper = ObjectMapper()
 
     override fun fetchFromNode(kvPair: KeyVersionPair, destNodeId: NodeId): String? {

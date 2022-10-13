@@ -4,19 +4,27 @@ import KeyVersionPair
 import NodeId
 
 /**
- * Interface describing actions supported by the receiver. Implementing classes will
- * elect caching policies across nodes in the system.
+ * An interface specifying the behavior of a distributed data cache.
  */
 interface IDistributedCache {
 
     /**
-     * Store the given key value pair in the distributed cache.
-     */
-    fun store(kvPair: KeyVersionPair, value: String, senderId: NodeId?): Boolean
-
-    /**
-     * Fetch the value corresponding to the given key from the distributed cache.
+     * Fetch a value from the distributed cache.
+     *
+     * @param kvPair The key-version pair to look up
+     * @param senderId If this lookup came from a remote node, the ID of that node
+     * @return The value, or null if the lookup fails
      */
     fun fetch(kvPair: KeyVersionPair, senderId: NodeId?): String?
+
+    /**
+     * Store a value to the distributed cache.
+     *
+     * @param kvPair The key-version pair to store
+     * @param value The value to store
+     * @param senderId If this lookup came from a remote node, the ID of that node
+     * @return True if the store succeeded, and false otherwise
+     */
+    fun store(kvPair: KeyVersionPair, value: String, senderId: NodeId?): Boolean
 
 }

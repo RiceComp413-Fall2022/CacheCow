@@ -9,19 +9,18 @@ import io.javalin.http.HttpCode
 import org.eclipse.jetty.http.HttpStatus
 
 /**
- * HTTP receiver to accept user API calls.
+ * A concrete receiver that accepts requests over HTTP.
  */
 class Receiver(private val nodeId: NodeId, private val distributedCache: IDistributedCache) : IReceiver {
 
+    /**
+     * The Javalin server used to route HTTP requests to handlers
+     */
     private val app: Javalin = Javalin.create()
 
-    private val defaultResponseString = """
-        Invalid Request.
-        Valid Requests:
-        GET /fetch/{key}/{version}: Fetch the value corresponding to the given key-version pair
-        POST /store/{key}/{version} with request body ""value"": Store the value corresponding to the given key-version pair
-    """.trimIndent()
-
+    /**
+     * The ObjectMapper used to decode JSON data
+     */
     private val mapper: ObjectMapper = ObjectMapper()
 
     init {
@@ -67,10 +66,18 @@ class Receiver(private val nodeId: NodeId, private val distributedCache: IDistri
 
         /* Handle invalid requests */
         app.error(404) { ctx ->
-            ctx.result(defaultResponseString)
+            ctx.result("""
+                Invalid Request.
+                Valid Requests:
+                GET /fetch/{key}/{version}: Fetch the value corresponding to the given key-version pair
+                POST /store/{key}/{version} with request body ""value"": Store the value corresponding to the given key-version pair
+                """.trimIndent())
         }
     }
 
+    /**
+     * Start the HTTP server.
+     */
     override fun start() {
         app.start(7070 + nodeId)
     }
@@ -78,9 +85,11 @@ class Receiver(private val nodeId: NodeId, private val distributedCache: IDistri
 }
 
 /**
- * Represents key-value pair, where the key is a concatenation of the key and version.
- * Class is used to print a representation of data received from the user.
+ * Represents a key-version-value tuple in a HTTP response.
  */
 data class KeyValueReply(val key: String, val version: Int, val value: String, val success: Boolean = true)
 
+/**
+ * Represents a failure in a HTTP response.
+ */
 data class FailureReply(val message: String, val success: Boolean = false)
