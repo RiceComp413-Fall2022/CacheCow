@@ -1,26 +1,14 @@
-import interfaces.ICache
+package cache.local
+
+import KeyVersionPair
 import java.util.concurrent.ConcurrentHashMap
 
 /**
- * Concrete Memory Cache.
+ * A concrete local cache that stores data in a ConcurrentHashMap.
  */
-class Cache(private var maxCapacity: Int = 100) : ICache {
+class LocalCache(private var maxCapacity: Int = 100) : ILocalCache {
 
     private val cache: ConcurrentHashMap<KeyVersionPair, String> = ConcurrentHashMap<KeyVersionPair, String>(maxCapacity)
-
-    // TODO: Implement concrete hashmap cache.
-    // TODO: Implement LRU Replacement?
-    // TODO: Determine stored object type.
-
-    override fun store(kvPair: KeyVersionPair, value: String) {
-        print("CACHE: Attempting to store (${kvPair.key}, $value)\n")
-        if (cache.size < maxCapacity) {
-            print("CACHE: Success\n")
-            cache[kvPair] = value
-        } else {
-            print("CACHE: Full\n")
-        }
-    }
 
     override fun fetch(kvPair: KeyVersionPair): String? {
         print("CACHE: Attempting to fetch ${kvPair.key}\n")
@@ -29,7 +17,19 @@ class Cache(private var maxCapacity: Int = 100) : ICache {
         } else {
             print("CACHE: Key not found\n")
         }
+
         return cache[kvPair]
+    }
+    override fun store(kvPair: KeyVersionPair, value: String): Boolean {
+        print("CACHE: Attempting to store (${kvPair.key}, $value)\n")
+        if (cache.size < maxCapacity) {
+            print("CACHE: Success\n")
+            cache[kvPair] = value
+            return true
+        } else {
+            print("CACHE: Full\n")
+            return false
+        }
     }
 
     override fun isFull(): Boolean {
