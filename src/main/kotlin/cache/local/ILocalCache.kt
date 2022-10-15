@@ -31,4 +31,11 @@ interface ILocalCache {
      */
     fun isFull(): Boolean
 
+    fun getCacheInfo() : CacheInfo
+
 }
+
+/**
+ * Encapsulates information about the cache in this node
+ */
+data class CacheInfo(val totalKeys: Int, val kvBytes: Int)

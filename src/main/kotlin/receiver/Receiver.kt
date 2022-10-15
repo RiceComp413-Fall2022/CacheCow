@@ -6,12 +6,13 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import cache.distributed.IDistributedCache
 import io.javalin.Javalin
 import io.javalin.http.HttpCode
+import node.Node
 import org.eclipse.jetty.http.HttpStatus
 
 /**
  * A concrete receiver that accepts requests over HTTP.
  */
-class Receiver(private val nodeId: NodeId, private val distributedCache: IDistributedCache) : IReceiver {
+class Receiver(private val nodeId: NodeId, private val node: Node, private val distributedCache: IDistributedCache) : IReceiver {
 
     /**
      * The Javalin server used to route HTTP requests to handlers
@@ -61,7 +62,11 @@ class Receiver(private val nodeId: NodeId, private val distributedCache: IDistri
             } else {
                 ctx.json(FailureReply("Failed to fetch pair.")).status(HttpCode.INTERNAL_SERVER_ERROR) // TODO: Make more descriptive
             }
+        }
 
+        /* Handle requests to monitor information about the node of this receiver */
+        app.get("/node-info") { ctx ->
+            ctx.json(node.getNodeInfo()).status(HttpStatus.OK_200)
         }
 
         /* Handle invalid requests */

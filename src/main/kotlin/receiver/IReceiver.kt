@@ -12,3 +12,9 @@ interface IReceiver {
     fun start()
 
 }
+
+/**
+ * Information about what the receiver has done so far
+ * TODO: not used yet
+ */
+data class ReceiverUsageInfo(val requestsReceived: Int)

@@ -5,6 +5,7 @@ import cache.distributed.IDistributedCache
 import cache.local.ILocalCache
 import sender.ISender
 import cache.distributed.DistributedCache
+import cache.local.CacheInfo
 import cache.local.LocalCache
 import receiver.IReceiver
 import receiver.Receiver
@@ -14,7 +15,7 @@ import sender.Sender
  * Node class that intermediates between the receiver, sender, local cache, and
  * distributed cache.
  */
-class Node(nodeId: NodeId, nodeCount: Int, capacity: Int) {
+class Node(private val nodeId: NodeId, nodeCount: Int, capacity: Int) {
 
     /**
      * The local cache
@@ -41,7 +42,10 @@ class Node(nodeId: NodeId, nodeCount: Int, capacity: Int) {
         localCache = LocalCache(capacity)
         sender = Sender(nodeId)
         distributedCache = DistributedCache(nodeId, nodeCount, localCache, sender)
-        receiver = Receiver(nodeId, distributedCache)
+        receiver = Receiver(nodeId, this, distributedCache)
+        // TODO: Assuming we want information about the whole node from a receiver,
+        //  it seems there needs to be a reference to the node itself. Might want to
+        //  switch this to an adapter for design purposes. For now,
     }
 
     /**
@@ -51,4 +55,27 @@ class Node(nodeId: NodeId, nodeCount: Int, capacity: Int) {
         receiver.start()
     }
 
+    /**
+     * Gets node info for this node, including memory usage, cacheInfo
+     * TODO: also process sender and receiver usage info
+     */
+    fun getNodeInfo(): NodeInfo {
+        val runtime = Runtime.getRuntime()
+        val allocatedMemory = runtime.totalMemory() - runtime.freeMemory()
+        val maxMemory = runtime.maxMemory()
+        val usage = allocatedMemory/(maxMemory * 1.0)
+        return NodeInfo(nodeId, MemoryUsageInfo(allocatedMemory, maxMemory, usage), localCache.getCacheInfo())
+    }
+
 }
+
+/**
+ * Client response giving memory usage of the JVM.
+ */
+data class MemoryUsageInfo(val allocated: Long, val max: Long, val usage: Double)
+
+/**
+ * Encapsulates information about the usage of this node into one object
+ * TODO: for more thorough information tracking, also include Sender and Receiver usage info
+ */
+data class NodeInfo(val nodeId: Int, val memUsage: MemoryUsageInfo, val cacheInfo: CacheInfo)

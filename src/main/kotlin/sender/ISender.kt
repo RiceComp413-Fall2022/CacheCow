@@ -29,3 +29,9 @@ interface ISender {
     fun storeToNode(kvPair: KeyVersionPair, value: String, destNodeId: NodeId): Boolean
 
 }
+
+/**
+ * Information about what the sender has done so far
+ * TODO: not used yet, add to NodeUsageInfo in Node
+ */
+data class SenderUsageInfo(val totalSent: Int)
