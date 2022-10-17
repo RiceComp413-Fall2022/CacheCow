@@ -11,7 +11,7 @@ class LocalCache(private var maxCapacity: Int = 100) : ILocalCache {
     private val cache: ConcurrentHashMap<KeyVersionPair, String> = ConcurrentHashMap<KeyVersionPair, String>(maxCapacity)
 
     /* Store the total size of key and value bytes. Note that HashMap's auxiliary objects are not counted */
-    private var kvByteSize: Int = 0;
+    private var kvByteSize = 0
 
     override fun fetch(kvPair: KeyVersionPair): String? {
         print("CACHE: Attempting to fetch ${kvPair.key}\n")
@@ -27,8 +27,11 @@ class LocalCache(private var maxCapacity: Int = 100) : ILocalCache {
         print("CACHE: Attempting to store (${kvPair.key}, $value)\n")
         if (cache.size < maxCapacity) {
             print("CACHE: Success\n")
+            val prevVal = cache[kvPair]
+            val prevKvByteSize = if(prevVal == null) 0 else (prevVal.length + kvPair.key.length + 4)
+            kvByteSize += (value.length + kvPair.key.length + 4) - prevKvByteSize
+
             cache[kvPair] = value
-            kvByteSize += kvPair.key.length + 4 + value.length
             return true
         } else {
             print("CACHE: Full\n")

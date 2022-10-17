@@ -9,7 +9,9 @@ import cache.local.CacheInfo
 import cache.local.LocalCache
 import receiver.IReceiver
 import receiver.Receiver
+import receiver.ReceiverUsageInfo
 import sender.Sender
+import sender.SenderUsageInfo
 
 /**
  * Node class that intermediates between the receiver, sender, local cache, and
@@ -64,7 +66,11 @@ class Node(private val nodeId: NodeId, nodeCount: Int, capacity: Int) {
         val allocatedMemory = runtime.totalMemory() - runtime.freeMemory()
         val maxMemory = runtime.maxMemory()
         val usage = allocatedMemory/(maxMemory * 1.0)
-        return NodeInfo(nodeId, MemoryUsageInfo(allocatedMemory, maxMemory, usage), localCache.getCacheInfo())
+        return NodeInfo(nodeId,
+                        MemoryUsageInfo(allocatedMemory, maxMemory, usage),
+                        localCache.getCacheInfo(),
+                        receiver.getReceiverUsageInfo(),
+                        sender.getSenderUsageInfo())
     }
 
 }
@@ -78,4 +84,8 @@ data class MemoryUsageInfo(val allocated: Long, val max: Long, val usage: Double
  * Encapsulates information about the usage of this node into one object
  * TODO: for more thorough information tracking, also include Sender and Receiver usage info
  */
-data class NodeInfo(val nodeId: Int, val memUsage: MemoryUsageInfo, val cacheInfo: CacheInfo)
+data class NodeInfo(val nodeId: Int,
+                    val memUsage: MemoryUsageInfo,
+                    val cacheInfo: CacheInfo,
+                    val receiverUsageInfo: ReceiverUsageInfo,
+                    val senderUsageInfo: SenderUsageInfo)
