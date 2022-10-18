@@ -40,6 +40,7 @@ class Sender(private val nodeId: NodeId) : ISender {
         try {
             response = client.send(request, HttpResponse.BodyHandlers.ofString())
         } catch (e: ConnectException) {
+            print("SENDER: Caught connection refused exception\n")
             throw ConnectionRefusedException()
         }
 
@@ -74,6 +75,7 @@ class Sender(private val nodeId: NodeId) : ISender {
         try {
             response = client.send(request, HttpResponse.BodyHandlers.ofString())
         } catch (e: ConnectException) {
+            print("SENDER: Caught connection refused exception\n")
             throw ConnectionRefusedException()
         }
 

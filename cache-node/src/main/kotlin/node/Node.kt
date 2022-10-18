@@ -41,7 +41,7 @@ class Node(nodeId: NodeId, nodeCount: Int, capacity: Int) {
         localCache = LocalCache(capacity)
         sender = Sender(nodeId)
         distributedCache = DistributedCache(nodeId, nodeCount, localCache, sender)
-        receiver = Receiver(nodeId, distributedCache)
+        receiver = Receiver(nodeId, nodeCount, distributedCache)
     }
 
     /**

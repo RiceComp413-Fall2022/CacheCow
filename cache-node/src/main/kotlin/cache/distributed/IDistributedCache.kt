@@ -14,7 +14,6 @@ interface IDistributedCache {
      * @param kvPair The key-version pair to look up
      * @param senderId If this lookup came from a remote node, the ID of that node
      * @return The value if found
-     * @throws
      */
     fun fetch(kvPair: KeyVersionPair, senderId: NodeId?): String
 
