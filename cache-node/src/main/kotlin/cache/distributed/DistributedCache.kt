@@ -5,6 +5,7 @@ import cache.distributed.hasher.NodeHasher
 import NodeId
 import cache.distributed.hasher.INodeHasher
 import cache.local.LocalCache
+import exception.KeyNotFoundException
 import sender.Sender
 
 /**
@@ -18,12 +19,12 @@ class DistributedCache(private val nodeId: NodeId, nodeCount: Int, private val c
      */
     private val nodeHasher: INodeHasher = NodeHasher(nodeCount)
 
-    override fun fetch(kvPair: KeyVersionPair, senderId: NodeId?): String? {
+    override fun fetch(kvPair: KeyVersionPair, senderId: NodeId?): String {
         val primaryNodeId = nodeHasher.primaryHash(kvPair)
 
         print("DISTRIBUTED CACHE: Hash value of key ${kvPair.key} is ${primaryNodeId}\n")
 
-        return if (nodeId == primaryNodeId) {
+        val value: String? = if (nodeId == primaryNodeId) {
             cache.fetch(kvPair)
         } else {
             sender.fetchFromNode(
@@ -31,14 +32,18 @@ class DistributedCache(private val nodeId: NodeId, nodeCount: Int, private val c
                 primaryNodeId
             )
         }
+        if (value == null) {
+            throw KeyNotFoundException(kvPair.key)
+        }
+        return value
     }
 
-    override fun store(kvPair: KeyVersionPair, value: String, senderId: NodeId?): Boolean {
+    override fun store(kvPair: KeyVersionPair, value: String, senderId: NodeId?) {
         val primaryNodeId = nodeHasher.primaryHash(kvPair)
 
         print("DISTRIBUTED CACHE: Hash value of key ${kvPair.key} is ${primaryNodeId}\n")
 
-        return if (nodeId == primaryNodeId) {
+        if (nodeId == primaryNodeId) {
             cache.store(kvPair, value)
         } else {
             sender.storeToNode(

@@ -4,6 +4,9 @@ import KeyVersionPair
 import NodeId
 import com.fasterxml.jackson.databind.ObjectMapper
 import cache.distributed.IDistributedCache
+import exception.ConnectionRefusedException
+import exception.InternalErrorException
+import exception.KeyNotFoundException
 import io.javalin.Javalin
 import io.javalin.http.HttpCode
 import org.eclipse.jetty.http.HttpStatus
@@ -39,12 +42,8 @@ class Receiver(private val nodeId: NodeId, private val distributedCache: IDistri
             }
 
             val senderNum = if (senderId == null) null else Integer.parseInt(senderId)
-            val success = distributedCache.store(KeyVersionPair(key, version), value, senderNum)
-            if (success) {
-                ctx.json(KeyValueReply(key, version, value)).status(HttpStatus.CREATED_201)
-            } else {
-                ctx.json(FailureReply("Failed to store pair.")).status(HttpCode.INTERNAL_SERVER_ERROR) // TODO: Make more descriptive
-            }
+            distributedCache.store(KeyVersionPair(key, version), value, senderNum)
+            ctx.json(KeyValueReply(key, version, value)).status(HttpStatus.CREATED_201)
         }
 
         /* Handle fetch requests */
@@ -56,12 +55,19 @@ class Receiver(private val nodeId: NodeId, private val distributedCache: IDistri
 
             val senderNum = if (senderId == null) null else Integer.parseInt(senderId)
             val value = distributedCache.fetch(KeyVersionPair(key, version), senderNum)
-            if (value != null) {
-                ctx.json(KeyValueReply(key, version, value)).status(HttpStatus.OK_200)
-            } else {
-                ctx.json(FailureReply("Failed to fetch pair.")).status(HttpCode.INTERNAL_SERVER_ERROR) // TODO: Make more descriptive
-            }
+            ctx.json(KeyValueReply(key, version, value)).status(HttpStatus.OK_200)
+        }
 
+        app.exception(InternalErrorException::class.java) { e, ctx ->
+            ctx.result(e.message!!).status(e.status)
+        }
+
+        app.exception(KeyNotFoundException::class.java) { e, ctx ->
+            ctx.result(e.message!!).status(e.status)
+        }
+
+        app.exception(ConnectionRefusedException::class.java) { e, ctx ->
+            ctx.result(e.message!!).status(e.status)
         }
 
         /* Handle invalid requests */

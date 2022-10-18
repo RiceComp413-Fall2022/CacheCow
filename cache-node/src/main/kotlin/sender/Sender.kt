@@ -3,6 +3,11 @@ package sender
 import KeyVersionPair
 import NodeId
 import com.fasterxml.jackson.databind.ObjectMapper
+import exception.ConnectionRefusedException
+import exception.InternalErrorException
+import exception.KeyNotFoundException
+import org.eclipse.jetty.http.HttpStatus
+import java.net.ConnectException
 import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
@@ -18,7 +23,7 @@ class Sender(private val nodeId: NodeId) : ISender {
      */
     private val mapper: ObjectMapper = ObjectMapper()
 
-    override fun fetchFromNode(kvPair: KeyVersionPair, destNodeId: NodeId): String? {
+    override fun fetchFromNode(kvPair: KeyVersionPair, destNodeId: NodeId): String {
         print("SENDER: Delegating fetch key ${kvPair.key} to node $destNodeId\n")
 
         val client = HttpClient.newBuilder().build()
@@ -31,12 +36,19 @@ class Sender(private val nodeId: NodeId) : ISender {
 
         print("SENDER: Sending fetch request to $destUrl\n")
 
-        val response = client.send(request, HttpResponse.BodyHandlers.ofString())
+        val response: HttpResponse<String>
+        try {
+            response = client.send(request, HttpResponse.BodyHandlers.ofString())
+        } catch (e: ConnectException) {
+            throw ConnectionRefusedException()
+        }
 
         print("SENDER: Got fetch response with status code ${response.statusCode()}\n")
 
-        if (response.statusCode() in 400..599) {
-            return null
+        if (response.statusCode() == HttpStatus.NOT_FOUND_404) {
+            throw KeyNotFoundException(kvPair.key)
+        } else if (response.statusCode() in 400..599) {
+            throw InternalErrorException()
         }
 
         val jsonResponse = mapper.readTree(response.body())
@@ -44,7 +56,7 @@ class Sender(private val nodeId: NodeId) : ISender {
         return jsonResponse.get("value").textValue()
     }
 
-    override fun storeToNode(kvPair: KeyVersionPair, value: String, destNodeId: NodeId): Boolean {
+    override fun storeToNode(kvPair: KeyVersionPair, value: String, destNodeId: NodeId) {
         print("SENDER: Delegating store key ${kvPair.key} to node $destNodeId\n")
 
         val client = HttpClient.newBuilder().build()
@@ -58,15 +70,17 @@ class Sender(private val nodeId: NodeId) : ISender {
 
         print("SENDER: Sending store request to $destUrl\n")
 
-        val response = client.send(request, HttpResponse.BodyHandlers.ofString())
+        val response: HttpResponse<String>
+        try {
+            response = client.send(request, HttpResponse.BodyHandlers.ofString())
+        } catch (e: ConnectException) {
+            throw ConnectionRefusedException()
+        }
 
         print("SENDER: Got fetch response with status code ${response.statusCode()}\n")
 
         if (response.statusCode() in 400..599) {
-            return false
+            throw InternalErrorException()
         }
-
-        return true
     }
-
 }
