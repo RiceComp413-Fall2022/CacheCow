@@ -26,6 +26,27 @@ class Receiver(private val nodeId: NodeId, private val nodeCount: Int, private v
         ReceiverUsageInfo(0, 0, 0, 0,  0)
 
     init {
+
+        /* Handle fetch requests */
+        app.get("/fetch/{key}/{version}") { ctx ->
+            print("\n*********FETCH REQUEST*********\n")
+            receiverUsageInfo.fetchAttempts++
+
+            val key = ctx.pathParam("key")
+            val version = ctx.pathParamAsClass<Int>("version")
+                .check({ it >= 0}, "Version number cannot be negative")
+                .get()
+            val senderNum = if (ctx.queryParam("senderId") == null) null else
+                ctx.queryParamAsClass<Int>("senderId")
+                    .check({ it in 0 until nodeCount }, "Sender id must be in range (0, ${nodeCount - 1})")
+                    .get()
+
+            val value = distributedCache.fetch(KeyVersionPair(key, version), senderNum)
+            receiverUsageInfo.fetchSuccesses++
+
+            ctx.json(KeyValueReply(key, version, value)).status(HttpStatus.OK_200)
+        }
+
         /* Handle store requests */
         app.post("/store/{key}/{version}") { ctx ->
             print("\n*********STORE REQUEST*********\n")
@@ -44,26 +65,9 @@ class Receiver(private val nodeId: NodeId, private val nodeCount: Int, private v
                 .get()
 
             distributedCache.store(KeyVersionPair(key, version), value, senderNum)
+            receiverUsageInfo.storeSuccesses++
+
             ctx.json(KeyValueReply(key, version, value)).status(HttpStatus.CREATED_201)
-        }
-
-        /* Handle fetch requests */
-        app.get("/fetch/{key}/{version}") { ctx ->
-            print("\n*********FETCH REQUEST*********\n")
-            receiverUsageInfo.fetchAttempts ++
-
-            val key = ctx.pathParam("key")
-            val version = ctx.pathParamAsClass<Int>("version")
-                .check({ it >= 0}, "Version number cannot be negative")
-                .get()
-            val senderNum = if (ctx.queryParam("senderId") == null) null else
-                ctx.queryParamAsClass<Int>("senderId")
-                    .check({ it in 0 until nodeCount }, "Sender id must be in range (0, ${nodeCount - 1})")
-                    .get()
-
-            val value = distributedCache.fetch(KeyVersionPair(key, version), senderNum)
-            receiverUsageInfo.fetchSuccesses++
-            ctx.json(KeyValueReply(key, version, value)).status(HttpStatus.OK_200)
         }
 
         /* Handle requests to monitor information about the node of this receiver */
@@ -87,8 +91,8 @@ class Receiver(private val nodeId: NodeId, private val nodeCount: Int, private v
 
         /* Handle invalid requests */
         app.error(HttpStatus.NOT_FOUND_404) { ctx ->
-            receiverUsageInfo.invalidRequests++
             if (ctx.resultString() == "Not found") {
+                receiverUsageInfo.invalidRequests++
                 ctx.result(
               """
                 Invalid Request.
