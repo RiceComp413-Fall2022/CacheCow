@@ -11,7 +11,7 @@ import {
   LineElement,
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
-import './index.css';
+import '../index.css';
 
 ChartJS.register(
   CategoryScale,
@@ -34,7 +34,7 @@ export const options = {
   },
   plugins: {
     legend: {
-      position: 'top' as const,
+      position: 'top',
       color: 'white',
     },
     title: {
@@ -62,10 +62,6 @@ export const data = {
   ],
 };
 
-export function App() {
-  return (
-    <div id='chart'>
-      <Line data={data} options={options} />
-    </div>
-  );
+export function Dashboard() {
+  return <Line data={data} options={options} />;
 }
