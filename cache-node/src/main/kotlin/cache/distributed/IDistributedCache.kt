@@ -13,9 +13,9 @@ interface IDistributedCache {
      *
      * @param kvPair The key-version pair to look up
      * @param senderId If this lookup came from a remote node, the ID of that node
-     * @return The value, or null if the lookup fails
+     * @return The value if found
      */
-    fun fetch(kvPair: KeyVersionPair, senderId: NodeId?): String?
+    fun fetch(kvPair: KeyVersionPair, senderId: NodeId?): String
 
     /**
      * Store a value to the distributed cache.
@@ -23,8 +23,7 @@ interface IDistributedCache {
      * @param kvPair The key-version pair to store
      * @param value The value to store
      * @param senderId If this lookup came from a remote node, the ID of that node
-     * @return True if the store succeeded, and false otherwise
      */
-    fun store(kvPair: KeyVersionPair, value: String, senderId: NodeId?): Boolean
+    fun store(kvPair: KeyVersionPair, value: String, senderId: NodeId?)
 
 }

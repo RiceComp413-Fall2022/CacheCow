@@ -44,10 +44,7 @@ class Node(private val nodeId: NodeId, nodeCount: Int, capacity: Int) {
         localCache = LocalCache(capacity)
         sender = Sender(nodeId)
         distributedCache = DistributedCache(nodeId, nodeCount, localCache, sender)
-        receiver = Receiver(nodeId, this, distributedCache)
-        // TODO: Assuming we want information about the whole node from a receiver,
-        //  it seems there needs to be a reference to the node itself. Might want to
-        //  switch this to an adapter for design purposes. For now,
+        receiver = Receiver(nodeId, nodeCount, this, distributedCache)
     }
 
     /**
