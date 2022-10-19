@@ -3,10 +3,9 @@ package receiver
 import KeyVersionPair
 import NodeId
 import cache.distributed.IDistributedCache
-import exception.JSONParseException
+import exception.CacheNodeException
 import io.javalin.Javalin
 import io.javalin.core.validation.ValidationException
-import io.javalin.http.HttpResponseException
 import node.Node
 import org.eclipse.jetty.http.HttpStatus
 
@@ -40,14 +39,9 @@ class Receiver(private val nodeId: NodeId, private val nodeCount: Int, private v
                 ctx.queryParamAsClass<Int>("senderId")
                     .check({ it in 0 until nodeCount }, "Sender id must be in range (0, ${nodeCount - 1})")
                     .get()
-            val value: String
-            try {
-                value = ctx.bodyValidator<String>()
-                    .check({ it != ""}, "Expecting value but none found")
-                    .get()
-            } catch (e: ValidationException) {
-                throw JSONParseException()
-            }
+            val value = ctx.bodyValidator<String>()
+                .check({ it != ""}, "Expecting value but none found")
+                .get()
 
             distributedCache.store(KeyVersionPair(key, version), value, senderNum)
             ctx.json(KeyValueReply(key, version, value)).status(HttpStatus.CREATED_201)
@@ -74,11 +68,21 @@ class Receiver(private val nodeId: NodeId, private val nodeCount: Int, private v
 
         /* Handle requests to monitor information about the node of this receiver */
         app.get("/node-info") { ctx ->
+            print("\n*********NODE INFO REQUEST*********\n")
             ctx.json(node.getNodeInfo()).status(HttpStatus.OK_200)
         }
 
-        app.exception(HttpResponseException::class.java) { e, ctx ->
-            ctx.result(e.message!!).status(e.status)
+        app.exception(CacheNodeException::class.java) { e, ctx ->
+            print("RECEIVER: Caught cache node exception with id ${e.getExceptionID()}\n")
+            ctx.result(e.message).status(e.status)
+        }
+
+        app.exception(ValidationException::class.java) { e, ctx ->
+            val firstError = e.errors.asIterable().iterator().next()
+            print("RECEIVER: Caught validation exception for field ${firstError.key}\n")
+
+            // TODO: Return message in JSON response body, extract more info from exception
+            ctx.result(firstError.value[0].message).status(HttpStatus.BAD_REQUEST_400)
         }
 
         /* Handle invalid requests */
