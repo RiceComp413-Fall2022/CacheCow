@@ -17,7 +17,7 @@ class Receiver(private val nodeId: NodeId, private val nodeCount: Int, private v
     /**
      * The Javalin server used to route HTTP requests to handlers
      */
-    private val app: Javalin = Javalin.create()
+    private val app: Javalin = Javalin.create {config -> config.enableCorsForAllOrigins()} // need to enable this for react calls to work locally
 
     /**
      * count the number of requests that are received
