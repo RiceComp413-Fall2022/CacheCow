@@ -15,7 +15,7 @@ interface IDistributedCache {
      * @param senderId If this lookup came from a remote node, the ID of that node
      * @return The value if found
      */
-    fun fetch(kvPair: KeyVersionPair, senderId: NodeId?): String
+    fun fetch(kvPair: KeyVersionPair, senderId: NodeId?): ByteArray
 
     /**
      * Store a value to the distributed cache.
@@ -24,6 +24,6 @@ interface IDistributedCache {
      * @param value The value to store
      * @param senderId If this lookup came from a remote node, the ID of that node
      */
-    fun store(kvPair: KeyVersionPair, value: String, senderId: NodeId?)
+    fun store(kvPair: KeyVersionPair, value: ByteArray, senderId: NodeId?)
 
 }
