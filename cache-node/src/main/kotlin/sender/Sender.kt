@@ -16,7 +16,7 @@ import java.net.http.HttpResponse
 /**
  * A concrete sender that sends HTTP requests.
  */
-class Sender(private val nodeId: NodeId) : ISender {
+class Sender(private val nodeId: NodeId, private val nodeList: List<String>) : ISender {
 
     /**
      * The ObjectMapper used to encode JSON data
@@ -32,7 +32,7 @@ class Sender(private val nodeId: NodeId) : ISender {
 
         val client = HttpClient.newBuilder().build()
 
-        val destUrl = URI.create("http://localhost:${7070 + destNodeId}/fetch/${kvPair.key}/${kvPair.version}?senderId=${nodeId}")
+        val destUrl = URI.create("http://${nodeList[destNodeId]}/fetch/${kvPair.key}/${kvPair.version}?senderId=${nodeId}")
         val request = HttpRequest.newBuilder()
             .uri(destUrl)
             .GET()
@@ -69,7 +69,7 @@ class Sender(private val nodeId: NodeId) : ISender {
         val client = HttpClient.newBuilder().build()
 
         val destUrl =
-            URI.create("http://localhost:${7070 + destNodeId}/store/${kvPair.key}/${kvPair.version}?senderId=${nodeId}")
+            URI.create("http://${nodeList[destNodeId]}/store/${kvPair.key}/${kvPair.version}?senderId=${nodeId}")
         val requestBody =
             mapper.writerWithDefaultPrettyPrinter().writeValueAsString(value)
         val request = HttpRequest.newBuilder()
