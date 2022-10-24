@@ -13,7 +13,7 @@ interface ILocalCache {
      * @param kvPair The key-version pair to look up
      * @return The value, or null if the lookup fails
      */
-    fun fetch(kvPair: KeyVersionPair) : String?
+    fun fetch(kvPair: KeyVersionPair) : ByteArray?
 
     /**
      * Store a value to the local cache.
@@ -22,7 +22,7 @@ interface ILocalCache {
      * @param value The value to store
      * @return True if the store succeeded, and false otherwise
      */
-    fun store(kvPair: KeyVersionPair, value: String): Boolean
+    fun store(kvPair: KeyVersionPair, value: ByteArray): Boolean
 
     /**
      * Check whether the local cache is full.

@@ -16,7 +16,7 @@ interface ISender {
      * @param destNodeId The node from which to retrieve the value
      * @return The value, or null if the lookup fails
      */
-    fun fetchFromNode(kvPair: KeyVersionPair, destNodeId: NodeId): String
+    fun fetchFromNode(kvPair: KeyVersionPair, destNodeId: NodeId): ByteArray
 
     /**
      * Store a value to a remote node.
@@ -26,7 +26,7 @@ interface ISender {
      * @param destNodeId The node to which the value should be stored
      * @return True if the store succeeded, and false otherwise
      */
-    fun storeToNode(kvPair: KeyVersionPair, value: String, destNodeId: NodeId)
+    fun storeToNode(kvPair: KeyVersionPair, value: ByteArray, destNodeId: NodeId)
 
     /**
      * Gets the sender usage info

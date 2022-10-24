@@ -4,6 +4,7 @@ import KeyVersionPair
 import NodeId
 import cache.distributed.IDistributedCache
 import exception.CacheNodeException
+import exception.InternalErrorException
 import io.javalin.Javalin
 import io.javalin.core.validation.ValidationException
 import node.Node
@@ -28,7 +29,7 @@ class Receiver(private val nodeId: NodeId, private val nodeCount: Int, private v
     init {
 
         /* Handle fetch requests */
-        app.get("/fetch/{key}/{version}") { ctx ->
+        app.get("/blobs/{key}/{version}") { ctx ->
             print("\n*********FETCH REQUEST*********\n")
             receiverUsageInfo.fetchAttempts++
 
@@ -48,7 +49,7 @@ class Receiver(private val nodeId: NodeId, private val nodeCount: Int, private v
         }
 
         /* Handle store requests */
-        app.post("/store/{key}/{version}") { ctx ->
+        app.post("/blobs/{key}/{version}") { ctx ->
             print("\n*********STORE REQUEST*********\n")
             receiverUsageInfo.storeAttempts++
 
@@ -60,14 +61,15 @@ class Receiver(private val nodeId: NodeId, private val nodeCount: Int, private v
                 ctx.queryParamAsClass<Int>("senderId")
                     .check({ it in 0 until nodeCount }, "Sender id must be in range (0, ${nodeCount - 1})")
                     .get()
-            val value = ctx.bodyValidator<String>()
-                .check({ it != ""}, "Expecting value but none found")
-                .get()
+            val value = ctx.bodyAsBytes()
+            if (value.isEmpty()) {
+                throw InternalErrorException()
+            }
 
             distributedCache.store(KeyVersionPair(key, version), value, senderNum)
             receiverUsageInfo.storeSuccesses++
 
-            ctx.json(KeyValueReply(key, version, value)).status(HttpStatus.CREATED_201)
+            ctx.result(value).status(HttpStatus.CREATED_201)
         }
 
         /* Handle requests to monitor information about the node of this receiver */
@@ -120,4 +122,4 @@ class Receiver(private val nodeId: NodeId, private val nodeCount: Int, private v
 /**
  * Represents a key-version-value tuple in a HTTP response.
  */
-data class KeyValueReply(val key: String, val version: Int, val value: String, val success: Boolean = true)
+data class KeyValueReply(val key: String, val version: Int, val value: ByteArray, val success: Boolean = true)
