@@ -12,7 +12,7 @@ import org.eclipse.jetty.http.HttpStatus
 /**
  * A concrete receiver that accepts requests over HTTP.
  */
-class Receiver(private val nodeId: NodeId, private val nodeCount: Int, private val node: Node, private val distributedCache: IDistributedCache) : IReceiver {
+class Receiver(private val nodeId: NodeId, private val port: Int, private val nodeCount: Int, private val node: Node, private val distributedCache: IDistributedCache) : IReceiver {
 
     /**
      * The Javalin server used to route HTTP requests to handlers
@@ -109,7 +109,7 @@ class Receiver(private val nodeId: NodeId, private val nodeCount: Int, private v
      * Start the HTTP server.
      */
     override fun start() {
-        app.start(7070 + nodeId)
+        app.start(port)
     }
 
     override fun getReceiverUsageInfo(): ReceiverUsageInfo {
