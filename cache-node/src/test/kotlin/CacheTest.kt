@@ -1,3 +1,4 @@
+import cache.local.LocalCache
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
@@ -6,11 +7,11 @@ import kotlin.test.assertNull
 class CacheTest {
 
     private val maxCapacity = 5
-    private lateinit var cache: Cache
+    private lateinit var cache: LocalCache
 
     @BeforeEach
     internal fun beforeEach() {
-        this.cache = Cache(maxCapacity)
+        this.cache = LocalCache(maxCapacity)
     }
 
     @Test
