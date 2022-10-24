@@ -32,7 +32,7 @@ class Sender(private val nodeId: NodeId, private val nodeList: List<String>) : I
 
         val client = HttpClient.newBuilder().build()
 
-        val destUrl = URI.create("http://${nodeList[destNodeId]}/fetch/${kvPair.key}/${kvPair.version}?senderId=${nodeId}")
+        val destUrl = URI.create("http://${nodeList[destNodeId]}/v1/blobs/${kvPair.key}/${kvPair.version}?senderId=${nodeId}")
         val request = HttpRequest.newBuilder()
             .uri(destUrl)
             .GET()
@@ -50,16 +50,14 @@ class Sender(private val nodeId: NodeId, private val nodeList: List<String>) : I
 
         print("SENDER: Got fetch response with status code ${response.statusCode()}\n")
 
-        val jsonBody =  mapper.readTree(response.body()).get("value").binaryValue()
-
-        if (response.statusCode() == HttpStatus.NOT_FOUND_404 || jsonBody.isEmpty()) {
+        if (response.statusCode() == HttpStatus.NOT_FOUND_404) {
             throw KeyNotFoundException(kvPair.key)
         } else if (response.statusCode() in 400..599) {
             throw InternalErrorException()
         }
 
-        senderUsageInfo.fetchSuccesses ++
-        return jsonBody
+        senderUsageInfo.fetchSuccesses++
+        return mapper.readTree(response.body()).binaryValue()
     }
 
     override fun storeToNode(kvPair: KeyVersionPair, value: ByteArray, destNodeId: NodeId) {
@@ -69,7 +67,7 @@ class Sender(private val nodeId: NodeId, private val nodeList: List<String>) : I
         val client = HttpClient.newBuilder().build()
 
         val destUrl =
-            URI.create("http://${nodeList[destNodeId]}/store/${kvPair.key}/${kvPair.version}?senderId=${nodeId}")
+            URI.create("http://${nodeList[destNodeId]}/v1/blobs/${kvPair.key}/${kvPair.version}?senderId=${nodeId}")
         val requestBody =
             mapper.writerWithDefaultPrettyPrinter().writeValueAsString(value)
         val request = HttpRequest.newBuilder()

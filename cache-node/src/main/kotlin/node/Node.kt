@@ -45,7 +45,7 @@ class Node(private val nodeId: NodeId, port: Int, nodeCount: Int, capacity: Int)
         localCache = LocalCache(capacity)
         sender = Sender(nodeId, File("nodes.txt").bufferedReader().readLines())
         distributedCache = DistributedCache(nodeId, nodeCount, localCache, sender)
-        receiver = Receiver(nodeId, port, nodeCount, this, distributedCache)
+        receiver = Receiver(port, nodeCount, this, distributedCache)
     }
 
     /**
