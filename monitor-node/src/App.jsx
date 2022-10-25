@@ -2,8 +2,8 @@ import React from 'react';
 import { Dashboard } from './components/Dashboard';
 import { useState } from 'react';
 import { useEffect } from 'react';
+import { Chart } from 'react-chartjs-2';
 import axios from 'axios';
-axios.defaults.baseURL = 'http://localhost:7070/';
 axios.defaults.withCredentials = true;
 
 
@@ -11,25 +11,27 @@ axios.defaults.withCredentials = true;
 export function App() {
   return (
     <div>
-      <FetchFull/>
+      <FetchNodeInfo nodeId = {0} />
+      <FetchNodeInfo nodeId = {1} />
     </div>
-    // <div id='chart'>
-    //   <Dashboard />
-    // </div>
   );
 }
 
 
-function FetchFull() {
+function FetchNodeInfo(props) {
   const [error, setError] = useState(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const [items, setItems] = useState(null);
+
+  const url = "http://localhost:707" + props.nodeId + "/node-info";
+
+  console.log(url)
 
   // Note: the empty deps array [] means
   // this useEffect will run once
   // similar to componentDidMount()
   useEffect(() => {
-    axios.get("/node-info")
+    axios.get(url)
       .then((result) => {
           setItems(result.data)
           console.log(result.data)
@@ -40,6 +42,8 @@ function FetchFull() {
   }, [])
 
   if (items != null) {
+
+
     return (
       <div>
         <ul>
