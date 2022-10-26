@@ -12,12 +12,13 @@ import receiver.Receiver
 import receiver.ReceiverUsageInfo
 import sender.Sender
 import sender.SenderUsageInfo
+import java.io.File
 
 /**
  * Node class that intermediates between the receiver, sender, local cache, and
  * distributed cache.
  */
-class Node(private val nodeId: NodeId, nodeCount: Int, capacity: Int) {
+class Node(private val nodeId: NodeId, port: Int, nodeCount: Int, capacity: Int) {
 
     /**
      * The local cache
@@ -40,11 +41,11 @@ class Node(private val nodeId: NodeId, nodeCount: Int, capacity: Int) {
     private val receiver: IReceiver
 
     init {
-        print("Initializing node $nodeId on port ${7070 + nodeId} with cache capacity $capacity\n")
+        print("Initializing node $nodeId on port $port with cache capacity $capacity\n")
         localCache = LocalCache(capacity)
-        sender = Sender(nodeId)
+        sender = Sender(nodeId, File("nodes.txt").bufferedReader().readLines())
         distributedCache = DistributedCache(nodeId, nodeCount, localCache, sender)
-        receiver = Receiver(nodeId, nodeCount, this, distributedCache)
+        receiver = Receiver(port, nodeCount, this, distributedCache)
     }
 
     /**

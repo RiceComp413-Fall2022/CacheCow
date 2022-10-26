@@ -16,7 +16,7 @@ import java.net.http.HttpResponse
 /**
  * A concrete sender that sends HTTP requests.
  */
-class Sender(private val nodeId: NodeId) : ISender {
+class Sender(private val nodeId: NodeId, private val nodeList: List<String>) : ISender {
 
     /**
      * The ObjectMapper used to encode JSON data
@@ -26,13 +26,13 @@ class Sender(private val nodeId: NodeId) : ISender {
     private var senderUsageInfo: SenderUsageInfo =
         SenderUsageInfo(0, 0, 0, 0)
 
-    override fun fetchFromNode(kvPair: KeyVersionPair, destNodeId: NodeId): String {
+    override fun fetchFromNode(kvPair: KeyVersionPair, destNodeId: NodeId): ByteArray {
         print("SENDER: Delegating fetch key ${kvPair.key} to node $destNodeId\n")
-        senderUsageInfo.fetchAttempts ++
+        senderUsageInfo.fetchAttempts++
 
         val client = HttpClient.newBuilder().build()
 
-        val destUrl = URI.create("http://localhost:${7070 + destNodeId}/fetch/${kvPair.key}/${kvPair.version}?senderId=${nodeId}")
+        val destUrl = URI.create("http://${nodeList[destNodeId]}/v1/blobs/${kvPair.key}/${kvPair.version}?senderId=${nodeId}")
         val request = HttpRequest.newBuilder()
             .uri(destUrl)
             .GET()
@@ -56,20 +56,18 @@ class Sender(private val nodeId: NodeId) : ISender {
             throw InternalErrorException()
         }
 
-        val jsonResponse = mapper.readTree(response.body())
-
-        senderUsageInfo.fetchSuccesses ++
-        return jsonResponse.get("value").textValue()
+        senderUsageInfo.fetchSuccesses++
+        return mapper.readTree(response.body()).binaryValue()
     }
 
-    override fun storeToNode(kvPair: KeyVersionPair, value: String, destNodeId: NodeId) {
+    override fun storeToNode(kvPair: KeyVersionPair, value: ByteArray, destNodeId: NodeId) {
         print("SENDER: Delegating store key ${kvPair.key} to node $destNodeId\n")
         senderUsageInfo.storeAttempts++
 
         val client = HttpClient.newBuilder().build()
 
         val destUrl =
-            URI.create("http://localhost:${7070 + destNodeId}/store/${kvPair.key}/${kvPair.version}?senderId=${nodeId}")
+            URI.create("http://${nodeList[destNodeId]}/v1/blobs/${kvPair.key}/${kvPair.version}?senderId=${nodeId}")
         val requestBody =
             mapper.writerWithDefaultPrettyPrinter().writeValueAsString(value)
         val request = HttpRequest.newBuilder()

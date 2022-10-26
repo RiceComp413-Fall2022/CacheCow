@@ -10,16 +10,18 @@ const val capacity = 2
  */
 fun main(args: Array<String>) {
     var nodeId = 0
-    if (args.isNotEmpty()) {
+    var port = 7070
+    if (args.size == 2) {
         try {
             nodeId = Integer.parseInt(args[0])
+            port = Integer.parseInt(args[1])
         } catch (e: NumberFormatException) {
-            System.err.println("Invalid node ID.")
+            System.err.println("Invalid node ID or port.")
             return
         }
     }
 
-    val node = Node(nodeId, nodeCount, capacity)
+    val node = Node(nodeId, port, nodeCount, capacity)
 
     node.start()
 }
