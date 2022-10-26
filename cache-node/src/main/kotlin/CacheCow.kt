@@ -1,6 +1,6 @@
 import node.Node
 
-const val nodeCount = 2
+const val nodeCount = 3
 const val capacity = 2
 
 /**

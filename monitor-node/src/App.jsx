@@ -12,7 +12,7 @@ axios.defaults.withCredentials = true;
 export function App() {
   return (
     <div>
-      <DisplayNodeCharts nodeCount = {3} />
+      <DisplayNodeCharts nodeCount = {3}/>
     </div>
   );
 }
@@ -26,7 +26,7 @@ function DisplayNodeCharts(props) {
   let links = []
   for (let i = 0; i < props.nodeCount; i++) {
     // TODO: will need to change this URL in the future
-    const url = "http://localhost:707" + i + "/node-info";
+    const url = "http://localhost:707" + i + "/v1/node-info";
     links.push(url);
     nodeNames.push('Node' + i);
   } 
@@ -43,71 +43,192 @@ function DisplayNodeCharts(props) {
       });
   }, [])
   
-  const memUsageData = {
-    labels: nodeNames,
-    datasets: [
-      {
-        backgroundColor: 'rgba(180,80,80,1)',
-        borderColor: 'rgba(0,0,0,1)',
-        borderWidth: 2,
-        data: nodeInfos.map(nodeInfo => nodeInfo.memUsage.usage)
-      }
-    ]
-  };
 
-  const keyCountData = {
-    labels: nodeNames,
-    datasets: [
-      {
-        backgroundColor: 'rgba(100,100,200,1)',
-        borderColor: 'rgba(0,0,0,1)',
-        borderWidth: 2,
-        data: nodeInfos.map(nodeInfo => nodeInfo.cacheInfo.totalKeys)
-      }
-    ]
-  };
+  if (nodeInfos != []) {
+    const memUsageData = {
+      labels: nodeNames,
+      datasets: [
+        {
+          backgroundColor: '#98A8F8',
+          borderColor: 'rgba(0,0,0,1)',
+          borderWidth: 0,
+          data: nodeInfos.map(nodeInfo => nodeInfo.memUsage.usage)
+        }
+      ]
+    };
+  
+    const keyCountData = {
+      labels: nodeNames,
+      datasets: [
+        {
+          backgroundColor: '#98A8F8',
+          borderColor: 'rgba(0,0,0,1)',
+          borderWidth: 0,
+          data: nodeInfos.map(nodeInfo => nodeInfo.cacheInfo.totalKeys)
+        }
+      ]
+    };
 
-  return (
-    <Grid container spacing={2} alignItems='center' justifyContent='center' paddingTop='5%'>
-      <Grid item>
-        <BasicBubbleChart 
-          data = {memUsageData}
-          backgroundColor = 'rgba(255,100,100,1)'
-          chartTitle = 'Memory Usage'
-        />
+    const keyValBytesData = {
+      labels: nodeNames,
+      datasets: [
+        {
+          backgroundColor: '#98A8F8',
+          borderColor: 'rgba(0,0,0,1)',
+          borderWidth: 0,
+          data: nodeInfos.map(nodeInfo => nodeInfo.cacheInfo.kvBytes)
+        }
+      ]
+    };
+
+    const receiverInfoData = {
+      labels: nodeNames,
+      datasets: [
+        {
+          label: 'StoreAttempts',
+          backgroundColor: '#98A8F8',
+          borderColor: 'rgba(0,0,0,1)',
+          borderWidth: 0,
+          data: nodeInfos.map(nodeInfo => nodeInfo.receiverUsageInfo.storeAttempts)
+        },
+        {
+          label: 'StoreSuccesses',
+          backgroundColor: '#E1FFB1',
+          borderColor: 'rgba(0,0,0,1)',
+          borderWidth: 0,
+          data: nodeInfos.map(nodeInfo => nodeInfo.receiverUsageInfo.storeSuccesses)
+        },
+        {
+          label: 'FetchAttempts',
+          backgroundColor: '#CDFCF6',
+          borderColor: 'rgba(0,0,0,1)',
+          borderWidth: 0,
+          data: nodeInfos.map(nodeInfo => nodeInfo.receiverUsageInfo.fetchAttempts)
+        },
+        {
+          label: 'FetchSuccesses',
+          backgroundColor: '#BCE29E',
+          borderColor: 'rgba(0,0,0,1)',
+          borderWidth: 0,
+          data: nodeInfos.map(nodeInfo => nodeInfo.receiverUsageInfo.fetchSuccesses)
+        },
+        {
+          label: 'InvalidRequests',
+          backgroundColor: '#FF7D7D',
+          borderColor: 'rgba(0,0,0,1)',
+          borderWidth: 0,
+          data: nodeInfos.map(nodeInfo => nodeInfo.receiverUsageInfo.invalidRequests)
+        }
+      ]
+    };
+
+    const senderInfoData = {
+      labels: nodeNames,
+      datasets: [
+        {
+          label: 'StoreAttempts',
+          backgroundColor: '#98A8F8',
+          borderColor: 'rgba(0,0,0,1)',
+          borderWidth: 0,
+          data: nodeInfos.map(nodeInfo => nodeInfo.senderUsageInfo.storeAttempts)
+        },
+        {
+          label: 'StoreSuccesses',
+          backgroundColor: '#E1FFB1',
+          borderColor: 'rgba(0,0,0,1)',
+          borderWidth: 0,
+          data: nodeInfos.map(nodeInfo => nodeInfo.senderUsageInfo.storeSuccesses)
+        },
+        {
+          label: 'FetchAttempts',
+          backgroundColor: '#CDFCF6',
+          borderColor: 'rgba(0,0,0,1)',
+          borderWidth: 0,
+          data: nodeInfos.map(nodeInfo => nodeInfo.senderUsageInfo.fetchAttempts)
+        },
+        {
+          label: 'FetchSuccesses',
+          backgroundColor: '#BCE29E',
+          borderColor: 'rgba(0,0,0,1)',
+          borderWidth: 0,
+          data: nodeInfos.map(nodeInfo => nodeInfo.senderUsageInfo.fetchSuccesses)
+        }
+      ]
+    };
+
+    return (
+      <Grid container spacing={3} alignItems='center' justifyContent='center' paddingTop='5%' paddingLeft='10%' paddingRight = '10%'>
+        <Grid item xs={6} md={5}>
+          <BasicBarChart 
+            data = {memUsageData}
+            backgroundColor = 'white'
+            chartTitle = 'Memory Usage'
+            displayLegend = {false}
+          />
+        </Grid>
+        <Grid item xs={6} md={5}>
+          <BasicBarChart 
+            data = {keyCountData}
+            backgroundColor = 'white'
+            chartTitle = 'Key Count'
+            displayLegend = {false}
+          />
+        </Grid>
+        <Grid item xs={6} md={5}>
+          <BasicBarChart 
+            data = {keyValBytesData}
+            backgroundColor = 'white'
+            chartTitle = 'Bytes Stored'
+            displayLegend = {false}
+          />
+        </Grid>
+        <Grid item xs={6} md={5}>
+          <BasicBarChart 
+            data = {receiverInfoData}
+            backgroundColor = 'white'
+            chartTitle = 'Receiver Info'
+            displayLegend = {true}
+          />
+        </Grid>
+        <Grid item xs={6} md={5}>
+          <BasicBarChart 
+            data = {senderInfoData}
+            backgroundColor = 'white'
+            chartTitle = 'Sender Info'
+            displayLegend = {true}
+          />
+        </Grid>
       </Grid>
-      <Grid item>
-        <BasicBubbleChart 
-          data = {keyCountData}
-          backgroundColor = 'rgba(180,200,230,1)'
-          chartTitle = 'Key Count'
-        />
-      </Grid>
-    </Grid>
-  );
+    );
+  }
+  else {
+    return <text>Loading...</text>
+  }
+ 
 
 }
 
-function BasicBubbleChart(props) {
+function BasicBarChart(props) {
   return (
-  <Box borderRadius = '10%' backgroundColor = {props.backgroundColor}>
-    <Bar
-      borderWidth = '10%'
-      data = {props.data}
-      options = {{
-        responsiveness: true,
-        plugins: {
-          title:{
-            display: true,
-            text: props.chartTitle, 
-            fontSize: 20
-          },
-          legend:{
-            display: false
+  <div>
+    <Box borderRadius = '3%' backgroundColor = {props.backgroundColor} style = {{height: '100%', margin: '10px'}}>
+      <Bar 
+        style = {{margin: '15px'}}
+        data = {props.data}
+        options = {{
+          responsiveness: true,
+          plugins: {
+            title:{
+              display: true,
+              text: props.chartTitle, 
+            },
+            legend:{
+              display: props.displayLegend
+            }
           }
-        }
-      }}
-    />
-  </Box>
+        }}
+      />
+    </Box>
+  </div>
   )
 }
