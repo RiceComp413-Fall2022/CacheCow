@@ -1,3 +1,5 @@
+import exception.InternalErrorException
+import exception.KeyNotFoundException
 import io.javalin.Javalin
 import io.javalin.testtools.JavalinTest
 import io.mockk.every
@@ -9,6 +11,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.eclipse.jetty.http.HttpStatus
 import sender.ISender
 import sender.Sender
+import kotlin.test.BeforeTest
 
 class ReceiverTest {
 
@@ -29,11 +32,16 @@ class ReceiverTest {
      * 7. Distributed cache hit
      */
 
-    @BeforeEach
-    internal fun beforeEach() {
+    @BeforeTest
+    fun beforeAll() {
         this.node = Node(0, 7070, 2, 10)
         this.app = node.getReceiver().getApp()
+    }
+
+    @BeforeEach
+    internal fun beforeEach() {
         this.sender = mockkClass(Sender::class)
+        this.node.setSender(sender)
     }
 
     @Test
@@ -73,7 +81,7 @@ class ReceiverTest {
     }
 
     @Test
-    internal fun `Store and fetch local key-value pair from different node`() = JavalinTest.test(app) { _, client ->
+    internal fun `Store and fetch local key-value pair originating from different node`() = JavalinTest.test(app) { _, client ->
         val storeResponse = client.post("/v1/blobs/a/1?requestId=1", "123")
         assertThat(storeResponse.code).isEqualTo(HttpStatus.CREATED_201)
 
@@ -84,16 +92,49 @@ class ReceiverTest {
     }
 
     @Test
+    internal fun `Store and fetch key-value pair to node that is not running`() = JavalinTest.test(app) { _, client ->
+        val storeResponse = client.post("/v1/blobs/b/1", "123")
+        assertThat(storeResponse.code).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR_500)
+
+        val fetchResponse = client.get("/v1/blobs/b/1")
+        assertThat(fetchResponse.code).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR_500)
+    }
+
+    @Test
+    internal fun `Store and fetch key-value pair to node that returns error`() = JavalinTest.test(app) { _, client ->
+        val mockSender = this.sender
+        every { mockSender.storeToNode(any(), any(), 1) } throws InternalErrorException()
+        every { mockSender.fetchFromNode(any(), 1) } throws InternalErrorException()
+
+        val storeResponse = client.post("/v1/blobs/b/1", "123")
+        assertThat(storeResponse.code).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR_500)
+
+        val fetchResponse = client.get("/v1/blobs/b/1")
+        assertThat(fetchResponse.code).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR_500)
+    }
+
+    @Test
+    internal fun `Not found error if value not stored in destination node`() = JavalinTest.test(app) { _, client ->
+        val mockSender = this.sender
+        every { mockSender.fetchFromNode(any(), 1) } throws KeyNotFoundException("b")
+
+        val fetchResponse = client.get("/v1/blobs/b/1")
+        assertThat(fetchResponse.code).isEqualTo(HttpStatus.NOT_FOUND_404)
+    }
+
+    @Test
     internal fun `Store and fetch key-value pair to different node`() = JavalinTest.test(app) { _, client ->
         val mockSender = this.sender
-        every { mockSender.storeToNode(kvPair = KeyVersionPair("b", 1), convertToBytes("123"), 1) }
+        every { mockSender.storeToNode(any(), any(), 1) } returns Unit
 
-        val storeResponse = client.post("/v1/blobs/b/1?requestId=1", "123")
+        val storeResponse = client.post("/v1/blobs/b/1", "123")
         assertThat(storeResponse.code).isEqualTo(HttpStatus.CREATED_201)
 
-//        val fetchResponse = client.get("/v1/blobs/a/1?requestId=1")
-//        assertThat(fetchResponse.code).isEqualTo(HttpStatus.OK_200)
-//        assertThat(fetchResponse.body).isNotNull
-//        assertThat(fetchResponse.body!!.string()).isEqualTo("123")
+        every { mockSender.fetchFromNode(any(), 1) } returns convertToBytes("123")
+
+        val fetchResponse = client.get("/v1/blobs/b/1")
+        assertThat(fetchResponse.code).isEqualTo(HttpStatus.OK_200)
+        assertThat(fetchResponse.body).isNotNull
+        assertThat(fetchResponse.body!!.string()).isEqualTo("123")
     }
 }

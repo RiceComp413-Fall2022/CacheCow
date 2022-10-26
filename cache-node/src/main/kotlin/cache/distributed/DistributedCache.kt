@@ -6,18 +6,23 @@ import NodeId
 import cache.distributed.hasher.INodeHasher
 import cache.local.LocalCache
 import exception.KeyNotFoundException
+import sender.ISender
 import sender.Sender
 
 /**
  * A concrete distributed cache that assigns keys to nodes using a NodeHasher.
  */
-class DistributedCache(private val nodeId: NodeId, nodeCount: Int, private val cache: LocalCache, private val sender: Sender):
+class DistributedCache(private val nodeId: NodeId, nodeCount: Int, private val cache: LocalCache, private var sender: ISender):
     IDistributedCache {
 
     /**
      * The INodeHasher used to map keys to nodes
      */
     private val nodeHasher: INodeHasher = NodeHasher(nodeCount)
+
+    override fun setSender(sender: ISender) {
+        this.sender = sender
+    }
 
     override fun fetch(kvPair: KeyVersionPair, senderId: NodeId?): ByteArray {
         val primaryNodeId = nodeHasher.primaryHash(kvPair)

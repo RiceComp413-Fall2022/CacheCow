@@ -33,7 +33,7 @@ class Node(private val nodeId: NodeId, port: Int, nodeCount: Int, capacity: Int)
     /**
      * The sender, used to send requests to other nodes
      */
-    private val sender: ISender
+    private var sender: ISender
 
     /**
      * The receiver, used to receive requests from users and other nodes
@@ -42,6 +42,11 @@ class Node(private val nodeId: NodeId, port: Int, nodeCount: Int, capacity: Int)
 
     fun getReceiver(): IReceiver {
         return receiver
+    }
+
+    fun setSender(sender: ISender) {
+        this.sender = sender
+        this.distributedCache.setSender(sender)
     }
 
     init {
