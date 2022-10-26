@@ -40,6 +40,10 @@ class Node(private val nodeId: NodeId, port: Int, nodeCount: Int, capacity: Int)
      */
     private val receiver: IReceiver
 
+    fun getReceiver(): IReceiver {
+        return receiver
+    }
+
     init {
         print("Initializing node $nodeId on port $port with cache capacity $capacity\n")
         localCache = LocalCache(capacity)

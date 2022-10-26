@@ -4,8 +4,11 @@ import KeyVersionPair
 import cache.distributed.IDistributedCache
 import exception.CacheNodeException
 import io.javalin.Javalin
-import io.javalin.core.validation.ValidationError
-import io.javalin.core.validation.ValidationException
+import io.javalin.config.JavalinConfig
+import io.javalin.plugin.bundled.CorsContainer
+import io.javalin.plugin.bundled.CorsPluginConfig
+import io.javalin.validation.ValidationError
+import io.javalin.validation.ValidationException
 import node.Node
 import org.eclipse.jetty.http.HttpStatus
 
@@ -17,7 +20,11 @@ class Receiver(private val port: Int, private val nodeCount: Int, private val no
     /**
      * The Javalin server used to route HTTP requests to handlers
      */
-    private val app: Javalin = Javalin.create {config -> config.enableCorsForAllOrigins()} // need to enable this for react calls to work locally
+    private val app: Javalin = Javalin.create { config: JavalinConfig ->
+        config.plugins.enableCors { cors: CorsContainer ->
+            cors.add { it: CorsPluginConfig -> it.anyHost() }
+        }
+    }
 
     /**
      * count the number of requests that are received
@@ -25,7 +32,16 @@ class Receiver(private val port: Int, private val nodeCount: Int, private val no
     private var receiverUsageInfo: ReceiverUsageInfo =
         ReceiverUsageInfo(0, 0, 0, 0,  0)
 
+
+    override fun getApp(): Javalin {
+        return app
+    }
+
+
     init {
+        app.get("/v1/hello-world") { ctx ->
+            ctx.result("Hello, World!").status(HttpStatus.OK_200)
+        }
 
         /* Handle fetch requests */
         app.get("/v1/blobs/{key}/{version}") { ctx ->
@@ -33,11 +49,11 @@ class Receiver(private val port: Int, private val nodeCount: Int, private val no
             receiverUsageInfo.fetchAttempts++
 
             val key = ctx.pathParam("key")
-            val version = ctx.pathParamAsClass<Int>("version")
+            val version = ctx.pathParamAsClass("version", Int::class.java)
                 .check({ it >= 0}, "Version number cannot be negative")
                 .get()
             val senderNum = if (ctx.queryParam("senderId") == null) null else
-                ctx.queryParamAsClass<Int>("senderId")
+                ctx.queryParamAsClass("senderId", Int::class.java)
                     .check({ it in 0 until nodeCount }, "Sender id must be in range (0, ${nodeCount - 1})")
                     .get()
 
@@ -53,11 +69,11 @@ class Receiver(private val port: Int, private val nodeCount: Int, private val no
             receiverUsageInfo.storeAttempts++
 
             val key = ctx.pathParam("key")
-            val version = ctx.pathParamAsClass<Int>("version")
+            val version = ctx.pathParamAsClass("version", Int::class.java)
                 .check({ it >= 0}, "Version number cannot be negative")
                 .get()
             val senderNum = if (ctx.queryParam("senderId") == null) null else
-                ctx.queryParamAsClass<Int>("senderId")
+                ctx.queryParamAsClass("senderId", Int::class.java)
                     .check({ it in 0 until nodeCount }, "Sender id must be in range (0, ${nodeCount - 1})")
                     .get()
 
@@ -92,7 +108,7 @@ class Receiver(private val port: Int, private val nodeCount: Int, private val no
 
         /* Handle invalid requests */
         app.error(HttpStatus.NOT_FOUND_404) { ctx ->
-            if (ctx.resultString() == "Not found") {
+            if (ctx.result() == "Not found") {
                 receiverUsageInfo.invalidRequests++
                 ctx.result(
               """
