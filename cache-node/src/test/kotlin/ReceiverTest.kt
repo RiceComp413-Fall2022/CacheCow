@@ -21,27 +21,17 @@ class ReceiverTest {
 
     private lateinit var sender: ISender
 
-    /**
-     * 1. Validation errors
-     * 2. Logical errors
-     * 2.5 Local cache store
-     * 3. Local cache miss
-     * 4. Local cache hit
-     * 5. Distributed cache miss
-     * 6. Distributed cache error
-     * 7. Distributed cache hit
-     */
-
     @BeforeTest
     fun beforeAll() {
-        this.node = Node(0, 7070, 2, 10)
-        this.app = node.getReceiver().getApp()
+        node = Node(0, 7070, 2, 10)
+        app = node.receiver.app
     }
 
     @BeforeEach
     internal fun beforeEach() {
-        this.sender = mockkClass(Sender::class)
-        this.node.setSender(sender)
+        sender = mockkClass(Sender::class)
+        node.sender = sender
+        node.distributedCache.sender = sender
     }
 
     @Test
@@ -125,13 +115,12 @@ class ReceiverTest {
     @Test
     internal fun `Store and fetch key-value pair to different node`() = JavalinTest.test(app) { _, client ->
         val mockSender = this.sender
-        every { mockSender.storeToNode(any(), any(), 1) } returns Unit
 
+        every { mockSender.storeToNode(any(), any(), 1) } returns Unit
         val storeResponse = client.post("/v1/blobs/b/1", "123")
         assertThat(storeResponse.code).isEqualTo(HttpStatus.CREATED_201)
 
         every { mockSender.fetchFromNode(any(), 1) } returns convertToBytes("123")
-
         val fetchResponse = client.get("/v1/blobs/b/1")
         assertThat(fetchResponse.code).isEqualTo(HttpStatus.OK_200)
         assertThat(fetchResponse.body).isNotNull

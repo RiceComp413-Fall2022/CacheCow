@@ -13,8 +13,6 @@ interface IReceiver {
      */
     fun start()
 
-    fun getApp(): Javalin
-
     /**
      * Get the receiver usage info
      * @return ReceiverUsageInfo data type of the info
