@@ -1,14 +1,11 @@
 package node
 
 import NodeId
-import cache.distributed.IDistributedCache
 import cache.local.ILocalCache
 import sender.ISender
 import cache.distributed.DistributedCache
 import cache.local.CacheInfo
 import cache.local.LocalCache
-import io.javalin.Javalin
-import receiver.IReceiver
 import receiver.Receiver
 import receiver.ReceiverUsageInfo
 import sender.Sender
@@ -45,7 +42,7 @@ open class Node(private val nodeId: NodeId, nodeList: List<String>, port: Int, c
         localCache = LocalCache(capacity)
         sender = Sender(nodeId, nodeList)
         distributedCache = DistributedCache(nodeId, nodeList.size, localCache, sender)
-        receiver = Receiver(nodeId, port, nodeList.size, this, distributedCache)
+        receiver = Receiver(port, nodeList.size, this, distributedCache)
     }
 
     /**

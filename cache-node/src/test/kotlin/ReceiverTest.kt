@@ -23,7 +23,8 @@ class ReceiverTest {
 
     @BeforeTest
     fun beforeAll() {
-        node = Node(0, 7070, 2, 10)
+        val nodeList = listOf("localhost:7070", "localhost:7071", "localhost:7072")
+        node = Node(0, nodeList, 7070, 10)
         app = node.receiver.app
     }
 
