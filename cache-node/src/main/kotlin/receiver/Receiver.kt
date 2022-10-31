@@ -1,23 +1,30 @@
 package receiver
 
 import KeyVersionPair
-import NodeId
 import cache.distributed.IDistributedCache
 import exception.CacheNodeException
 import io.javalin.Javalin
-import io.javalin.core.validation.ValidationException
+import io.javalin.config.JavalinConfig
+import io.javalin.plugin.bundled.CorsContainer
+import io.javalin.plugin.bundled.CorsPluginConfig
+import io.javalin.validation.ValidationError
+import io.javalin.validation.ValidationException
 import node.Node
 import org.eclipse.jetty.http.HttpStatus
 
 /**
  * A concrete receiver that accepts requests over HTTP.
  */
-class Receiver(private val nodeId: NodeId, private val port: Int, private val nodeCount: Int, private val node: Node, private val distributedCache: IDistributedCache) : IReceiver {
+class Receiver(private val port: Int, private val nodeCount: Int, private val node: Node, private val distributedCache: IDistributedCache) : IReceiver {
 
     /**
      * The Javalin server used to route HTTP requests to handlers
      */
-    private val app: Javalin = Javalin.create {config -> config.enableCorsForAllOrigins()} // need to enable this for react calls to work locally
+     val app: Javalin = Javalin.create { config: JavalinConfig ->
+        config.plugins.enableCors { cors: CorsContainer ->
+            cors.add { it: CorsPluginConfig -> it.anyHost() }
+        }
+    }
 
     /**
      * count the number of requests that are received
@@ -25,53 +32,58 @@ class Receiver(private val nodeId: NodeId, private val port: Int, private val no
     private var receiverUsageInfo: ReceiverUsageInfo =
         ReceiverUsageInfo(0, 0, 0, 0,  0)
 
+
     init {
+        app.get("/v1/hello-world") { ctx ->
+            ctx.result("Hello, World!").status(HttpStatus.OK_200)
+        }
 
         /* Handle fetch requests */
-        app.get("/fetch/{key}/{version}") { ctx ->
+        app.get("/v1/blobs/{key}/{version}") { ctx ->
             print("\n*********FETCH REQUEST*********\n")
             receiverUsageInfo.fetchAttempts++
 
             val key = ctx.pathParam("key")
-            val version = ctx.pathParamAsClass<Int>("version")
+            val version = ctx.pathParamAsClass("version", Int::class.java)
                 .check({ it >= 0}, "Version number cannot be negative")
                 .get()
             val senderNum = if (ctx.queryParam("senderId") == null) null else
-                ctx.queryParamAsClass<Int>("senderId")
+                ctx.queryParamAsClass("senderId", Int::class.java)
                     .check({ it in 0 until nodeCount }, "Sender id must be in range (0, ${nodeCount - 1})")
                     .get()
 
             val value = distributedCache.fetch(KeyVersionPair(key, version), senderNum)
             receiverUsageInfo.fetchSuccesses++
 
-            ctx.json(KeyValueReply(key, version, value)).status(HttpStatus.OK_200)
+            ctx.result(value).status(HttpStatus.OK_200)
         }
 
         /* Handle store requests */
-        app.post("/store/{key}/{version}") { ctx ->
+        app.post("/v1/blobs/{key}/{version}") { ctx ->
             print("\n*********STORE REQUEST*********\n")
             receiverUsageInfo.storeAttempts++
 
             val key = ctx.pathParam("key")
-            val version = ctx.pathParamAsClass<Int>("version")
+            val version = ctx.pathParamAsClass("version", Int::class.java)
                 .check({ it >= 0}, "Version number cannot be negative")
                 .get()
             val senderNum = if (ctx.queryParam("senderId") == null) null else
-                ctx.queryParamAsClass<Int>("senderId")
+                ctx.queryParamAsClass("senderId", Int::class.java)
                     .check({ it in 0 until nodeCount }, "Sender id must be in range (0, ${nodeCount - 1})")
                     .get()
-            val value = ctx.bodyValidator<String>()
-                .check({ it != ""}, "Expecting value but none found")
-                .get()
 
+            val value = ctx.bodyAsBytes()
+            if (value.isEmpty()) {
+                throw ValidationException(mapOf("REQUEST_BODY" to listOf(ValidationError("Binary blob cannot be empty"))))
+            }
             distributedCache.store(KeyVersionPair(key, version), value, senderNum)
             receiverUsageInfo.storeSuccesses++
 
-            ctx.json(KeyValueReply(key, version, value)).status(HttpStatus.CREATED_201)
+            ctx.json(KeyVersionReply(key, version)).status(HttpStatus.CREATED_201)
         }
 
         /* Handle requests to monitor information about the node of this receiver */
-        app.get("/node-info") { ctx ->
+        app.get("/v1/node-info") { ctx ->
             print("\n*********NODE INFO REQUEST*********\n")
             ctx.json(node.getNodeInfo()).status(HttpStatus.OK_200)
         }
@@ -91,7 +103,7 @@ class Receiver(private val nodeId: NodeId, private val port: Int, private val no
 
         /* Handle invalid requests */
         app.error(HttpStatus.NOT_FOUND_404) { ctx ->
-            if (ctx.resultString() == "Not found") {
+            if (ctx.result() == "Not found") {
                 receiverUsageInfo.invalidRequests++
                 ctx.result(
               """
@@ -118,6 +130,6 @@ class Receiver(private val nodeId: NodeId, private val port: Int, private val no
 }
 
 /**
- * Represents a key-version-value tuple in a HTTP response.
+ * Represents a key-version tuple in a HTTP response.
  */
-data class KeyValueReply(val key: String, val version: Int, val value: String, val success: Boolean = true)
+data class KeyVersionReply(val key: String, val version: Int)

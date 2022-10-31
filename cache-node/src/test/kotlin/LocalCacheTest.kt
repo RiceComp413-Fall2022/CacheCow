@@ -1,10 +1,11 @@
 import cache.local.LocalCache
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import java.nio.charset.Charset
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 
-class CacheTest {
+class LocalCacheTest {
 
     private val maxCapacity = 5
     private lateinit var cache: LocalCache
@@ -18,9 +19,9 @@ class CacheTest {
     internal fun testHit() {
         val key = KeyVersionPair("key1", 0)
 
-        this.cache.store(key,"value1")
+        this.cache.store(key, convertToBytes("value1"))
 
-        assertEquals("value1", this.cache.fetch(key))
+        assertEquals("value1", convertFromBytes(this.cache.fetch(key)))
     }
 
     @Test
@@ -28,7 +29,7 @@ class CacheTest {
         val key = KeyVersionPair("key1", 0)
         val invalidKey = KeyVersionPair("key2", 0)
 
-        this.cache.store(key, "value1")
+        this.cache.store(key, convertToBytes("value1"))
 
         assertNull(this.cache.fetch(invalidKey))
     }
@@ -41,10 +42,18 @@ class CacheTest {
         var key: KeyVersionPair?
         for (i in 1..maxCapacity + 1) {
             key = KeyVersionPair("key$i", 0)
-            this.cache.store(key, "value$i")
+            this.cache.store(key, convertToBytes("value$i"))
         }
 
-        assertEquals("value$maxCapacity", this.cache.fetch(maxCapacityKey))
+        assertEquals("value$maxCapacity", convertFromBytes(this.cache.fetch(maxCapacityKey)))
         assertNull(this.cache.fetch(overMaxCapacityKey))
     }
+}
+
+fun convertToBytes(value: String): ByteArray {
+    return value.toByteArray(Charset.defaultCharset())
+}
+
+fun convertFromBytes(value: ByteArray?): String {
+    return if (value == null) "" else String(value, Charset.defaultCharset())
 }

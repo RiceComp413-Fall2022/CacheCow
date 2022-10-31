@@ -7,6 +7,7 @@ import sender.ISender
 import cache.distributed.DistributedCache
 import cache.local.CacheInfo
 import cache.local.LocalCache
+import io.javalin.Javalin
 import receiver.IReceiver
 import receiver.Receiver
 import receiver.ReceiverUsageInfo
@@ -17,8 +18,8 @@ import sender.SenderUsageInfo
  * Node class that intermediates between the receiver, sender, local cache, and
  * distributed cache.
  */
-class Node(private val nodeId: NodeId, nodeList: List<String>, port: Int, capacity: Int) {
 
+open class Node(private val nodeId: NodeId, nodeList: List<String>, port: Int, capacity: Int) {
     /**
      * The local cache
      */
@@ -27,17 +28,17 @@ class Node(private val nodeId: NodeId, nodeList: List<String>, port: Int, capaci
     /**
      * The distributed cache
      */
-    private val distributedCache: IDistributedCache
+    var distributedCache: DistributedCache
 
     /**
      * The sender, used to send requests to other nodes
      */
-    private val sender: ISender
+    var sender: ISender
 
     /**
      * The receiver, used to receive requests from users and other nodes
      */
-    private val receiver: IReceiver
+    val receiver: Receiver
 
     init {
         print("Initializing node $nodeId on port $port with cache capacity $capacity\n")
@@ -79,7 +80,6 @@ data class MemoryUsageInfo(val allocated: Long, val max: Long, val usage: Double
 
 /**
  * Encapsulates information about the usage of this node into one object
- * TODO: for more thorough information tracking, also include Sender and Receiver usage info
  */
 data class NodeInfo(val nodeId: Int,
                     val memUsage: MemoryUsageInfo,
