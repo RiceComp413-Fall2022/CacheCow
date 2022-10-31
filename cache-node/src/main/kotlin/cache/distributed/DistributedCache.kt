@@ -4,14 +4,16 @@ import KeyVersionPair
 import cache.distributed.hasher.NodeHasher
 import NodeId
 import cache.distributed.hasher.INodeHasher
+import cache.local.ILocalCache
 import cache.local.LocalCache
 import exception.KeyNotFoundException
+import sender.ISender
 import sender.Sender
 
 /**
  * A concrete distributed cache that assigns keys to nodes using a NodeHasher.
  */
-class DistributedCache(private val nodeId: NodeId, nodeCount: Int, private val cache: LocalCache, private val sender: Sender):
+class DistributedCache(private val nodeId: NodeId, nodeCount: Int, private val cache: ILocalCache, var sender: ISender):
     IDistributedCache {
 
     /**

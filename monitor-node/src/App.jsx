@@ -11,7 +11,7 @@ axios.defaults.withCredentials = true;
 
 export function App() {
   return (
-    <div>
+    <div tyle = {{padding: '20%'}}>
       <DisplayNodeCharts nodeCount = {3}/>
     </div>
   );
@@ -157,8 +157,8 @@ function DisplayNodeCharts(props) {
     };
 
     return (
-      <Grid container spacing={3} alignItems='center' justifyContent='center' paddingTop='5%' paddingLeft='10%' paddingRight = '10%'>
-        <Grid item xs={6} md={5}>
+      <Grid container spacing={2} alignItems='center' justifyContent='center' paddingTop='5%' paddingBottom='5%' paddingRight='20px' paddingLeft='20px'>
+        <Grid item xs={3} md={4}>
           <BasicBarChart 
             data = {memUsageData}
             backgroundColor = 'white'
@@ -166,7 +166,7 @@ function DisplayNodeCharts(props) {
             displayLegend = {false}
           />
         </Grid>
-        <Grid item xs={6} md={5}>
+        <Grid item xs={3} md={4}>
           <BasicBarChart 
             data = {keyCountData}
             backgroundColor = 'white'
@@ -174,7 +174,7 @@ function DisplayNodeCharts(props) {
             displayLegend = {false}
           />
         </Grid>
-        <Grid item xs={6} md={5}>
+        <Grid item xs={3} md={4}>
           <BasicBarChart 
             data = {keyValBytesData}
             backgroundColor = 'white'
@@ -182,7 +182,7 @@ function DisplayNodeCharts(props) {
             displayLegend = {false}
           />
         </Grid>
-        <Grid item xs={6} md={5}>
+        <Grid item xs={3} md={5}>
           <BasicBarChart 
             data = {receiverInfoData}
             backgroundColor = 'white'
@@ -190,7 +190,7 @@ function DisplayNodeCharts(props) {
             displayLegend = {true}
           />
         </Grid>
-        <Grid item xs={6} md={5}>
+        <Grid item xs={3} md={5}>
           <BasicBarChart 
             data = {senderInfoData}
             backgroundColor = 'white'
@@ -211,9 +211,9 @@ function DisplayNodeCharts(props) {
 function BasicBarChart(props) {
   return (
   <div>
-    <Box borderRadius = '3%' backgroundColor = {props.backgroundColor} style = {{height: '100%', margin: '10px'}}>
+    <Box borderRadius = '3%' backgroundColor = {props.backgroundColor} style = {{justifyContent: 'center'}} >
       <Bar 
-        style = {{margin: '15px'}}
+        style = {{margin: '10px'}}
         data = {props.data}
         options = {{
           responsiveness: true,
