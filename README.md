@@ -3,7 +3,7 @@
 # Drive Folder For Design Decisions
 https://drive.google.com/drive/u/0/folders/14yXw_k74cJNPWMZYnpjWMDIvtp1FH8T9
 
-Design Doc: docs.google.com/document/d/1lT3F6lsjmoETbyx3xtu-MgMmEzld4PASVc9IrKrWGbw/
+Design Doc: https://docs.google.com/document/d/1lT3F6lsjmoETbyx3xtu-MgMmEzld4PASVc9IrKrWGbw/ 
 
 ## Ngrok Setup
 1. Download [ngrok](https://ngrok.com/download)
