@@ -67,7 +67,7 @@ for i, node in enumerate(node_dns):
     c.run("sudo yum install git java-11-amazon-corretto-headless tmux -y")
 
     c.run("git clone https://github.com/RiceComp413-Fall2022/CacheCow")
-    c.run("cd CacheCow/cache-node/ && git switch ec2-support")
+    # c.run("cd CacheCow/cache-node/ && git switch ec2-support")
 
     c.put(node_dns_f, remote='CacheCow/cache-node/nodes.txt')
 
