@@ -5,18 +5,10 @@ import java.nio.charset.Charset
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 
-class CacheTest {
+class LocalCacheTest {
 
     private val maxCapacity = 5
     private lateinit var cache: LocalCache
-
-    private fun convertToBytes(value: String): ByteArray {
-        return value.toByteArray(Charset.defaultCharset())
-    }
-
-    private fun convertFromBytes(value: ByteArray?): String {
-        return if (value == null) "" else String(value, Charset.defaultCharset())
-    }
 
     @BeforeEach
     internal fun beforeEach() {
@@ -56,4 +48,12 @@ class CacheTest {
         assertEquals("value$maxCapacity", convertFromBytes(this.cache.fetch(maxCapacityKey)))
         assertNull(this.cache.fetch(overMaxCapacityKey))
     }
+}
+
+fun convertToBytes(value: String): ByteArray {
+    return value.toByteArray(Charset.defaultCharset())
+}
+
+fun convertFromBytes(value: ByteArray?): String {
+    return if (value == null) "" else String(value, Charset.defaultCharset())
 }
