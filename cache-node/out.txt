@@ -1,0 +1,11 @@
+Starting a Gradle Daemon, 1 busy and 3 stopped Daemons could not be reused, use --status for details
+> Task :compileKotlin UP-TO-DATE
+> Task :compileJava NO-SOURCE
+> Task :processResources NO-SOURCE
+> Task :classes UP-TO-DATE
+
+> Task :run
+Initializing node 1 on port 7071 with cache capacity 2
+
+> Task :run FAILED
+2 actionable tasks: 1 executed, 1 up-to-date

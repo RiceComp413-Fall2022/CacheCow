@@ -9,9 +9,13 @@ import org.apache.commons.codec.digest.MurmurHash3
  */
 class NodeHasher(private val nodeCount: Int) : INodeHasher {
 
-    override fun primaryHash(kvPair: KeyVersionPair): NodeId {
+    override fun primaryHashValue(kvPair: KeyVersionPair): Int {
         val bytes = kvPair.key.encodeToByteArray()
-        return ((MurmurHash3.hash32x86(bytes, 0, bytes.size, 0) % nodeCount) + nodeCount) % nodeCount
+        return MurmurHash3.hash32x86(bytes, 0, bytes.size, 0)
+    }
+
+    override fun primaryHashNode(kvPair: KeyVersionPair): NodeId {
+        return ((primaryHashValue(kvPair) % nodeCount) + nodeCount) % nodeCount
     }
 
 }

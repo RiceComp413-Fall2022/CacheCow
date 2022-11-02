@@ -16,7 +16,7 @@ import sender.SenderUsageInfo
  * distributed cache.
  */
 
-open class Node(private val nodeId: NodeId, nodeList: List<String>, port: Int, capacity: Int) {
+class Node(private val nodeId: NodeId, nodeList: List<String>, port: Int, capacity: Int) {
     /**
      * The local cache
      */

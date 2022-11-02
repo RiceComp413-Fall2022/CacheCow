@@ -1,19 +1,15 @@
-package cache.distributed
-
-import KeyVersionPair
-import cache.distributed.hasher.NodeHasher
-import NodeId
+import cache.distributed.IDistributedCache
 import cache.distributed.hasher.INodeHasher
+import cache.distributed.hasher.NodeHasher
 import cache.local.ILocalCache
-import cache.local.LocalCache
 import exception.KeyNotFoundException
 import sender.ISender
-import sender.Sender
+import java.util.*
 
 /**
  * A concrete distributed cache that assigns keys to nodes using a NodeHasher.
  */
-class DistributedCache(private val nodeId: NodeId, nodeCount: Int, private val cache: ILocalCache, var sender: ISender):
+class ScalableDistributedCache(private val nodeId: NodeId, nodeCount: Int, private val cache: ILocalCache, var sender: ISender):
     IDistributedCache {
 
     /**
@@ -21,8 +17,21 @@ class DistributedCache(private val nodeId: NodeId, nodeCount: Int, private val c
      */
     private val nodeHasher: INodeHasher = NodeHasher(nodeCount)
 
+    private var sortedNodes: List<Pair<Int, Int>>
+
+    private var sortedLocalKeys: SortedMap<KeyVersionPair, Int> = Collections.synchronizedSortedMap(TreeMap())
+
+
+    init {
+        sortedNodes = listOf()
+        for ()
+    }
+
     override fun fetch(kvPair: KeyVersionPair, senderId: NodeId?): ByteArray {
-        val primaryNodeId = nodeHasher.primaryHashNode(kvPair)
+        val hashValue = nodeHasher.primaryHashValue(kvPair)
+
+
+
 
         print("DISTRIBUTED CACHE: Hash value of key ${kvPair.key} is ${primaryNodeId}\n")
 
@@ -41,7 +50,7 @@ class DistributedCache(private val nodeId: NodeId, nodeCount: Int, private val c
     }
 
     override fun store(kvPair: KeyVersionPair, value: ByteArray, senderId: NodeId?) {
-        val primaryNodeId = nodeHasher.primaryHashNode(kvPair)
+        val primaryNodeId = nodeHasher.primaryHash(kvPair)
 
         print("DISTRIBUTED CACHE: Hash value of key ${kvPair.key} is ${primaryNodeId}\n")
 
@@ -54,5 +63,9 @@ class DistributedCache(private val nodeId: NodeId, nodeCount: Int, private val c
                 primaryNodeId
             )
         }
+    }
+
+    fun beginCopying() {
+        nodeCount
     }
 }
