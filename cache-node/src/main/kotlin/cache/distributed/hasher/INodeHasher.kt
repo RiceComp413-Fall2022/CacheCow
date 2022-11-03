@@ -9,11 +9,20 @@ import NodeId
  */
 interface INodeHasher {
 
+
+    /**
+     * Get the hash value for given node.
+     *
+     * @param nodeId The node id
+     * @return The hash value of the node id
+     */
+    fun nodeHashValue(nodeId: NodeId): Int
+
     /**
      * Get the hash value for given key-version pair.
      *
      * @param kvPair The key version pair
-     * @return The ID of the node designated for the key version pair
+     * @return The hash value of the pair
      */
     fun primaryHashValue(kvPair: KeyVersionPair): Int
 
