@@ -5,6 +5,7 @@ import cache.distributed.IDistributedCache
 import exception.CacheNodeException
 import io.javalin.Javalin
 import io.javalin.config.JavalinConfig
+import io.javalin.http.bodyValidator
 import io.javalin.plugin.bundled.CorsContainer
 import io.javalin.plugin.bundled.CorsPluginConfig
 import io.javalin.validation.ValidationError
@@ -161,7 +162,13 @@ class Receiver(private val port: Int, private val nodeCount: Int, private val no
         }
 
         app.get("/v1/bulk-copy") { ctx ->
-            val message = ctx.body()
+            ctx.bodyAsClass(MutableList::class.java)
+            val kvPairs: MutableList<Pair<KeyVersionPair, ByteArray>> = mutableListOf()
+
+        }
+
+        app.get("/v1/test-bulk-send") { ctx ->
+            ctx.result("Success").status(HttpStatus.OK_200)
         }
 
         app.exception(CacheNodeException::class.java) { e, ctx ->

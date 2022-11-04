@@ -93,6 +93,34 @@ class Sender(private val nodeId: NodeId, private val nodeList: List<String>) : I
         senderUsageInfo.storeSuccesses++
     }
 
+    override fun copyKvPairs(kvPairs: MutableList<Pair<KeyVersionPair, ByteArray>>, destNodeId: NodeId): Boolean {
+        val client = HttpClient.newBuilder().build()
+
+        val destUrl =
+            URI.create("http://${nodeList[destNodeId]}/v1/bulk-copy")
+        val requestBody =
+            mapper.writerWithDefaultPrettyPrinter().writeValueAsString(kvPairs)
+        val request = HttpRequest.newBuilder()
+            .uri(destUrl)
+            .POST(HttpRequest.BodyPublishers.ofString(requestBody))
+            .build()
+
+        print("SENDER: Sending bulk copy request to $destUrl\n")
+
+        val response: HttpResponse<String>
+        try {
+            response = client.send(request, HttpResponse.BodyHandlers.ofString())
+        } catch (e: ConnectException) {
+            print("SENDER: Caught connection refused exception\n")
+            throw ConnectionRefusedException()
+        }
+
+        // TODO: Error handling
+        print("SENDER: Got fetch response with status code ${response.statusCode()}\n")
+
+        return !(response.statusCode() in 400..599)
+    }
+
     override fun getSenderUsageInfo(): SenderUsageInfo {
         return senderUsageInfo
     }

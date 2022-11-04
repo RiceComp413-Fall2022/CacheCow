@@ -55,4 +55,14 @@ class DistributedCache(private val nodeId: NodeId, nodeCount: Int, private val c
             )
         }
     }
+
+    override fun testCopy() {
+        TODO("Remove")
+    }
+
+    override fun bulkLocalStore(kvPairs: MutableList<Pair<KeyVersionPair, ByteArray>>) {
+        TODO("Remove")
+    }
+
+
 }

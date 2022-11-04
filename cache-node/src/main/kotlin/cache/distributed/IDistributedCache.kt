@@ -26,4 +26,9 @@ interface IDistributedCache {
      * @param senderId If this lookup came from a remote node, the ID of that node
      */
     fun store(kvPair: KeyVersionPair, value: ByteArray, senderId: NodeId?)
+
+    fun testCopy()
+
+    fun bulkLocalStore(kvPairs: MutableList<Pair<KeyVersionPair, ByteArray>>)
+
 }

@@ -63,7 +63,7 @@ class TestCache(private var maxCapacity: Int = 100) {
     }
 
     fun initalizeCopy(start: Int, end: Int) {
-        copyKvPairs = listOf()
+        copyKvPairs = mutableListOf()
         if (start > end) {
             for (e in sortedLocalKeys.tailMap(end)) {
                 addKeyToCopyPairs(e.value)
