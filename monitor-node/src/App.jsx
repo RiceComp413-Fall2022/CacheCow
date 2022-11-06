@@ -5,7 +5,6 @@ import { useEffect } from 'react';
 import { Bar } from 'react-chartjs-2';
 import { Box, Grid } from '@mui/material';
 import axios from 'axios';
-axios.defaults.withCredentials = true;
 
 
 
@@ -20,6 +19,13 @@ export function App() {
 
 function DisplayNodeCharts(props) {
   const [nodeInfos, setNodeInfos] = useState([]);
+  
+  
+  let reload = {val: 0};
+  // setInterval(() => {
+  //   reload.val = 1 - reload.val;
+  //   console.log("Changing reload var");
+  // }, 5000);
 
   let nodeNames = [];
 
@@ -31,17 +37,22 @@ function DisplayNodeCharts(props) {
     nodeNames.push('Node' + i);
   } 
 
-  console.log("fetching with axios");
+  
   useEffect(() => {
-    axios.all(links.map(link => axios.get(link)))
+    const interval = setInterval(() => {
+      console.log("Doing again")
+      axios.all(links.map(link => axios.get(link)))
       .then(axios.spread(function(...res) {
-        console.log(res);
+        console.log("processing")
         setNodeInfos(res.map(res => res.data));
       }))
       .catch((error) => {
         console.error(error);
       });
-  }, [])
+    }, 2000);
+    return () => clearInterval(interval);
+  }, []);
+  
   
 
   if (nodeInfos != []) {
