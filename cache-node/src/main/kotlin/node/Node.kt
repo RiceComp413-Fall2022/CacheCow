@@ -1,11 +1,13 @@
 package node
 
 import NodeId
+import cache.distributed.IDistributedCache
 import cache.local.ILocalCache
 import sender.ISender
 import cache.distributed.DistributedCache
 import cache.local.CacheInfo
 import cache.local.LocalCache
+import receiver.IReceiver
 import receiver.Receiver
 import receiver.ReceiverUsageInfo
 import sender.Sender
@@ -15,8 +17,8 @@ import sender.SenderUsageInfo
  * Node class that intermediates between the receiver, sender, local cache, and
  * distributed cache.
  */
+class Node(private val nodeId: NodeId, nodeCount: Int, capacity: Int) {
 
-open class Node(private val nodeId: NodeId, nodeList: List<String>, port: Int, capacity: Int) {
     /**
      * The local cache
      */
@@ -25,24 +27,24 @@ open class Node(private val nodeId: NodeId, nodeList: List<String>, port: Int, c
     /**
      * The distributed cache
      */
-    var distributedCache: DistributedCache
+    private val distributedCache: IDistributedCache
 
     /**
      * The sender, used to send requests to other nodes
      */
-    var sender: ISender
+    private val sender: ISender
 
     /**
      * The receiver, used to receive requests from users and other nodes
      */
-    val receiver: Receiver
+    private val receiver: IReceiver
 
     init {
-        print("Initializing node $nodeId on port $port with cache capacity $capacity\n")
+        print("Initializing node $nodeId on port ${7070 + nodeId} with cache capacity $capacity\n")
         localCache = LocalCache(capacity)
-        sender = Sender(nodeId, nodeList)
-        distributedCache = DistributedCache(nodeId, nodeList.size, localCache, sender)
-        receiver = Receiver(port, nodeList.size, this, distributedCache)
+        sender = Sender(nodeId)
+        distributedCache = DistributedCache(nodeId, nodeCount, localCache, sender)
+        receiver = Receiver(nodeId, nodeCount, this, distributedCache)
     }
 
     /**
@@ -77,6 +79,7 @@ data class MemoryUsageInfo(val allocated: Long, val max: Long, val usage: Double
 
 /**
  * Encapsulates information about the usage of this node into one object
+ * TODO: for more thorough information tracking, also include Sender and Receiver usage info
  */
 data class NodeInfo(val nodeId: Int,
                     val memUsage: MemoryUsageInfo,
