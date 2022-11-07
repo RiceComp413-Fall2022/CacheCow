@@ -4,14 +4,27 @@ import { useState } from 'react';
 import { useEffect } from 'react';
 import { Bar } from 'react-chartjs-2';
 import { Box, Grid } from '@mui/material';
+import nodes from './nodes.txt'
 import axios from 'axios';
 
 
 
 export function App() {
+  const [nodeDnss, setNodeDnss] = useState([])
+
+  useEffect(() => {
+    fetch(nodes)
+    .then(row => row.text())
+    .then(text => {
+      setNodeDnss(text.split("\n"));
+      console.log(nodeDnss);
+    });
+  }, [])
+  
+  console.log(nodeDnss)
   return (
     <div tyle = {{padding: '20%'}}>
-      <DisplayNodeCharts nodeCount = {3}/>
+      <DisplayNodeCharts links = {nodeDnss}/>
     </div>
   );
 }
@@ -20,30 +33,16 @@ export function App() {
 function DisplayNodeCharts(props) {
   const [nodeInfos, setNodeInfos] = useState([]);
   
-  
-  let reload = {val: 0};
-  // setInterval(() => {
-  //   reload.val = 1 - reload.val;
-  //   console.log("Changing reload var");
-  // }, 5000);
-
   let nodeNames = [];
 
-  let links = []
-  for (let i = 0; i < props.nodeCount; i++) {
-    // TODO: will need to change this URL in the future
-    const url = "http://localhost:707" + i + "/v1/node-info";
-    links.push(url);
-    nodeNames.push('Node' + i);
-  } 
+  props.links.map(link => nodeNames.push(link))
 
-  
   useEffect(() => {
     const interval = setInterval(() => {
-      console.log("Doing again")
-      axios.all(links.map(link => axios.get(link)))
+      console.log("fetching node info")
+      axios.all(props.links.map(link => axios.get('http://' + link + '/v1/node-info')))
       .then(axios.spread(function(...res) {
-        console.log("processing")
+        // console.log(res)
         setNodeInfos(res.map(res => res.data));
       }))
       .catch((error) => {
@@ -55,7 +54,7 @@ function DisplayNodeCharts(props) {
   
   
 
-  if (nodeInfos != []) {
+  if (nodeInfos !== []) {
     const memUsageData = {
       labels: nodeNames,
       datasets: [
