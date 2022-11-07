@@ -1,6 +1,8 @@
 import sys
 import io
 import time
+import subprocess
+import os
 
 import requests # pip install requests
 import boto3 # pip install boto3[crt]
@@ -106,6 +108,9 @@ def wait_node(node):
 
 for node in node_dns:
     wait_node(node)
+
+#start the react app here, so it can read nodes.txt
+subprocess.call(['npm', 'start', '--prefix', os.path.dirname(__file__)])
 
 elb = boto3.client('elbv2')
 
