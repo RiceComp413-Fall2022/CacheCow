@@ -4,10 +4,9 @@ import BulkCopyRequest
 import KeyValuePair
 import NodeId
 import ScalableMessage
+import ScalableMessageType
 import cache.distributed.IScalableDistributedCache
 import com.fasterxml.jackson.databind.ObjectMapper
-import io.javalin.validation.ValidationError
-import io.javalin.validation.ValidationException
 import org.eclipse.jetty.http.HttpStatus
 import java.io.File
 import java.util.*

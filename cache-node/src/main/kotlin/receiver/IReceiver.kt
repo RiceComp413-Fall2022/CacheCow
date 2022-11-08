@@ -1,7 +1,6 @@
 package receiver
 
 import cache.local.CacheInfo
-import io.javalin.Javalin
 import sender.SenderUsageInfo
 
 /**

@@ -14,7 +14,7 @@ class ScalableDistributedCache(private val nodeId: NodeId, private var nodeList:
     IScalableDistributedCache {
 
     /**
-     * Updated immediately once copying starts to support re-routing.
+     * Updated immediately once copying starts to support re-routing
      */
     private var nodeCount = nodeList.size
 

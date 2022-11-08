@@ -3,9 +3,6 @@ package cache.distributed
 import KeyVersionPair
 import NodeId
 import cache.local.CacheInfo
-import ch.qos.logback.core.util.SystemInfo
-import receiver.ReceiverUsageInfo
-import sender.ISender
 import sender.SenderUsageInfo
 
 /**

@@ -2,19 +2,11 @@ package node
 
 import NodeId
 import ScalableDistributedCache
-import cache.local.ILocalCache
 import cache.distributed.DistributedCache
 import cache.distributed.IDistributedCache
 import cache.distributed.IScalableDistributedCache
-import cache.distributed.hasher.INodeHasher
-import cache.distributed.hasher.NodeHasher
-import cache.local.CacheInfo
-import cache.local.LocalCache
-import cache.local.LocalScalableCache
 import receiver.Receiver
-import receiver.ReceiverUsageInfo
 import receiver.ScalableReceiver
-import sender.*
 
 /**
  * Node class that intermediates between the receiver, sender, local cache, and
