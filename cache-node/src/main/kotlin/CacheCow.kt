@@ -2,7 +2,7 @@ import node.Node
 import java.io.File
 
 const val nodeListPath = "nodes.txt"
-const val capacity = 30
+const val capacity = 2
 
 /**
  * The entry point to CacheCow.
