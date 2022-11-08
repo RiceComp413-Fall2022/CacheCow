@@ -67,9 +67,12 @@ if __name__ == "__main__":
 
     # Print Performance Time Metrics
     if options.time_backend:
-        # TODO: Support backend timing
         fetched_data = json.loads(requests.get(url=f'http://{options.url}/v1/node-info').content)
-        print("Total Backend Timing: [Backend timing is not yet supported.]", fetched_data['nodeId'])
+        request_timing = fetched_data['totalRequestTiming']
+        store_timing = request_timing['storeTiming']
+        fetch_timing = request_timing['fetchTiming']
+        total_request_time = store_timing + fetch_timing
+        print("Total Backend Timing: ", total_request_time, "(store: ", store_timing, "fetch: ", fetch_timing, ")")
     if options.time_client:
         print("Total Client Timing: ", client_time)
     if options.time_script:

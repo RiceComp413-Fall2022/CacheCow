@@ -23,8 +23,7 @@ class Sender(private val nodeId: NodeId, private val nodeList: List<String>) : I
      */
     private val mapper: ObjectMapper = ObjectMapper()
 
-    private var senderUsageInfo: SenderUsageInfo =
-        SenderUsageInfo(0, 0, 0, 0)
+    private var senderUsageInfo: SenderUsageInfo = SenderUsageInfo(0, 0, 0, 0)
 
     override fun fetchFromNode(kvPair: KeyVersionPair, destNodeId: NodeId): ByteArray {
         print("SENDER: Delegating fetch key ${kvPair.key} to node $destNodeId\n")

@@ -8,6 +8,7 @@ import cache.local.CacheInfo
 import cache.local.LocalCache
 import receiver.Receiver
 import receiver.ReceiverUsageInfo
+import receiver.TotalRequestTiming
 import sender.Sender
 import sender.SenderUsageInfo
 
@@ -65,6 +66,7 @@ open class Node(private val nodeId: NodeId, nodeList: List<String>, port: Int, c
                         MemoryUsageInfo(allocatedMemory, maxMemory, usage),
                         localCache.getCacheInfo(),
                         receiver.getReceiverUsageInfo(),
+                        receiver.getTotalRequestTiming(),
                         sender.getSenderUsageInfo())
     }
 
@@ -82,4 +84,5 @@ data class NodeInfo(val nodeId: Int,
                     val memUsage: MemoryUsageInfo,
                     val cacheInfo: CacheInfo,
                     val receiverUsageInfo: ReceiverUsageInfo,
+                    val totalRequestTiming: TotalRequestTiming,
                     val senderUsageInfo: SenderUsageInfo)
