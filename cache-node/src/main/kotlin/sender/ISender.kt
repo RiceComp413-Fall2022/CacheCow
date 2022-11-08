@@ -33,15 +33,6 @@ interface ISender {
      * @return SenderUsageInfo data type of the info
      */
     fun getSenderUsageInfo(): SenderUsageInfo
-
-    /**
-     * Copy a list of key value pairs to another node.
-     * @param kvPairs list of key value pairs
-     * @param destNodeId node id of destination node
-     * @return boolean indicating success
-     */
-    fun copyKvPairs(kvPairs: MutableList<Pair<KeyVersionPair, ByteArray>>, destNodeId: NodeId): Boolean
-
 }
 
 /**

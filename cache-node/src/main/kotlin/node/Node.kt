@@ -1,22 +1,27 @@
 package node
 
 import NodeId
+import ScalableDistributedCache
 import cache.local.ILocalCache
-import sender.ISender
 import cache.distributed.DistributedCache
+import cache.distributed.IDistributedCache
+import cache.distributed.IScalableDistributedCache
+import cache.distributed.hasher.INodeHasher
+import cache.distributed.hasher.NodeHasher
 import cache.local.CacheInfo
 import cache.local.LocalCache
+import cache.local.LocalScalableCache
 import receiver.Receiver
 import receiver.ReceiverUsageInfo
-import sender.Sender
-import sender.SenderUsageInfo
+import receiver.ScalableReceiver
+import sender.*
 
 /**
  * Node class that intermediates between the receiver, sender, local cache, and
  * distributed cache.
  */
 
-class Node(private val nodeId: NodeId, nodeList: List<String>, port: Int, capacity: Int) {
+class Node(private val nodeId: NodeId, nodeList: List<String>, port: Int, capacity: Int, scalable: Boolean) {
     /**
      * The local cache
      */
@@ -25,24 +30,34 @@ class Node(private val nodeId: NodeId, nodeList: List<String>, port: Int, capaci
     /**
      * The distributed cache
      */
-    var distributedCache: DistributedCache
+    private var distributedCache: IDistributedCache
 
     /**
      * The sender, used to send requests to other nodes
      */
-    var sender: ISender
+    private var sender: ISender
 
     /**
      * The receiver, used to receive requests from users and other nodes
      */
-    val receiver: Receiver
+    private val receiver: Receiver
 
     init {
         print("Initializing node $nodeId on port $port with cache capacity $capacity\n")
-        localCache = LocalCache(capacity)
-        sender = Sender(nodeId, nodeList)
-        distributedCache = DistributedCache(nodeId, nodeList.size, localCache, sender)
-        receiver = Receiver(port, nodeList.size, this, distributedCache)
+        val nodeHasher: INodeHasher = NodeHasher(nodeList.size)
+        if (scalable) {
+            localCache = LocalScalableCache(nodeHasher)
+            sender = ScalableSender(nodeId, nodeList)
+            distributedCache = ScalableDistributedCache(nodeId, nodeList.size, nodeHasher, localCache,
+                sender as IScalableSender
+            )
+            receiver = ScalableReceiver(port, nodeList.size, this, distributedCache as IScalableDistributedCache)
+        } else {
+            localCache = LocalCache(capacity)
+            sender = Sender(nodeId, nodeList)
+            distributedCache = DistributedCache(nodeId, nodeList.size, localCache, sender)
+            receiver = Receiver(port, nodeList.size, this, distributedCache)
+        }
     }
 
     /**

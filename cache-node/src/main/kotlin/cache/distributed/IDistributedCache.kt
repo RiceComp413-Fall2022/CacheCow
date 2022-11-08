@@ -27,8 +27,4 @@ interface IDistributedCache {
      */
     fun store(kvPair: KeyVersionPair, value: ByteArray, senderId: NodeId?)
 
-    fun testCopy()
-
-    fun bulkLocalStore(kvPairs: MutableList<Pair<KeyVersionPair, ByteArray>>)
-
 }

@@ -1,22 +1,22 @@
 import cache.distributed.IDistributedCache
+import cache.distributed.IScalableDistributedCache
 import cache.distributed.hasher.INodeHasher
 import cache.distributed.hasher.NodeHasher
-import cache.local.TestCache
+import cache.local.ILocalEvictingCache
+import cache.local.ILocalScalableCache
+import cache.local.LocalScalableCache
 import exception.KeyNotFoundException
+import sender.IScalableSender
 import sender.ISender
+import sender.ScalableSender
 import java.util.*
 import kotlin.collections.ArrayList
 
 /**
  * A concrete distributed cache that assigns keys to nodes using a NodeHasher.
  */
-class ScalableDistributedCache(private val nodeId: NodeId, private var nodeCount: Int, private val cache: TestCache, var sender: ISender):
-    IDistributedCache {
-
-    /**
-     * The INodeHasher used to map keys to nodes
-     */
-    private val nodeHasher: INodeHasher = NodeHasher(nodeCount)
+class ScalableDistributedCache(private val nodeId: NodeId, private var nodeCount: Int, private val nodeHasher: INodeHasher, private var cache: ILocalScalableCache, private var sender: IScalableSender):
+    IScalableDistributedCache {
 
     private var sortedNodes: ArrayList<Pair<Int, Int>> = ArrayList()
 
@@ -73,7 +73,7 @@ class ScalableDistributedCache(private val nodeId: NodeId, private var nodeCount
         // Always
         if (nodeId == primaryNodeId) {
             // Always store to new location, even during copying
-            cache.store(kvPair, value, hashValue)
+            cache.store(kvPair, value)
         } else {
             sender.storeToNode(
                 kvPair,
@@ -91,8 +91,8 @@ class ScalableDistributedCache(private val nodeId: NodeId, private var nodeCount
     }
 
     override fun bulkLocalStore(kvPairs: MutableList<Pair<KeyVersionPair, ByteArray>>) {
-        for (p in kvPairs) {
-            cache.store(p.first, p.second, nodeHasher.primaryHashValue(p.first))
+        for (kvPair in kvPairs) {
+            cache.store(kvPair.first, kvPair.second)
         }
     }
 
@@ -131,7 +131,7 @@ class ScalableDistributedCache(private val nodeId: NodeId, private var nodeCount
     }
 
     private fun copyHelper(start: Int, end: Int) {
-        cache.initalizeCopy(start, end)
+        cache.initializeCopy(start, end)
         var kvPairs: MutableList<Pair<KeyVersionPair, ByteArray>>
         var retryRemaining: Int
         do {

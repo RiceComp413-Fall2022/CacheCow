@@ -17,3 +17,7 @@ data class IntroRequest(val senderId: Int, val senderHost: String)
  * Represents a request to bulk copy key-value pairs.
  */
 data class BulkCopyRequest(val count: Int, val map: Map<String, ByteArray>)
+
+data class KeyValuePair(val key: String, val version : Int, val value: ByteArray)
+
+data class CopyClass(val values: MutableList<KeyValuePair>)

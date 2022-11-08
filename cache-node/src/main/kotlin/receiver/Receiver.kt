@@ -1,7 +1,10 @@
 package receiver
 
+import CopyClass
+import KeyValuePair
 import KeyVersionPair
 import cache.distributed.IDistributedCache
+import com.fasterxml.jackson.databind.ObjectMapper
 import exception.CacheNodeException
 import io.javalin.Javalin
 import io.javalin.config.JavalinConfig
@@ -18,7 +21,7 @@ import java.util.*
 /**
  * A concrete receiver that accepts requests over HTTP.
  */
-class Receiver(private val port: Int, private val nodeCount: Int, private val node: Node, private val distributedCache: IDistributedCache) : IReceiver {
+open class Receiver(private val port: Int, private val nodeCount: Int, private val node: Node, private val distributedCache: IDistributedCache) : IReceiver {
 
     /**
      * The Javalin server used to route HTTP requests to handlers
@@ -29,22 +32,6 @@ class Receiver(private val port: Int, private val nodeCount: Int, private val no
         }
     }
 
-    private var launchTimer = Timer()
-
-    /**
-     * Flag indicating whether the current node intends to launch
-     */
-    private var desireToLaunch = false
-
-    /**
-     * Flag indicating whether the current node is copying to the new node
-     */
-    private var copyingInProgress = false
-
-    /**
-     * Minimum id of a node that is currently intending to launch another node
-     */
-    private var minLaunchingNode = nodeCount
 
     /**
      * Count the number of requests that are received
@@ -108,69 +95,6 @@ class Receiver(private val port: Int, private val nodeCount: Int, private val no
             ctx.json(node.getNodeInfo()).status(HttpStatus.OK_200)
         }
 
-        /**
-         * Test endpoint to launch a node, note this would normally be embedded in cache
-         * along with fullness criteria
-         */
-        app.get("/v1/launch-node") { ctx ->
-            print("*********LAUNCH NODE REQUEST*********\n")
-
-            if (minLaunchingNode == nodeCount) {
-                desireToLaunch = true
-                // Send LAUNCH_NODE request to all other nodes
-                // Set timer for a few seconds, if sender num is still
-                 launchTimer.schedule(object: TimerTask() {
-                     override fun run() {
-                         launchNode()
-                     }
-                 },2 * 1000)
-            }
-
-            ctx.status(HttpStatus.OK_200)
-        }
-
-        /* Test endpoint to print a message from another node */
-        app.post("/v1/inform") { ctx ->
-            print("*********NODE INFO REQUEST*********\n")
-            val message = ctx.body()
-
-            val senderNum = ctx.queryParamAsClass("senderId", Int::class.java)
-                    .check({ it in 0 until nodeCount }, "Sender id must be in range (0, ${nodeCount - 1})")
-                    .get()
-
-            if (message == "LAUNCH_NODE") {
-                // Node senderNum intends to launch a node
-                if (senderNum < minLaunchingNode) {
-                    minLaunchingNode = senderNum
-                    if (desireToLaunch) {
-                        desireToLaunch = false
-                        launchTimer.cancel()
-                    }
-                    ctx.result("ACCEPTED").status(HttpStatus.ACCEPTED_202)
-                } else if (senderNum > minLaunchingNode) {
-                    ctx.result("REJECTED").status(HttpStatus.CONFLICT_409)
-                }
-            } else if (message == "BEGIN_COPY") {
-                // Node senderNum just booted up and is ready for data
-                if (senderNum == nodeCount) {
-                    copyingInProgress = true
-                    // 1. Increment node count
-                    // 2. Begin copying data to new node in small chunks, we can delete
-                    // once it has been successfully copied
-                }
-            }
-        }
-
-        app.get("/v1/bulk-copy") { ctx ->
-            ctx.bodyAsClass(MutableList::class.java)
-            val kvPairs: MutableList<Pair<KeyVersionPair, ByteArray>> = mutableListOf()
-
-        }
-
-        app.get("/v1/test-bulk-send") { ctx ->
-            ctx.result("Success").status(HttpStatus.OK_200)
-        }
-
         app.exception(CacheNodeException::class.java) { e, ctx ->
             print("RECEIVER: Caught cache node exception with id ${e.getExceptionID()}\n")
             ctx.result(e.message).status(e.status)
@@ -201,22 +125,6 @@ class Receiver(private val port: Int, private val nodeCount: Int, private val no
     }
 
     /**
-     * Should eventually be abstracted in different class (NodeLauncher)
-     */
-    fun launchNode() {
-        val args = arrayOf("/bin/bash", "-c", "./gradlew run --args '$nodeCount ${7070 + nodeCount}'")
-        val pb = ProcessBuilder(*args)
-        val currentDirectory = System.getProperty("user.dir")
-        print("Command: ${pb.command()}\n")
-        print("Current directory: $currentDirectory\n")
-
-        pb.directory(File(currentDirectory))
-        pb.redirectOutput(File("$currentDirectory/out.txt"))
-        print("$currentDirectory/out.txt")
-        pb.start()
-    }
-
-    /**
      * Start the HTTP server.
      */
     override fun start() {
@@ -229,6 +137,6 @@ class Receiver(private val port: Int, private val nodeCount: Int, private val no
 }
 
 /**
- * Represents a key-version tuple in a HTTP response.
+ * Represents a key-version tuple in an HTTP response.
  */
 data class KeyVersionReply(val key: String, val version: Int)
