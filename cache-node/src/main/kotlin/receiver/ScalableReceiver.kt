@@ -1,17 +1,18 @@
 package receiver
 
-import CopyClass
+import BulkCopyRequest
 import KeyValuePair
+import NodeId
+import ScalableMessage
 import cache.distributed.IScalableDistributedCache
 import com.fasterxml.jackson.databind.ObjectMapper
-import node.Node
+import io.javalin.validation.ValidationError
+import io.javalin.validation.ValidationException
 import org.eclipse.jetty.http.HttpStatus
 import java.io.File
 import java.util.*
 
-class ScalableReceiver(port: Int, private val nodeCount: Int, node: Node, distributedCache: IScalableDistributedCache): Receiver(port, nodeCount, node, distributedCache), IScalableReceiver {
-
-    private var launchTimer = Timer()
+class ScalableReceiver(port: Int, nodeId: NodeId, private var nodeCount: Int, distributedCache: IScalableDistributedCache): Receiver(port, nodeId, nodeCount, distributedCache), IScalableReceiver {
 
     /**
      * Flag indicating whether the current node intends to launch
@@ -19,18 +20,99 @@ class ScalableReceiver(port: Int, private val nodeCount: Int, node: Node, distri
     private var desireToLaunch = false
 
     /**
-     * Flag indicating whether the current node is copying to the new node
+     * Flag indicating whether the scaling process has begun
      */
-    private var copyingInProgress = false
+    private var scaleInProgress = false
+
+    /**
+     * Timer used to ensure that nodes achieve launching consensus
+     */
+    private var launchTimer = Timer()
 
     /**
      * Minimum id of a node that is currently intending to launch another node
      */
     private var minLaunchingNode = nodeCount
 
+    /**
+     * TODO: Remove
+     */
     private val mapper: ObjectMapper = ObjectMapper()
 
     init {
+
+        /* Handle simple message passing for coordinating scaling process */
+        app.post("/v1/inform") { ctx ->
+            print("*********NODE INFO REQUEST*********\n")
+            val message = ctx.bodyAsClass(ScalableMessage::class.java)
+
+            if (!scaleInProgress && message.type != ScalableMessageType.LAUNCH_NODE) {
+                throw simpleValidationException("Scaling not currently in progress")
+            }
+
+            if (message.nodeId < 0 || message.nodeId > nodeCount) {
+                throw simpleValidationException("Invalid node id")
+            }
+
+            if (message.type == ScalableMessageType.COPY_COMPLETE || message.type == ScalableMessageType.LAUNCH_NODE) {
+                if (message.nodeId == nodeCount) {
+                    throw simpleValidationException("New node cannot send this message type")
+                }
+            } else {
+                if (message.nodeId != nodeCount) {
+                    throw simpleValidationException("Only new node can send this message type")
+                }
+            }
+
+            var accepted = true
+            if (message.type == ScalableMessageType.LAUNCH_NODE) {
+                // Sender intends to launch a new node
+                if (message.nodeId < minLaunchingNode) {
+                    minLaunchingNode = message.nodeId
+                    if (desireToLaunch) {
+                        desireToLaunch = false
+                        launchTimer.cancel()
+                    }
+                } else {
+                    accepted = false
+                }
+            } else if (message.type == ScalableMessageType.READY) {
+                // Sender just booted up and is ready to receive copied values
+                if (message.hostName.isBlank()) {
+                    throw simpleValidationException("Missing host name")
+                }
+                distributedCache.initiateCopy(message.hostName)
+            } else if (message.type == ScalableMessageType.COPY_COMPLETE) {
+                // Sender finished copying values to this node
+                if (nodeId != nodeCount) {
+                    throw simpleValidationException("Only new node can accept this message type")
+                }
+                distributedCache.markCopyComplete(nodeId)
+            } else if (message.type == ScalableMessageType.SCALE_COMPLETE) {
+                scaleInProgress = false
+                nodeCount++
+            }
+
+            if (accepted) {
+                ctx.result("Accepted Message").status(HttpStatus.ACCEPTED_202)
+            } else {
+                ctx.result("Rejected Message").status(HttpStatus.CONFLICT_409)
+            }
+        }
+
+        /* Handle bulk copy requests */
+        app.post("/v1/test-bulk-receive") { ctx ->
+            val bulkCopy: BulkCopyRequest = ctx.bodyAsClass(BulkCopyRequest::class.java)
+
+            if (!scaleInProgress || nodeId != nodeCount) {
+                throw simpleValidationException("New node can only receive bulk copy requests while scaling is in progress")
+            }
+            if (bulkCopy.nodeId < 0 || bulkCopy.nodeId >= nodeCount) {
+                throw simpleValidationException("Invalid node id")
+            }
+            distributedCache.bulkLocalStore(bulkCopy.values)
+        }
+
         /**
          * Test endpoint to launch a node, note this would normally be embedded in cache
          * along with fullness criteria
@@ -40,58 +122,36 @@ class ScalableReceiver(port: Int, private val nodeCount: Int, node: Node, distri
 
             if (minLaunchingNode == nodeCount) {
                 desireToLaunch = true
-                // Send LAUNCH_NODE request to all other nodes
-                // Set timer for a few seconds, if sender num is still
-                launchTimer.schedule(object: TimerTask() {
+                scaleInProgress = true
+
+                // Broadcast launch intentions to all other nodes (should be async)
+                distributedCache.broadcastLaunchIntentions()
+
+                // If this node has minimum node id, launch new node
+                launchTimer.schedule(object : TimerTask() {
                     override fun run() {
                         launchNode()
                     }
-                },2 * 1000)
+                }, 2 * 1000)
             }
 
             ctx.status(HttpStatus.OK_200)
         }
 
-        /* Test endpoint to print a message from another node */
-        app.post("/v1/inform") { ctx ->
-            print("*********NODE INFO REQUEST*********\n")
-            val message = ctx.body()
-
-            val senderNum = ctx.queryParamAsClass("senderId", Int::class.java)
-                .check({ it in 0 until nodeCount }, "Sender id must be in range (0, ${nodeCount - 1})")
-                .get()
-
-            if (message == "LAUNCH_NODE") {
-                // Node senderNum intends to launch a node
-                if (senderNum < minLaunchingNode) {
-                    minLaunchingNode = senderNum
-                    if (desireToLaunch) {
-                        desireToLaunch = false
-                        launchTimer.cancel()
-                    }
-                    ctx.result("ACCEPTED").status(HttpStatus.ACCEPTED_202)
-                } else if (senderNum > minLaunchingNode) {
-                    ctx.result("REJECTED").status(HttpStatus.CONFLICT_409)
-                }
-            } else if (message == "BEGIN_COPY") {
-                // Node senderNum just booted up and is ready for data
-                if (senderNum == nodeCount) {
-                    copyingInProgress = true
-                    // 1. Increment node count
-                    // 2. Begin copying data to new node in small chunks, we can delete
-                    // once it has been successfully copied
-                }
-            }
-        }
-
-        app.post("/v1/test-bulk-receive") { ctx ->
-            val kvPairs: CopyClass = ctx.bodyAsClass(CopyClass::class.java)
-            val values = kvPairs.values
-            print("${values[0].key}, ${values[0].version}, ${values[0].value}\n")
-        }
-
+        /**
+         * Test endpoint to check json of bulk copy request
+         */
         app.get("/v1/test-bulk-send") { ctx ->
-            val kvPairs = CopyClass(mutableListOf(KeyValuePair("1", 1, "1".encodeToByteArray())))
+            val kvPairs = BulkCopyRequest(
+                nodeId,
+                mutableListOf(
+                    KeyValuePair(
+                        "1",
+                        1,
+                        "1".encodeToByteArray()
+                    )
+                )
+            )
             ctx.result(mapper.writeValueAsString(kvPairs)).status(HttpStatus.OK_200)
         }
     }

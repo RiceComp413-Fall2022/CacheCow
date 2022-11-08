@@ -22,7 +22,7 @@ fun main(args: Array<String>) {
         }
     }
 
-    val node = Node(nodeId, File(nodeListPath).bufferedReader().readLines(), port, capacity)
+    val node = Node(nodeId, File(nodeListPath).bufferedReader().readLines().toMutableList(), port, capacity, true)
 
     node.start()
 }

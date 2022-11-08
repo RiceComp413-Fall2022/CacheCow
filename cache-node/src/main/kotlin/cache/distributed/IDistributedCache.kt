@@ -2,7 +2,11 @@ package cache.distributed
 
 import KeyVersionPair
 import NodeId
+import cache.local.CacheInfo
+import ch.qos.logback.core.util.SystemInfo
+import receiver.ReceiverUsageInfo
 import sender.ISender
+import sender.SenderUsageInfo
 
 /**
  * An interface specifying the behavior of a distributed data cache.
@@ -27,4 +31,7 @@ interface IDistributedCache {
      */
     fun store(kvPair: KeyVersionPair, value: ByteArray, senderId: NodeId?)
 
+    fun getCacheInfo(): CacheInfo
+
+    fun getSenderInfo(): SenderUsageInfo
 }

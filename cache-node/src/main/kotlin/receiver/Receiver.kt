@@ -1,27 +1,21 @@
 package receiver
 
-import CopyClass
-import KeyValuePair
 import KeyVersionPair
+import NodeId
 import cache.distributed.IDistributedCache
-import com.fasterxml.jackson.databind.ObjectMapper
 import exception.CacheNodeException
 import io.javalin.Javalin
 import io.javalin.config.JavalinConfig
-import io.javalin.http.bodyValidator
 import io.javalin.plugin.bundled.CorsContainer
 import io.javalin.plugin.bundled.CorsPluginConfig
 import io.javalin.validation.ValidationError
 import io.javalin.validation.ValidationException
-import node.Node
 import org.eclipse.jetty.http.HttpStatus
-import java.io.File
-import java.util.*
 
 /**
  * A concrete receiver that accepts requests over HTTP.
  */
-open class Receiver(private val port: Int, private val nodeCount: Int, private val node: Node, private val distributedCache: IDistributedCache) : IReceiver {
+open class Receiver(private val port: Int, private val nodeId: NodeId, private val nodeCount: Int, private val distributedCache: IDistributedCache) : IReceiver {
 
     /**
      * The Javalin server used to route HTTP requests to handlers
@@ -41,6 +35,8 @@ open class Receiver(private val port: Int, private val nodeCount: Int, private v
 
 
     init {
+
+        /* Check if receiver is up and running */
         app.get("/v1/hello-world") { ctx ->
             ctx.result("Hello, World!").status(HttpStatus.OK_200)
         }
@@ -81,7 +77,7 @@ open class Receiver(private val port: Int, private val nodeCount: Int, private v
 
             val value = ctx.bodyAsBytes()
             if (value.isEmpty()) {
-                throw ValidationException(mapOf("REQUEST_BODY" to listOf(ValidationError("Binary blob cannot be empty"))))
+                throw simpleValidationException("Binary blob cannot be empty")
             }
             distributedCache.store(KeyVersionPair(key, version), value, senderNum)
             receiverUsageInfo.storeSuccesses++
@@ -92,14 +88,16 @@ open class Receiver(private val port: Int, private val nodeCount: Int, private v
         /* Handle requests to monitor information about the node of this receiver */
         app.get("/v1/node-info") { ctx ->
             print("\n*********NODE INFO REQUEST*********\n")
-            ctx.json(node.getNodeInfo()).status(HttpStatus.OK_200)
+            ctx.json(getSystemInfo()).status(HttpStatus.OK_200)
         }
 
+        /* Catch and return any internal errors */
         app.exception(CacheNodeException::class.java) { e, ctx ->
             print("RECEIVER: Caught cache node exception with id ${e.getExceptionID()}\n")
             ctx.result(e.message).status(e.status)
         }
 
+        /* Catch and format any errors resulting from request validation */
         app.exception(ValidationException::class.java) { e, ctx ->
             val firstError = e.errors.asIterable().iterator().next()
             print("RECEIVER: Caught validation exception for field ${firstError.key}\n")
@@ -124,6 +122,10 @@ open class Receiver(private val port: Int, private val nodeCount: Int, private v
         }
     }
 
+    fun simpleValidationException(message: String): ValidationException {
+        return ValidationException(mapOf("REQUEST_BODY" to listOf(ValidationError(message))))
+    }
+
     /**
      * Start the HTTP server.
      */
@@ -133,6 +135,26 @@ open class Receiver(private val port: Int, private val nodeCount: Int, private v
 
     override fun getReceiverUsageInfo(): ReceiverUsageInfo {
         return receiverUsageInfo
+    }
+
+    override fun getSystemInfo(): SystemInfo {
+        return SystemInfo(
+            nodeId,
+            getMemoryUsage(),
+            distributedCache.getCacheInfo(),
+            getReceiverUsageInfo(),
+            distributedCache.getSenderInfo())
+    }
+
+    /**
+     * Get memory usage information from JVM runtime.
+     */
+    private fun getMemoryUsage(): MemoryUsageInfo {
+        val runtime = Runtime.getRuntime()
+        val allocatedMemory = runtime.totalMemory() - runtime.freeMemory()
+        val maxMemory = runtime.maxMemory()
+        val usage = allocatedMemory/(maxMemory * 1.0)
+        return MemoryUsageInfo(allocatedMemory, maxMemory, usage)
     }
 }
 

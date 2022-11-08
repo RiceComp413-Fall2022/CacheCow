@@ -1,25 +1,28 @@
 package cache.distributed
 
 import KeyVersionPair
-import cache.distributed.hasher.NodeHasher
 import NodeId
 import cache.distributed.hasher.INodeHasher
-import cache.local.ILocalCache
+import cache.distributed.hasher.NodeHasher
+import cache.local.CacheInfo
 import cache.local.LocalCache
 import exception.KeyNotFoundException
-import sender.ISender
 import sender.Sender
+import sender.SenderUsageInfo
 
 /**
  * A concrete distributed cache that assigns keys to nodes using a NodeHasher.
  */
-class DistributedCache(private val nodeId: NodeId, nodeCount: Int, private val cache: ILocalCache, var sender: ISender):
-    IDistributedCache {
+class DistributedCache(private val nodeId: NodeId, nodeList: List<String>): IDistributedCache {
 
     /**
      * The INodeHasher used to map keys to nodes
      */
-    private val nodeHasher: INodeHasher = NodeHasher(nodeCount)
+    private val nodeHasher: INodeHasher = NodeHasher(nodeList.size)
+
+    private val cache = LocalCache()
+
+    private val sender = Sender(nodeId, nodeList)
 
     override fun fetch(kvPair: KeyVersionPair, senderId: NodeId?): ByteArray {
         val primaryNodeId = nodeHasher.primaryHashNode(kvPair)
@@ -56,13 +59,11 @@ class DistributedCache(private val nodeId: NodeId, nodeCount: Int, private val c
         }
     }
 
-    override fun testCopy() {
-        TODO("Remove")
+    override fun getCacheInfo(): CacheInfo {
+        return cache.getCacheInfo()
     }
 
-    override fun bulkLocalStore(kvPairs: MutableList<Pair<KeyVersionPair, ByteArray>>) {
-        TODO("Remove")
+    override fun getSenderInfo(): SenderUsageInfo {
+        return sender.getSenderUsageInfo()
     }
-
-
 }

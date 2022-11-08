@@ -1,10 +1,10 @@
 package cache.local
 
-import KeyVersionPair
+import KeyValuePair
 
 interface ILocalScalableCache: ILocalEvictingCache {
 
     fun initializeCopy(start: Int, end: Int)
 
-    fun streamCopyKeys(count: Int): MutableList<Pair<KeyVersionPair, ByteArray>>
+    fun streamCopyKeys(count: Int): MutableList<KeyValuePair>
 }

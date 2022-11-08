@@ -2,31 +2,49 @@ import cache.distributed.IDistributedCache
 import cache.distributed.IScalableDistributedCache
 import cache.distributed.hasher.INodeHasher
 import cache.distributed.hasher.NodeHasher
+import cache.local.CacheInfo
 import cache.local.ILocalEvictingCache
 import cache.local.ILocalScalableCache
 import cache.local.LocalScalableCache
 import exception.KeyNotFoundException
+import org.w3c.dom.NodeList
 import sender.IScalableSender
 import sender.ISender
 import sender.ScalableSender
+import sender.SenderUsageInfo
 import java.util.*
 import kotlin.collections.ArrayList
 
 /**
  * A concrete distributed cache that assigns keys to nodes using a NodeHasher.
  */
-class ScalableDistributedCache(private val nodeId: NodeId, private var nodeCount: Int, private val nodeHasher: INodeHasher, private var cache: ILocalScalableCache, private var sender: IScalableSender):
+class ScalableDistributedCache(private val nodeId: NodeId, private var nodeList: MutableList<String>):
     IScalableDistributedCache {
+
+    private var nodeCount = nodeList.size
+
+    private val nodeHasher = NodeHasher(nodeCount)
+
+    private val cache = LocalScalableCache(nodeHasher)
+
+    private val sender = ScalableSender(nodeId, nodeList)
 
     private var sortedNodes: ArrayList<Pair<Int, Int>> = ArrayList()
 
+    /**
+     * Flag indicating whether the current node is copying to the new node
+     */
     private var copyInProgress = false
-
-    private var copyTimer = Timer()
 
     private val copySize = 10
 
     private val copyRetryCount = 3
+
+    private val copyComplete = MutableList(nodeCount) { false }
+
+    private var copyCompleteCount = 0
+
+    private lateinit var copyThread: Thread
 
     init {
         for (i in 1..nodeCount) {
@@ -37,12 +55,9 @@ class ScalableDistributedCache(private val nodeId: NodeId, private var nodeCount
 
     override fun fetch(kvPair: KeyVersionPair, senderId: NodeId?): ByteArray {
 
-        // 1. Compute hash value of key
-        // 2. Check membership
-
         val hashValue = nodeHasher.primaryHashValue(kvPair)
 
-        print("TEST CACHE: Hash value of key ${kvPair.key} is ${hashValue}\n")
+        print("SCALABLE CACHE: Hash value of key ${kvPair.key} is ${hashValue}\n")
 
         val primaryNodeIndex = findPrimaryNode(hashValue)
         val primaryNodeId = sortedNodes.get(primaryNodeIndex).second
@@ -66,7 +81,7 @@ class ScalableDistributedCache(private val nodeId: NodeId, private var nodeCount
 
         val hashValue = nodeHasher.primaryHashValue(kvPair)
 
-        print("TEST CACHE: Hash value of key ${kvPair.key} is ${hashValue}\n")
+        print("SCALABLE CACHE: Hash value of key ${kvPair.key} is ${hashValue}\n")
 
         val primaryNodeId = findPrimaryNode(hashValue)
 
@@ -83,17 +98,73 @@ class ScalableDistributedCache(private val nodeId: NodeId, private var nodeCount
         }
     }
 
-    override fun testCopy() {
-        sender.copyKvPairs(
-            mutableListOf(Pair(KeyVersionPair("key1", 1), "1".encodeToByteArray()), Pair(KeyVersionPair("key2", 2), "2".encodeToByteArray())),
-            1
-            )
+    override fun getCacheInfo(): CacheInfo {
+        return cache.getCacheInfo()
     }
 
-    override fun bulkLocalStore(kvPairs: MutableList<Pair<KeyVersionPair, ByteArray>>) {
-        for (kvPair in kvPairs) {
-            cache.store(kvPair.first, kvPair.second)
+    override fun getSenderInfo(): SenderUsageInfo {
+        return sender.getSenderUsageInfo()
+    }
+
+    override fun broadcastLaunchIntentions() {
+        val success = sender.broadcastScalableMessage(ScalableMessage(nodeId, nodeList[nodeId], ScalableMessageType.LAUNCH_NODE))
+        print("SCALABLE CACHE: Result of broadcasting launch intentions was $success\n")
+    }
+
+    override fun markCopyComplete(nodeId: NodeId) {
+        if (!copyComplete[nodeId]) {
+            copyComplete[nodeId] = true
+            copyCompleteCount++
+            if (copyCompleteCount == nodeCount - 1) {
+                sender.broadcastScalableMessage(ScalableMessage(nodeId, nodeList[nodeId], ScalableMessageType.SCALE_COMPLETE))
+            }
         }
+    }
+
+    override fun bulkLocalStore(kvPairs: MutableList<KeyValuePair>) {
+        for (kvPair in kvPairs) {
+            cache.store(KeyVersionPair(kvPair.key, kvPair.version), kvPair.value)
+        }
+    }
+
+    override fun initiateCopy(hostName: String) {
+        if (!copyInProgress) {
+            copyInProgress = true
+            val newHashValue = nodeHasher.nodeHashValue(nodeCount)
+            val nextIndex = findPrimaryNode(newHashValue)
+            val nextHashValue = sortedNodes.get(nextIndex).first
+
+            // Add hash value of new node to sorted node values
+            val updatedNodes = ArrayList<Pair<Int, Int>>()
+            updatedNodes.addAll(sortedNodes.subList(0, nextIndex))
+            updatedNodes.add(Pair(nodeCount, newHashValue)) // Place new node hash value
+            updatedNodes.addAll(sortedNodes.subList(nextIndex, sortedNodes.size))
+
+            // Update the sorted nodes and node count
+            sortedNodes = updatedNodes
+            nodeList.add(hostName)
+            nodeCount = nodeList.size
+
+            // Start the thread to copy asynchronously
+            copyThread = Thread { copyKeysByHashValues(newHashValue, nextHashValue) }
+            copyThread.start()
+        }
+    }
+
+    private fun copyKeysByHashValues(start: Int, end: Int) {
+        cache.initializeCopy(start, end)
+        var kvPairs: MutableList<KeyValuePair>
+        var retryRemaining: Int
+        // TODO: Move retry logic to sender
+        do {
+            retryRemaining = copyRetryCount
+            kvPairs = cache.streamCopyKeys(copySize)
+            while (kvPairs.size > 0 && retryRemaining > 0 && !sender.sendBulkCopy(BulkCopyRequest(nodeId, kvPairs),  nodeCount)) {
+                retryRemaining--
+            }
+
+        } while(kvPairs.size == copySize)
+        copyInProgress = false
     }
 
     private fun findPrimaryNode(hashValue: Int) : NodeId {
@@ -109,38 +180,5 @@ class ScalableDistributedCache(private val nodeId: NodeId, private var nodeCount
             }
         }
         return if (k == sortedNodes.size) 0 else k
-    }
-
-    fun copyHandler() {
-        val newHashValue = nodeHasher.nodeHashValue(nodeCount)
-        val nextIndex = findPrimaryNode(newHashValue)
-        val nextHashValue = sortedNodes.get(nextIndex).first
-
-        // Add hash value of new node to sorted node values
-        val updatedNodes = ArrayList<Pair<Int, Int>>()
-        updatedNodes.addAll(sortedNodes.subList(0, nextIndex))
-        updatedNodes.add(Pair(nodeCount, newHashValue)) // Place new node hash value
-        updatedNodes.addAll(sortedNodes.subList(nextIndex, sortedNodes.size))
-        sortedNodes = updatedNodes
-
-        copyTimer.schedule(object: TimerTask() {
-            override fun run() {
-                copyHelper(newHashValue, nextHashValue)
-            }
-        },20)
-    }
-
-    private fun copyHelper(start: Int, end: Int) {
-        cache.initializeCopy(start, end)
-        var kvPairs: MutableList<Pair<KeyVersionPair, ByteArray>>
-        var retryRemaining: Int
-        do {
-            retryRemaining = copyRetryCount
-            kvPairs = cache.streamCopyKeys(copySize)
-            while (kvPairs.size > 0 && retryRemaining > 0 && !sender.copyKvPairs(kvPairs, nodeCount)) {
-                retryRemaining--
-            }
-
-        } while(kvPairs.size == copySize)
     }
 }

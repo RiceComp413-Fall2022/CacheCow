@@ -1,8 +1,9 @@
 package cache.local
 
+import KeyValuePair
 import KeyVersionPair
 import cache.distributed.hasher.INodeHasher
-import node.MemoryUsageInfo
+import receiver.MemoryUsageInfo
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
@@ -41,7 +42,7 @@ class LocalScalableCache(private var nodeHasher: INodeHasher, private var maxCap
         TreeMap()
     )
 
-    private var copyKvPairs = mutableListOf<Pair<KeyVersionPair, ByteArray>>()
+    private var copyKvPairs = mutableListOf<KeyValuePair>()
 
     private var copyIndex = 0
 
@@ -199,7 +200,7 @@ class LocalScalableCache(private var nodeHasher: INodeHasher, private var maxCap
         }
     }
 
-    override fun streamCopyKeys(count: Int): MutableList<Pair<KeyVersionPair, ByteArray>> {
+    override fun streamCopyKeys(count: Int): MutableList<KeyValuePair> {
         // Check bounds here and elsewhere
         val topIndex = Integer.max(copyIndex + count, copyKvPairs.count())
         val streamKeys = copyKvPairs.subList(copyIndex, topIndex)
@@ -211,7 +212,7 @@ class LocalScalableCache(private var nodeHasher: INodeHasher, private var maxCap
         if (kvPair != null) {
             val node = cache[kvPair]
             if (node != null) {
-                copyKvPairs.add(Pair(kvPair, node.value))
+                copyKvPairs.add(KeyValuePair(kvPair.key, kvPair.version, node.value))
             }
         }
     }

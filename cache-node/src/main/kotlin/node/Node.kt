@@ -21,21 +21,12 @@ import sender.*
  * distributed cache.
  */
 
-class Node(private val nodeId: NodeId, nodeList: List<String>, port: Int, capacity: Int, scalable: Boolean) {
-    /**
-     * The local cache
-     */
-    private val localCache: ILocalCache
+class Node(nodeId: NodeId, nodeList: MutableList<String>, port: Int, capacity: Int, scalable: Boolean) {
 
     /**
      * The distributed cache
      */
     private var distributedCache: IDistributedCache
-
-    /**
-     * The sender, used to send requests to other nodes
-     */
-    private var sender: ISender
 
     /**
      * The receiver, used to receive requests from users and other nodes
@@ -44,19 +35,12 @@ class Node(private val nodeId: NodeId, nodeList: List<String>, port: Int, capaci
 
     init {
         print("Initializing node $nodeId on port $port with cache capacity $capacity\n")
-        val nodeHasher: INodeHasher = NodeHasher(nodeList.size)
         if (scalable) {
-            localCache = LocalScalableCache(nodeHasher)
-            sender = ScalableSender(nodeId, nodeList)
-            distributedCache = ScalableDistributedCache(nodeId, nodeList.size, nodeHasher, localCache,
-                sender as IScalableSender
-            )
-            receiver = ScalableReceiver(port, nodeList.size, this, distributedCache as IScalableDistributedCache)
+            distributedCache = ScalableDistributedCache(nodeId, nodeList)
+            receiver = ScalableReceiver(port, nodeId, nodeList.size, distributedCache as IScalableDistributedCache)
         } else {
-            localCache = LocalCache(capacity)
-            sender = Sender(nodeId, nodeList)
-            distributedCache = DistributedCache(nodeId, nodeList.size, localCache, sender)
-            receiver = Receiver(port, nodeList.size, this, distributedCache)
+            distributedCache = DistributedCache(nodeId, nodeList)
+            receiver = Receiver(port, nodeId, nodeList.size, distributedCache)
         }
     }
 
@@ -66,35 +50,4 @@ class Node(private val nodeId: NodeId, nodeList: List<String>, port: Int, capaci
     fun start() {
         receiver.start()
     }
-
-    /**
-     * Gets node info for this node, including memory usage, cacheInfo
-     * TODO: also process sender and receiver usage info
-     */
-    fun getNodeInfo(): NodeInfo {
-        val runtime = Runtime.getRuntime()
-        val allocatedMemory = runtime.totalMemory() - runtime.freeMemory()
-        val maxMemory = runtime.maxMemory()
-        val usage = allocatedMemory/(maxMemory * 1.0)
-        return NodeInfo(nodeId,
-                        MemoryUsageInfo(allocatedMemory, maxMemory, usage),
-                        localCache.getCacheInfo(),
-                        receiver.getReceiverUsageInfo(),
-                        sender.getSenderUsageInfo())
-    }
-
 }
-
-/**
- * Client response giving memory usage of the JVM.
- */
-data class MemoryUsageInfo(val allocated: Long, val max: Long, val usage: Double)
-
-/**
- * Encapsulates information about the usage of this node into one object
- */
-data class NodeInfo(val nodeId: Int,
-                    val memUsage: MemoryUsageInfo,
-                    val cacheInfo: CacheInfo,
-                    val receiverUsageInfo: ReceiverUsageInfo,
-                    val senderUsageInfo: SenderUsageInfo)

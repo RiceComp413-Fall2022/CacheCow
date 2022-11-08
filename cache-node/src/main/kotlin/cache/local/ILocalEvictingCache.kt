@@ -1,6 +1,6 @@
 package cache.local
 
-import node.MemoryUsageInfo
+import receiver.MemoryUsageInfo
 
 /**
  * An interface specifying the behavior of a local data cache.

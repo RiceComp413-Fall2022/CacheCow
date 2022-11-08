@@ -1,9 +1,15 @@
 package cache.distributed
 
-import KeyVersionPair
+import KeyValuePair
+import NodeId
 
 interface IScalableDistributedCache: IDistributedCache {
-    fun testCopy()
 
-    fun bulkLocalStore(kvPairs: MutableList<Pair<KeyVersionPair, ByteArray>>)
+    fun broadcastLaunchIntentions()
+
+    fun initiateCopy(hostName: String)
+
+    fun markCopyComplete(nodeId: NodeId)
+
+    fun bulkLocalStore(kvPairs: MutableList<KeyValuePair>)
 }

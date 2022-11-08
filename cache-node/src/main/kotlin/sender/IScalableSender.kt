@@ -1,7 +1,8 @@
 package sender
 
-import KeyVersionPair
+import BulkCopyRequest
 import NodeId
+import ScalableMessage
 
 interface IScalableSender: ISender {
     /**
@@ -10,5 +11,7 @@ interface IScalableSender: ISender {
      * @param destNodeId node id of destination node
      * @return boolean indicating success
      */
-    fun copyKvPairs(kvPairs: MutableList<Pair<KeyVersionPair, ByteArray>>, destNodeId: NodeId): Boolean
+    fun sendBulkCopy(kvPairs: BulkCopyRequest, destNodeId: NodeId): Boolean
+
+    fun broadcastScalableMessage(message: ScalableMessage): Boolean
 }
