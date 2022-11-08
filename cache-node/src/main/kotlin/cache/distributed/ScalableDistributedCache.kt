@@ -1,19 +1,11 @@
-import cache.distributed.IDistributedCache
 import cache.distributed.IScalableDistributedCache
-import cache.distributed.hasher.INodeHasher
 import cache.distributed.hasher.NodeHasher
 import cache.local.CacheInfo
-import cache.local.ILocalEvictingCache
-import cache.local.ILocalScalableCache
 import cache.local.LocalScalableCache
 import exception.KeyNotFoundException
-import org.w3c.dom.NodeList
-import sender.IScalableSender
-import sender.ISender
 import sender.ScalableSender
 import sender.SenderUsageInfo
 import java.util.*
-import kotlin.collections.ArrayList
 
 /**
  * A concrete distributed cache that assigns keys to nodes using a NodeHasher.
@@ -21,6 +13,9 @@ import kotlin.collections.ArrayList
 class ScalableDistributedCache(private val nodeId: NodeId, private var nodeList: MutableList<String>):
     IScalableDistributedCache {
 
+    /**
+     * Updated immediately once copying starts to support re-routing.
+     */
     private var nodeCount = nodeList.size
 
     private val nodeHasher = NodeHasher(nodeCount)
@@ -29,16 +24,16 @@ class ScalableDistributedCache(private val nodeId: NodeId, private var nodeList:
 
     private val sender = ScalableSender(nodeId, nodeList)
 
-    private var sortedNodes: ArrayList<Pair<Int, Int>> = ArrayList()
+    private var sortedNodes: SortedMap<Int, Int> = Collections.synchronizedSortedMap(
+        TreeMap()
+    )
 
     /**
      * Flag indicating whether the current node is copying to the new node
      */
     private var copyInProgress = false
 
-    private val copySize = 10
-
-    private val copyRetryCount = 3
+    private val copyBatchSize = 10
 
     private val copyComplete = MutableList(nodeCount) { false }
 
@@ -48,9 +43,8 @@ class ScalableDistributedCache(private val nodeId: NodeId, private var nodeList:
 
     init {
         for (i in 1..nodeCount) {
-            sortedNodes.add(Pair(i, nodeHasher.nodeHashValue(i)))
+            sortedNodes[nodeHasher.nodeHashValue(i)] = i
         }
-        sortedNodes.sortBy { it.second }
     }
 
     override fun fetch(kvPair: KeyVersionPair, senderId: NodeId?): ByteArray {
@@ -59,15 +53,14 @@ class ScalableDistributedCache(private val nodeId: NodeId, private var nodeList:
 
         print("SCALABLE CACHE: Hash value of key ${kvPair.key} is ${hashValue}\n")
 
-        val primaryNodeIndex = findPrimaryNode(hashValue)
-        val primaryNodeId = sortedNodes.get(primaryNodeIndex).second
-        val oldPrimaryNodeId = sortedNodes.get((primaryNodeIndex + 1) % sortedNodes.size).second
+        val primaryNodeId = findPrimaryNode(hashValue)
+        val prevPrimaryNodeId = findPrevPrimaryNode(hashValue)
 
-        val value: ByteArray? = if (!copyInProgress || primaryNodeId != nodeCount - 1 || nodeId != oldPrimaryNodeId) {
+        val value: ByteArray? = if (!copyInProgress || primaryNodeId != nodeCount - 1 || nodeId != prevPrimaryNodeId) {
             // Normal case
             if (nodeId == primaryNodeId) cache.fetch(kvPair) else sender.fetchFromNode(kvPair, primaryNodeId)
         } else {
-            // This key is be copying to new node, check both locations
+            // This key is being copied to new node, check both locations
             cache.fetch(kvPair) ?: sender.fetchFromNode(kvPair, primaryNodeId)
         }
 
@@ -84,8 +77,6 @@ class ScalableDistributedCache(private val nodeId: NodeId, private var nodeList:
         print("SCALABLE CACHE: Hash value of key ${kvPair.key} is ${hashValue}\n")
 
         val primaryNodeId = findPrimaryNode(hashValue)
-
-        // Always
         if (nodeId == primaryNodeId) {
             // Always store to new location, even during copying
             cache.store(kvPair, value)
@@ -131,17 +122,11 @@ class ScalableDistributedCache(private val nodeId: NodeId, private var nodeList:
         if (!copyInProgress) {
             copyInProgress = true
             val newHashValue = nodeHasher.nodeHashValue(nodeCount)
-            val nextIndex = findPrimaryNode(newHashValue)
-            val nextHashValue = sortedNodes.get(nextIndex).first
-
-            // Add hash value of new node to sorted node values
-            val updatedNodes = ArrayList<Pair<Int, Int>>()
-            updatedNodes.addAll(sortedNodes.subList(0, nextIndex))
-            updatedNodes.add(Pair(nodeCount, newHashValue)) // Place new node hash value
-            updatedNodes.addAll(sortedNodes.subList(nextIndex, sortedNodes.size))
+            val nextNodeId = findPrimaryNode(newHashValue)
+            val nextHashValue = nodeHasher.nodeHashValue(nextNodeId)
 
             // Update the sorted nodes and node count
-            sortedNodes = updatedNodes
+            sortedNodes[nodeCount] = newHashValue
             nodeList.add(hostName)
             nodeCount = nodeList.size
 
@@ -154,31 +139,28 @@ class ScalableDistributedCache(private val nodeId: NodeId, private var nodeList:
     private fun copyKeysByHashValues(start: Int, end: Int) {
         cache.initializeCopy(start, end)
         var kvPairs: MutableList<KeyValuePair>
-        var retryRemaining: Int
-        // TODO: Move retry logic to sender
         do {
-            retryRemaining = copyRetryCount
-            kvPairs = cache.streamCopyKeys(copySize)
-            while (kvPairs.size > 0 && retryRemaining > 0 && !sender.sendBulkCopy(BulkCopyRequest(nodeId, kvPairs),  nodeCount)) {
-                retryRemaining--
-            }
+            kvPairs = cache.streamCopyKeys(copyBatchSize)
+            sender.sendBulkCopy(BulkCopyRequest(nodeId, kvPairs),  nodeCount)
 
-        } while(kvPairs.size == copySize)
+        } while(kvPairs.size == copyBatchSize)
         copyInProgress = false
     }
 
-    private fun findPrimaryNode(hashValue: Int) : NodeId {
-        var i = 0
-        var j = sortedNodes.size
-        var k = 0
-        while (i < j) {
-            k = (i + j).floorDiv(2)
-            if (hashValue < sortedNodes[k].second) {
-                i = k
-            } else {
-                j = i
-            }
+    private fun findPrimaryNode(hashValue: Int): NodeId {
+        val tailMap = sortedNodes.tailMap(hashValue)
+        if (tailMap.isNotEmpty()) {
+            return tailMap.iterator().next().value
         }
-        return if (k == sortedNodes.size) 0 else k
+        return sortedNodes.headMap(hashValue).iterator().next().value
+    }
+
+    private fun findPrevPrimaryNode(hashValue: Int): NodeId {
+        val headMap = sortedNodes.headMap(hashValue)
+        if (headMap.isNotEmpty()) {
+            return headMap[headMap.lastKey()]!!
+        }
+        val tailMap = sortedNodes.tailMap(hashValue)
+        return tailMap[tailMap.lastKey()]!!
     }
 }

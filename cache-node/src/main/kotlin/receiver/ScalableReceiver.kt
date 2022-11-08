@@ -22,7 +22,7 @@ class ScalableReceiver(port: Int, nodeId: NodeId, private var nodeCount: Int, di
     /**
      * Flag indicating whether the scaling process has begun
      */
-    private var scaleInProgress = false
+    private var scaleInProgress = nodeId == nodeCount
 
     /**
      * Timer used to ensure that nodes achieve launching consensus
@@ -77,7 +77,7 @@ class ScalableReceiver(port: Int, nodeId: NodeId, private var nodeCount: Int, di
                     accepted = false
                 }
             } else if (message.type == ScalableMessageType.READY) {
-                // Sender just booted up and is ready to receive copied values
+                // New node just booted up and is ready to receive copied values
                 if (message.hostName.isBlank()) {
                     throw simpleValidationException("Missing host name")
                 }
@@ -89,14 +89,16 @@ class ScalableReceiver(port: Int, nodeId: NodeId, private var nodeCount: Int, di
                 }
                 distributedCache.markCopyComplete(nodeId)
             } else if (message.type == ScalableMessageType.SCALE_COMPLETE) {
+                // New node has received all copied values, scaling has completed
                 scaleInProgress = false
                 nodeCount++
+                minLaunchingNode = nodeCount
             }
 
             if (accepted) {
-                ctx.result("Accepted Message").status(HttpStatus.ACCEPTED_202)
+                ctx.result("Accepted message").status(HttpStatus.ACCEPTED_202)
             } else {
-                ctx.result("Rejected Message").status(HttpStatus.CONFLICT_409)
+                ctx.result("Rejected message").status(HttpStatus.CONFLICT_409)
             }
         }
 
