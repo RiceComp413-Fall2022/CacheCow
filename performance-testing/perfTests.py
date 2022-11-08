@@ -65,5 +65,5 @@ class PerfTest:
     def eviction_test(url, perfTestFunc):
         raise Exception("Unimplemened.")
 
-    def memory_overflow_test(url, perfTestFunc):
+    def memory_overflow_test(url, perfTestFunc, max_capacity):
         raise Exception("Unimplemened.")
