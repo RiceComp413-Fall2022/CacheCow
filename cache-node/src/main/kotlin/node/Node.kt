@@ -60,9 +60,8 @@ open class Node(private val nodeId: NodeId, nodeList: List<String>, port: Int, c
         val runtime = Runtime.getRuntime()
         val allocatedMemory = runtime.totalMemory() - runtime.freeMemory()
         val maxMemory = runtime.maxMemory()
-        val usage = allocatedMemory/(maxMemory * 1.0)
         return NodeInfo(nodeId,
-            MemoryUsageInfo(allocatedMemory, maxMemory, usage),
+            MemoryUsageInfo(allocatedMemory, maxMemory),
             localCache.getCacheInfo(),
             receiver.getReceiverUsageInfo(),
             sender.getSenderUsageInfo())
@@ -73,7 +72,7 @@ open class Node(private val nodeId: NodeId, nodeList: List<String>, port: Int, c
 /**
  * Client response giving memory usage of the JVM.
  */
-data class MemoryUsageInfo(val allocated: Long, val max: Long, val usage: Double)
+data class MemoryUsageInfo(val usedMemory: Long, val maxMemory: Long)
 
 /**
  * Encapsulates information about the usage of this node into one object

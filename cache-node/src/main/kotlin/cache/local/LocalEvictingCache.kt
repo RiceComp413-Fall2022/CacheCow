@@ -52,7 +52,7 @@ class LocalEvictingCache(private var maxCapacity: Int = 100) : ILocalEvictingCac
 
     }
 
-    override fun fetch(kvPair: KeyVersionPair): String? {
+    override fun fetch(kvPair: KeyVersionPair): ByteArray? {
         print("CACHE: Attempting to fetch ${kvPair.key}\n")
         if (cache.containsKey(kvPair)) {
             print("CACHE: Found value ${cache[kvPair]}\n")
@@ -65,12 +65,12 @@ class LocalEvictingCache(private var maxCapacity: Int = 100) : ILocalEvictingCac
         return null
     }
 
-    override fun store(kvPair: KeyVersionPair, value: String): Boolean {
+    override fun store(kvPair: KeyVersionPair, value: ByteArray): Boolean {
         print("CACHE: Attempting to store (${kvPair.key}, $value)\n")
 
         val prevVal = cache[kvPair]?.value
-        val prevKvByteSize = if(prevVal == null) 0 else (prevVal.length + kvPair.key.length + 4)
-        kvByteSize += (value.length + kvPair.key.length + 4) - prevKvByteSize
+        val prevKvByteSize = if(prevVal == null) 0 else (prevVal.size + kvPair.key.length + 4)
+        kvByteSize += (value.size + kvPair.key.length + 4) - prevKvByteSize
 
         val node = LRUNode(kvPair, value)
         if (cache.containsKey(kvPair)) {
@@ -119,7 +119,7 @@ class LocalEvictingCache(private var maxCapacity: Int = 100) : ILocalEvictingCac
             node.next?.prev = node.prev;
             cache.remove(node.kvPair)
 
-            return node.value.length + node.kvPair.key.length + 4
+            return node.value.size + node.kvPair.key.length + 4
         }
         return 0
     }
@@ -169,13 +169,13 @@ class LocalEvictingCache(private var maxCapacity: Int = 100) : ILocalEvictingCac
     }
 
 
-    class LRUNode(kvPair : KeyVersionPair=KeyVersionPair("", -1), value : String="") {
+    class LRUNode(kvPair : KeyVersionPair=KeyVersionPair("", -1), value : ByteArray=ByteArray(0)) {
 
         /* The key of the node - key of the key-value pair */
         val kvPair : KeyVersionPair = kvPair
 
         /* The payload of the node - value of the key-value pair */
-        val value : String = value
+        val value : ByteArray = value
 
         /* The next oldest node */
         var next : LRUNode? = null
