@@ -42,13 +42,13 @@ function DisplayNodeCharts(props) {
       console.log("fetching node info")
       axios.all(props.links.map(link => axios.get('http://' + link + '/v1/node-info')))
       .then(axios.spread(function(...res) {
-        // console.log(res)
+        console.log(res)
         setNodeInfos(res.map(res => res.data));
       }))
       .catch((error) => {
         console.error(error);
       });
-    }, 2000);
+    }, 1000);
     return () => clearInterval(interval);
   }, []);
   
