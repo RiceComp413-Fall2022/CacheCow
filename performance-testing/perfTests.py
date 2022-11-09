@@ -16,6 +16,18 @@ class PerfTest:
     run core functions in parallel to speed up execution.
     """
 
+    def load_test(test_name):
+        """Loads test function from test name.
+        """
+        test_name_to_test = {
+            "store_and_fetch_test" : PerfTest.store_and_fetch_test,
+
+        }
+        if test_name in test_name_to_test:
+            return test_name_to_test[test_name]
+        else:
+            return PerfTest.store_and_fetch_test # Default
+
     # The following provide core test functions.
     def store_key_test(data):
         node_url, key, version, value = data.unpack()
@@ -67,3 +79,22 @@ class PerfTest:
 
     def memory_overflow_test(url, perfTestFunc, max_capacity):
         raise Exception("Unimplemened.")
+
+    def sorting_test(url, perfTestFunc):
+        raise Exception("Unimplemened.")
+
+        # Generate standardized data
+
+        # Start time
+        start_time = time.perf_counter()
+
+        # Sort
+        sorted_list = []
+
+        # End time
+        end_time = time.perf_counter() - start_time
+
+        # Validate sorting
+        assert sorted_list == sorted(sorted_list)
+
+        return end_time

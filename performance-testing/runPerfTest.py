@@ -13,6 +13,7 @@ import requests
 import seaborn as sns
 from statistics import mean
 
+from floydWarshall import *
 from perfTests import *
 
 # Types of perfTestFunc: serial or parallel
@@ -38,7 +39,7 @@ def runPerfTest(options):
     # Initialize timing for multiple trials
     timing_data = {}
     if options.time_backend:
-        timing_data["Request Times"] = []
+        timing_data["Backend Times"] = []
     if options.time_client:
         timing_data["Client Times"] = []
     if options.time_script:
@@ -56,7 +57,7 @@ def runPerfTest(options):
         perfTestFunc = serialPerfTest
         if options.parallel:
             perfTestFunc = parallelPerfTest
-        client_time = PerfTest.store_and_fetch_test(options.url, perfTestFunc=perfTestFunc)
+        client_time = options.test(options.url, perfTestFunc=perfTestFunc)
 
         # Print Performance Time Metrics
         if options.time_backend:
@@ -64,7 +65,7 @@ def runPerfTest(options):
             store_timing = store_end_timing - store_start_timing
             fetch_timing = fetch_end_timing - fetch_start_timing
             total_request_time = store_timing + fetch_timing
-            timing_data["Request Times"].append(total_request_time)
+            timing_data["Backend Times"].append(total_request_time)
         if options.time_client:
             timing_data["Client Times"].append(client_time)
         if options.time_script:
@@ -74,18 +75,23 @@ def runPerfTest(options):
 
     # Print average timing
     if options.time_backend:
-        print("Average Backend Timing: ", mean(timing_data["Request Times"]))
+        print("Average Backend Timing: ", mean(timing_data["Backend Times"]))
     if options.time_client:
         print("Average Client Timing: ", mean(timing_data["Client Times"]))
     if options.time_script:
         print("Average Performance Script Timing: ", mean(timing_data["Script Times"]))
+
+    timing_df["HTTP Times"] = timing_df["Client Times"] - timing_df["Backend Times"]
 
     # Graph
     if options.graph:
         sns.lineplot(data=timing_df, markers=True)
         plt.xlabel("Trials")
         plt.ylabel("Time (in seconds)")
-        plt.title("Timing per Trial")
+        if options.parallel:
+            plt.title("Timing per Trial (in Parallel)")
+        else:
+            plt.title("Timing per Trial (in Serial)")
         # ax.xaxis.get_major_locator().set_params(integer=True)
         plt.show()
 
@@ -97,6 +103,11 @@ if __name__ == "__main__":
                 type="string",
                 dest="url",
                 help="Node URL for sending HTTP requests.")
+    parser.add_option("--test",
+                type="string",
+                default="store_and_fetch_test",
+                dest="test_name",
+                help="Performance test to run. Default is 'store_and_fetch_test'.")
     parser.add_option("-b", "--time_backend",
                 action = "store_true",
                 default=False,
@@ -141,5 +152,7 @@ if __name__ == "__main__":
         raise Exception("URL Argument is necessary for performance testing.")
     if not options.time_backend and not options.time_script:
         options.time_client = True
+    print("Performing Test: ", options.test_name)
+    options.test = PerfTest.load_test(options.test_name)
 
     runPerfTest(options)
