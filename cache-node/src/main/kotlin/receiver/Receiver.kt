@@ -11,6 +11,7 @@ import io.javalin.validation.ValidationError
 import io.javalin.validation.ValidationException
 import node.Node
 import org.eclipse.jetty.http.HttpStatus
+import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * A concrete receiver that accepts requests over HTTP.
@@ -30,7 +31,8 @@ class Receiver(private val port: Int, private val nodeCount: Int, private val no
      * count the number of requests that are received
      */
     private var receiverUsageInfo: ReceiverUsageInfo =
-        ReceiverUsageInfo(0, 0, 0, 0,  0)
+        ReceiverUsageInfo(AtomicInteger(0), AtomicInteger(0), AtomicInteger(0),
+            AtomicInteger(0),  AtomicInteger(0))
 
 
     init {
@@ -41,7 +43,7 @@ class Receiver(private val port: Int, private val nodeCount: Int, private val no
         /* Handle fetch requests */
         app.get("/v1/blobs/{key}/{version}") { ctx ->
             print("\n*********FETCH REQUEST*********\n")
-            receiverUsageInfo.fetchAttempts++
+            receiverUsageInfo.fetchAttempts.addAndGet(1)
 
             val key = ctx.pathParam("key")
             val version = ctx.pathParamAsClass("version", Int::class.java)
@@ -53,7 +55,7 @@ class Receiver(private val port: Int, private val nodeCount: Int, private val no
                     .get()
 
             val value = distributedCache.fetch(KeyVersionPair(key, version), senderNum)
-            receiverUsageInfo.fetchSuccesses++
+            receiverUsageInfo.fetchSuccesses.addAndGet(1)
 
             ctx.result(value).status(HttpStatus.OK_200)
         }
@@ -61,7 +63,7 @@ class Receiver(private val port: Int, private val nodeCount: Int, private val no
         /* Handle store requests */
         app.post("/v1/blobs/{key}/{version}") { ctx ->
             print("\n*********STORE REQUEST*********\n")
-            receiverUsageInfo.storeAttempts++
+            receiverUsageInfo.storeAttempts.addAndGet(1)
 
             val key = ctx.pathParam("key")
             val version = ctx.pathParamAsClass("version", Int::class.java)
@@ -77,7 +79,7 @@ class Receiver(private val port: Int, private val nodeCount: Int, private val no
                 throw ValidationException(mapOf("REQUEST_BODY" to listOf(ValidationError("Binary blob cannot be empty"))))
             }
             distributedCache.store(KeyVersionPair(key, version), value, senderNum)
-            receiverUsageInfo.storeSuccesses++
+            receiverUsageInfo.storeSuccesses.addAndGet(1)
 
             ctx.json(KeyVersionReply(key, version)).status(HttpStatus.CREATED_201)
         }
@@ -104,7 +106,7 @@ class Receiver(private val port: Int, private val nodeCount: Int, private val no
         /* Handle invalid requests */
         app.error(HttpStatus.NOT_FOUND_404) { ctx ->
             if (ctx.result() == "Not found") {
-                receiverUsageInfo.invalidRequests++
+                receiverUsageInfo.invalidRequests.addAndGet(1)
                 ctx.result(
               """
                 Invalid Request.

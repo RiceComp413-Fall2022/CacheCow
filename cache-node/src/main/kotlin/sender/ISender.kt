@@ -2,6 +2,7 @@ package sender
 
 import KeyVersionPair
 import NodeId
+import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * An interface specifying the behavior of a sender, which sends requests to other nodes
@@ -39,7 +40,7 @@ interface ISender {
 /**
  * Information about what the sender has done so far
  */
-data class SenderUsageInfo(var storeAttempts: Int,
-                           var storeSuccesses: Int,
-                           var fetchAttempts: Int,
-                           var fetchSuccesses: Int)
+data class SenderUsageInfo(var storeAttempts: AtomicInteger,
+                           var storeSuccesses: AtomicInteger,
+                           var fetchAttempts: AtomicInteger,
+                           var fetchSuccesses: AtomicInteger)

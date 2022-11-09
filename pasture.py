@@ -61,7 +61,7 @@ for instance in instances:
 node_dns_str = "\n".join(x + f":{port}" for x in node_dns)
 node_dns_f = io.StringIO(node_dns_str)
 
-node_dns_real_f = os.path.dirname(__file__) + '/nodes.txt'
+node_dns_real_f = os.path.dirname(__file__) + 'monitor-node/src/nodes.txt'
 
 with open(node_dns_real_f, 'w') as nodeList:
     nodeList.write(node_dns_str)

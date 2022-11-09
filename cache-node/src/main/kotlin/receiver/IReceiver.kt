@@ -1,6 +1,7 @@
 package receiver
 
 import io.javalin.Javalin
+import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * An interface specifying the behavior of a receiver, which receives request from other
@@ -24,8 +25,8 @@ interface IReceiver {
 /**
  * Information about what the receiver has done so far
  */
-data class ReceiverUsageInfo(var storeAttempts: Int,
-                             var storeSuccesses: Int,
-                             var fetchAttempts: Int,
-                             var fetchSuccesses: Int,
-                             var invalidRequests: Int)
+data class ReceiverUsageInfo(var storeAttempts: AtomicInteger,
+                             var storeSuccesses: AtomicInteger,
+                             var fetchAttempts: AtomicInteger,
+                             var fetchSuccesses: AtomicInteger,
+                             var invalidRequests: AtomicInteger)
