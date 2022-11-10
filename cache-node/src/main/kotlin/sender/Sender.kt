@@ -13,6 +13,7 @@ import java.net.URLEncoder
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
+import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * A concrete sender that sends HTTP requests.
@@ -24,11 +25,14 @@ class Sender(private val nodeId: NodeId, private val nodeList: List<String>) : I
      */
     private val mapper: ObjectMapper = ObjectMapper()
 
-    private var senderUsageInfo: SenderUsageInfo = SenderUsageInfo(0, 0, 0, 0)
+    private var senderUsageInfo: SenderUsageInfo = SenderUsageInfo(
+        AtomicInteger(0), AtomicInteger(0), AtomicInteger(0),
+        AtomicInteger(0), AtomicInteger(0), AtomicInteger(0),
+        AtomicInteger(0), AtomicInteger(0))
 
     override fun fetchFromNode(kvPair: KeyVersionPair, destNodeId: NodeId): ByteArray {
         print("SENDER: Delegating fetch key ${kvPair.key} to node $destNodeId\n")
-        senderUsageInfo.fetchAttempts++
+        senderUsageInfo.fetchAttempts.getAndIncrement()
 
         val client = HttpClient.newBuilder().build()
         val key = URLEncoder.encode(kvPair.key, "UTF-8")
@@ -56,13 +60,13 @@ class Sender(private val nodeId: NodeId, private val nodeList: List<String>) : I
             throw InternalErrorException()
         }
 
-        senderUsageInfo.fetchSuccesses++
+        senderUsageInfo.fetchSuccesses.getAndIncrement()
         return mapper.readTree(response.body()).binaryValue()
     }
 
     override fun storeToNode(kvPair: KeyVersionPair, value: ByteArray, destNodeId: NodeId) {
         print("SENDER: Delegating store key ${kvPair.key} to node $destNodeId\n")
-        senderUsageInfo.storeAttempts++
+        senderUsageInfo.storeAttempts.getAndIncrement()
 
         val client = HttpClient.newBuilder().build()
         val key = URLEncoder.encode(kvPair.key, "UTF-8")
@@ -90,7 +94,69 @@ class Sender(private val nodeId: NodeId, private val nodeList: List<String>) : I
         if (response.statusCode() in 400..599) {
             throw InternalErrorException()
         }
-        senderUsageInfo.storeSuccesses++
+        senderUsageInfo.storeSuccesses.getAndIncrement()
+    }
+
+    override fun removeFromNode(kvPair: KeyVersionPair, destNodeId: NodeId): ByteArray? {
+        print("SENDER: Delegating remove key ${kvPair.key} to node $destNodeId\n")
+        senderUsageInfo.removeAttempts.getAndIncrement()
+
+        val client = HttpClient.newBuilder().build()
+        val key = URLEncoder.encode(kvPair.key, "UTF-8")
+        val destUrl = URI.create("http://${nodeList[destNodeId]}/v1/blobs/${key}/${kvPair.version}?senderId=${nodeId}")
+        val request = HttpRequest.newBuilder()
+            .uri(destUrl)
+            .DELETE()
+            .build()
+
+        print("SENDER: Sending remove request to $destUrl\n")
+
+        val response: HttpResponse<String>
+        try {
+            response = client.send(request, HttpResponse.BodyHandlers.ofString())
+        } catch (e: ConnectException) {
+            print("SENDER: Caught connection refused exception\n")
+            throw ConnectionRefusedException()
+        }
+
+        print("SENDER: Got remove response with status code ${response.statusCode()}\n")
+
+        if (response.statusCode() != 204 && response.statusCode() != 404) {
+            throw InternalErrorException()
+        }
+
+        senderUsageInfo.removeSuccesses.getAndIncrement()
+        return mapper.readTree(response.body()).binaryValue()
+    }
+
+    override fun clearNode(destNodeId: NodeId) {
+        print("SENDER: Clearing node $destNodeId\n")
+        senderUsageInfo.clearAttempts.getAndIncrement()
+
+        val client = HttpClient.newBuilder().build()
+        val destUrl = URI.create("http://${nodeList[destNodeId]}/v1/clear?senderId=${nodeId}")
+        val request = HttpRequest.newBuilder()
+            .uri(destUrl)
+            .DELETE()
+            .build()
+
+        print("SENDER: Sending clear request to $destUrl\n")
+
+        val response: HttpResponse<String>
+        try {
+            response = client.send(request, HttpResponse.BodyHandlers.ofString())
+        } catch (e: ConnectException) {
+            print("SENDER: Caught connection refused exception\n")
+            throw ConnectionRefusedException()
+        }
+
+        print("SENDER: Got clear response with status code ${response.statusCode()}")
+
+        if (response.statusCode() != 204) {
+            throw InternalErrorException()
+        }
+
+        senderUsageInfo.clearSuccesses.getAndIncrement()
     }
 
     override fun getSenderUsageInfo(): SenderUsageInfo {

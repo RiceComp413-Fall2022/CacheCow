@@ -6,6 +6,7 @@ import sender.ISender
 import cache.distributed.DistributedCache
 import cache.local.CacheInfo
 import cache.local.LocalCache
+import cache.local.MultiTableCache
 import receiver.Receiver
 import receiver.ReceiverUsageInfo
 import receiver.TotalRequestTiming
@@ -17,7 +18,7 @@ import sender.SenderUsageInfo
  * distributed cache.
  */
 
-open class Node(private val nodeId: NodeId, nodeList: List<String>, port: Int, capacity: Int) {
+open class Node(private val nodeId: NodeId, nodeList: List<String>, port: Int) {
     /**
      * The local cache
      */
@@ -39,11 +40,11 @@ open class Node(private val nodeId: NodeId, nodeList: List<String>, port: Int, c
     val receiver: Receiver
 
     init {
-        print("Initializing node $nodeId on port $port with cache capacity $capacity\n")
-        localCache = LocalCache(capacity)
+        print("Initializing node $nodeId on port $port")
+        localCache = LocalCache()
         sender = Sender(nodeId, nodeList)
         distributedCache = DistributedCache(nodeId, nodeList.size, localCache, sender)
-        receiver = Receiver(port, nodeList.size, this, distributedCache)
+        receiver = Receiver(port, nodeList.size, this, distributedCache, localCache)
     }
 
     /**
@@ -66,8 +67,9 @@ open class Node(private val nodeId: NodeId, nodeList: List<String>, port: Int, c
                         MemoryUsageInfo(allocatedMemory, maxMemory, usage),
                         localCache.getCacheInfo(),
                         receiver.getReceiverUsageInfo(),
-                        receiver.getTotalRequestTiming(),
-                        sender.getSenderUsageInfo())
+                        sender.getSenderUsageInfo(),
+                        receiver.getClientRequestTiming(),
+                        receiver.getServerRequestTiming())
     }
 
 }
@@ -84,5 +86,6 @@ data class NodeInfo(val nodeId: Int,
                     val memUsage: MemoryUsageInfo,
                     val cacheInfo: CacheInfo,
                     val receiverUsageInfo: ReceiverUsageInfo,
-                    val totalRequestTiming: TotalRequestTiming,
-                    val senderUsageInfo: SenderUsageInfo)
+                    val senderUsageInfo: SenderUsageInfo,
+                    val clientRequestTiming: TotalRequestTiming,
+                    val serverRequestTiming: TotalRequestTiming)
