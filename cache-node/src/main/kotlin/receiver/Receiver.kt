@@ -12,6 +12,8 @@ import io.javalin.validation.ValidationError
 import io.javalin.validation.ValidationException
 import node.Node
 import org.eclipse.jetty.http.HttpStatus
+import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicReference
 import kotlin.system.*
 
 /**
@@ -33,20 +35,23 @@ class Receiver(private val port: Int, private val nodeCount: Int, private val no
      * Counts the number of requests that are received
      */
     private var receiverUsageInfo: ReceiverUsageInfo = ReceiverUsageInfo(
-        0, 0, 0, 0,
-        0, 0, 0, 0, 0)
+        AtomicInteger(0), AtomicInteger(0), AtomicInteger(0),
+        AtomicInteger(0), AtomicInteger(0), AtomicInteger(0),
+        AtomicInteger(0), AtomicInteger(0), AtomicInteger(0))
 
     /**
      * Time spent (in seconds) to perform client requests.
      */
     private var clientRequestTiming: TotalRequestTiming = TotalRequestTiming(
-        0.0, 0.0, 0.0, 0.0)
+        AtomicReference<Double>(0.0), AtomicReference<Double>(0.0),
+        AtomicReference<Double>(0.0), AtomicReference<Double>(0.0))
 
     /**
      * Time spent (in seconds) to perform server requests.
      */
     private var serverRequestTiming: TotalRequestTiming = TotalRequestTiming(
-        0.0, 0.0, 0.0, 0.0)
+        AtomicReference<Double>(0.0), AtomicReference<Double>(0.0),
+        AtomicReference<Double>(0.0), AtomicReference<Double>(0.0))
 
     init {
 
@@ -60,7 +65,7 @@ class Receiver(private val port: Int, private val nodeCount: Int, private val no
         /* Handle fetch requests */
         app.get("/v1/blobs/{key}/{version}") { ctx ->
             print("\n*********FETCH REQUEST*********\n")
-            receiverUsageInfo.fetchAttempts++
+            receiverUsageInfo.fetchAttempts.getAndIncrement()
 
             // Handle Request
             var isClientRequest = false
@@ -89,18 +94,18 @@ class Receiver(private val port: Int, private val nodeCount: Int, private val no
             }
 
             // Increment node statistics
-            receiverUsageInfo.fetchSuccesses++
+            receiverUsageInfo.fetchSuccesses.getAndIncrement()
             if (isClientRequest) {
-                clientRequestTiming.fetchTiming += requestTime
+                clientRequestTiming.fetchTiming.accumulateAndGet(requestTime) { a: Double, b: Double -> a + b }
             } else {
-                serverRequestTiming.fetchTiming += requestTime
+                serverRequestTiming.fetchTiming.accumulateAndGet(requestTime) { a: Double, b: Double -> a + b }
             }
         }
 
         /* Handle Store Requests */
         app.post("/v1/blobs/{key}/{version}") { ctx ->
             print("\n*********STORE REQUEST*********\n")
-            receiverUsageInfo.storeAttempts++
+            receiverUsageInfo.storeAttempts.getAndIncrement()
 
             // Handle Request
             var isClientRequest = false
@@ -129,18 +134,18 @@ class Receiver(private val port: Int, private val nodeCount: Int, private val no
             }
 
             // Increment node statistics
-            receiverUsageInfo.storeSuccesses++
+            receiverUsageInfo.storeSuccesses.getAndIncrement()
             if (isClientRequest) {
-                clientRequestTiming.storeTiming += requestTime
+                clientRequestTiming.storeTiming.accumulateAndGet(requestTime) { a: Double, b: Double -> a + b }
             } else {
-                serverRequestTiming.storeTiming += requestTime
+                serverRequestTiming.storeTiming.accumulateAndGet(requestTime) { a: Double, b: Double -> a + b }
             }
         }
 
         /* Handle Remove Requests */
         app.delete("/v1/blobs/{key}/{version}") { ctx ->
             print("\n*********REMOVE REQUEST*********\n")
-            receiverUsageInfo.removeAttempts++
+            receiverUsageInfo.removeAttempts.getAndIncrement()
 
             // Handle Request
             var isClientRequest = false
@@ -174,18 +179,18 @@ class Receiver(private val port: Int, private val nodeCount: Int, private val no
             }
 
             // Increment node statistics
-            receiverUsageInfo.removeSuccesses++
+            receiverUsageInfo.removeSuccesses.getAndIncrement()
             if (isClientRequest) {
-                clientRequestTiming.removeTiming += requestTime
+                clientRequestTiming.removeTiming.accumulateAndGet(requestTime) { a: Double, b: Double -> a + b }
             } else {
-                serverRequestTiming.removeTiming += requestTime
+                serverRequestTiming.removeTiming.accumulateAndGet(requestTime) { a: Double, b: Double -> a + b }
             }
         }
 
         /* Handle Clear Requests */
         app.delete("/v1/clear") { ctx ->
             print("\n*********CLEAR REQUEST*********\n")
-            receiverUsageInfo.clearAttempts++
+            receiverUsageInfo.clearAttempts.getAndIncrement()
 
             // Handle Request
             var isClientRequest = false
@@ -210,11 +215,11 @@ class Receiver(private val port: Int, private val nodeCount: Int, private val no
             }
 
             // Increment node statistics
-            receiverUsageInfo.clearSuccesses++
+            receiverUsageInfo.clearSuccesses.getAndIncrement()
             if (isClientRequest) {
-                clientRequestTiming.clearTiming += requestTime
+                clientRequestTiming.clearTiming.accumulateAndGet(requestTime) { a: Double, b: Double -> a + b }
             } else {
-                serverRequestTiming.clearTiming += requestTime
+                serverRequestTiming.clearTiming.accumulateAndGet(requestTime) { a: Double, b: Double -> a + b }
             }
         }
 
@@ -244,7 +249,7 @@ class Receiver(private val port: Int, private val nodeCount: Int, private val no
         /* Handle invalid requests */
         app.error(HttpStatus.NOT_FOUND_404) { ctx ->
             if (ctx.result() == "Not found") {
-                receiverUsageInfo.invalidRequests++
+                receiverUsageInfo.invalidRequests.getAndIncrement()
                 ctx.result(
               """
                 Invalid Request.
