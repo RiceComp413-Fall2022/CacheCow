@@ -2,6 +2,7 @@ package receiver
 
 import KeyVersionPair
 import cache.distributed.IDistributedCache
+import cache.local.ILocalCache
 import exception.CacheNodeException
 import io.javalin.Javalin
 import io.javalin.config.JavalinConfig
@@ -12,12 +13,12 @@ import io.javalin.validation.ValidationException
 import node.Node
 import org.eclipse.jetty.http.HttpStatus
 import kotlin.system.*
-import java.util.concurrent.TimeUnit
 
 /**
  * A concrete receiver that accepts requests over HTTP.
  */
-class Receiver(private val port: Int, private val nodeCount: Int, private val node: Node, private val distributedCache: IDistributedCache) : IReceiver {
+class Receiver(private val port: Int, private val nodeCount: Int, private val node: Node,
+               private val distributedCache: IDistributedCache, private val localCache : ILocalCache) : IReceiver {
 
     /**
      * The Javalin server used to route HTTP requests to handlers
@@ -31,24 +32,39 @@ class Receiver(private val port: Int, private val nodeCount: Int, private val no
     /**
      * Counts the number of requests that are received
      */
-    private var receiverUsageInfo: ReceiverUsageInfo = ReceiverUsageInfo(0, 0, 0, 0,  0)
+    private var receiverUsageInfo: ReceiverUsageInfo = ReceiverUsageInfo(
+        0, 0, 0, 0,  0, 0, 0, 0, 0)
 
     /**
-     * Time spent (in seconds) to perform store and fetch requests.
+     * Time spent (in seconds) to perform client requests.
      */
-    private var totalRequestTiming: TotalRequestTiming = TotalRequestTiming(0.0, 0.0)
+    private var clientRequestTiming: TotalRequestTiming = TotalRequestTiming(
+        0.0, 0.0, 0.0, 0.0)
+
+    /**
+     * Time spent (in seconds) to perform server requests.
+     */
+    private var serverRequestTiming: TotalRequestTiming = TotalRequestTiming(
+        0.0, 0.0, 0.0, 0.0)
 
     init {
+
+        /** ENDPOINTS **/
+
+        /* Handle Testing: Hello Word */
         app.get("/v1/hello-world") { ctx ->
             ctx.result("Hello, World!").status(HttpStatus.OK_200)
         }
 
         /* Handle fetch requests */
         app.get("/v1/blobs/{key}/{version}") { ctx ->
-            totalRequestTiming.fetchTiming += 1/1000.0 * measureTimeMillis {
-                print("\n*********FETCH REQUEST*********\n")
-                receiverUsageInfo.fetchAttempts++
+            print("\n*********FETCH REQUEST*********\n")
+            receiverUsageInfo.fetchAttempts++
 
+            // Handle Request
+            var isClientRequest = false
+            val requestTime = 1/1000.0 * measureTimeMillis {
+                // Parse Path
                 val key = ctx.pathParam("key")
                 val version = ctx.pathParamAsClass("version", Int::class.java)
                     .check({ it >= 0 }, "Version number cannot be negative")
@@ -60,21 +76,34 @@ class Receiver(private val port: Int, private val nodeCount: Int, private val no
                             "Sender id must be in range (0, ${nodeCount - 1})"
                         )
                         .get()
+                isClientRequest = senderNum == null
 
-                val value =
+                // Fetch Data
+                val value = if (isClientRequest) {
+                    localCache.fetch(KeyVersionPair(key, version))
+                } else {
                     distributedCache.fetch(KeyVersionPair(key, version), senderNum)
-                receiverUsageInfo.fetchSuccesses++
-
+                }
                 ctx.result(value).status(HttpStatus.OK_200)
+            }
+
+            // Increment node statistics
+            receiverUsageInfo.fetchSuccesses++
+            if (isClientRequest) {
+                clientRequestTiming.fetchTiming += requestTime
+            } else {
+                serverRequestTiming.fetchTiming += requestTime
             }
         }
 
-        /* Handle store requests */
+        /* Handle Store Requests */
         app.post("/v1/blobs/{key}/{version}") { ctx ->
-            totalRequestTiming.storeTiming += 1/1000.0 * measureTimeMillis {
-                print("\n*********STORE REQUEST*********\n")
-                receiverUsageInfo.storeAttempts++
+            print("\n*********STORE REQUEST*********\n")
+            receiverUsageInfo.storeAttempts++
 
+            // Handle Request
+            var isClientRequest = false
+            val requestTime = 1/1000.0 * measureTimeMillis {
                 val key = ctx.pathParam("key")
                 val version = ctx.pathParamAsClass("version", Int::class.java)
                     .check({ it >= 0}, "Version number cannot be negative")
@@ -83,23 +112,120 @@ class Receiver(private val port: Int, private val nodeCount: Int, private val no
                     ctx.queryParamAsClass("senderId", Int::class.java)
                         .check({ it in 0 until nodeCount }, "Sender id must be in range (0, ${nodeCount - 1})")
                         .get()
+                isClientRequest = senderNum == null
 
+                // Store Data
                 val value = ctx.bodyAsBytes()
                 if (value.isEmpty()) {
                     throw ValidationException(mapOf("REQUEST_BODY" to listOf(ValidationError("Binary blob cannot be empty"))))
                 }
-                distributedCache.store(KeyVersionPair(key, version), value, senderNum)
-                receiverUsageInfo.storeSuccesses++
-
+                if (isClientRequest) {
+                    localCache.store(KeyVersionPair(key, version), value)
+                } else {
+                    distributedCache.store(KeyVersionPair(key, version), value, senderNum)
+                }
                 ctx.json(KeyVersionReply(key, version)).status(HttpStatus.CREATED_201)
+            }
+
+            // Increment node statistics
+            receiverUsageInfo.storeSuccesses++
+            if (isClientRequest) {
+                clientRequestTiming.storeTiming += requestTime
+            } else {
+                serverRequestTiming.storeTiming += requestTime
             }
         }
 
-        /* Handle requests to monitor information about the node of this receiver */
+        /* Handle Remove Requests */
+        app.delete("/v1/blobs/{key}/{version}") { ctx ->
+            print("\n*********REMOVE REQUEST*********\n")
+            receiverUsageInfo.removeAttempts++
+
+            // Handle Request
+            var isClientRequest = false
+            val requestTime = 1/1000.0 * measureTimeMillis {
+                // Parse Path
+                val key = ctx.pathParam("key")
+                val version = ctx.pathParamAsClass("version", Int::class.java)
+                    .check({ it >= 0 }, "Version number cannot be negative")
+                    .get()
+                val senderNum = if (ctx.queryParam("senderId") == null) null else
+                    ctx.queryParamAsClass("senderId", Int::class.java)
+                        .check(
+                            { it in 0 until nodeCount },
+                            "Sender id must be in range (0, ${nodeCount - 1})"
+                        )
+                        .get()
+                isClientRequest = senderNum == null
+
+                // Remove Data
+                val value = if (isClientRequest) {
+                    localCache.remove(KeyVersionPair(key, version))
+                } else {
+                    distributedCache.remove(KeyVersionPair(key, version), senderNum)
+                }
+
+                if (value != null) {
+                    ctx.status(HttpStatus.NO_CONTENT_204)
+                } else {
+                    ctx.status(HttpStatus.NOT_FOUND_404)
+                }
+            }
+
+            // Increment node statistics
+            receiverUsageInfo.removeSuccesses++
+            if (isClientRequest) {
+                clientRequestTiming.removeTiming += requestTime
+            } else {
+                serverRequestTiming.removeTiming += requestTime
+            }
+        }
+
+        /* Handle Clear Requests */
+        app.delete("/v1/clear") { ctx ->
+            print("\n*********CLEAR REQUEST*********\n")
+            receiverUsageInfo.clearAttempts++
+
+            // Handle Request
+            var isClientRequest = false
+            val requestTime = 1/1000.0 * measureTimeMillis {
+                // Parse Path
+                val senderNum = if (ctx.queryParam("senderId") == null) null else
+                    ctx.queryParamAsClass("senderId", Int::class.java)
+                        .check(
+                            { it in 0 until nodeCount },
+                            "Sender id must be in range (0, ${nodeCount - 1})"
+                        )
+                        .get()
+                isClientRequest = senderNum == null
+
+                // Clear Cache
+                if (isClientRequest) {
+                    distributedCache.clearAll()
+                } else {
+                    localCache.clear()
+                }
+                ctx.status(HttpStatus.NO_CONTENT_204)
+            }
+
+            // Increment node statistics
+            receiverUsageInfo.clearSuccesses++
+            if (isClientRequest) {
+                clientRequestTiming.clearTiming += requestTime
+            } else {
+                serverRequestTiming.clearTiming += requestTime
+            }
+        }
+
+        /* Handle Node Information */
         app.get("/v1/node-info") { ctx ->
             print("\n*********NODE INFO REQUEST*********\n")
             ctx.json(node.getNodeInfo()).status(HttpStatus.OK_200)
         }
+
+
+
+        /** ERROR HANDLING **/
 
         app.exception(CacheNodeException::class.java) { e, ctx ->
             print("RECEIVER: Caught cache node exception with id ${e.getExceptionID()}\n")
@@ -141,12 +267,11 @@ class Receiver(private val port: Int, private val nodeCount: Int, private val no
         return receiverUsageInfo
     }
 
-    override fun getTotalRequestTiming(): TotalRequestTiming {
-        return totalRequestTiming
+    override fun getClientRequestTiming(): TotalRequestTiming {
+        return clientRequestTiming
+    }
+
+    override fun getServerRequestTiming(): TotalRequestTiming {
+        return serverRequestTiming
     }
 }
-
-/**
- * Represents a key-version tuple in a HTTP response.
- */
-data class KeyVersionReply(val key: String, val version: Int)

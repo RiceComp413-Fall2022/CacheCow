@@ -13,16 +13,28 @@ interface ILocalCache {
      * @param kvPair The key-version pair to look up
      * @return The value, or null if the lookup fails
      */
-    fun fetch(kvPair: KeyVersionPair) : ByteArray?
+    fun fetch(kvPair: KeyVersionPair) : ByteArray
 
     /**
      * Store a value to the local cache.
      *
      * @param kvPair The key-version pair to store
      * @param value The value to store
-     * @return True if the store succeeded, and false otherwise
      */
-    fun store(kvPair: KeyVersionPair, value: ByteArray): Boolean
+    fun store(kvPair: KeyVersionPair, value: ByteArray)
+
+    /**
+     * Removes a specified element from the cache.
+     * @param kvPair The key-version pair to look up
+     * @return the previous value associated with the key-version pair, or null if there
+     * was no mapping for the key-version pair.
+     */
+    fun remove(kvPair: KeyVersionPair) : ByteArray?
+
+    /**
+     * Clears all elements from the cache.
+     */
+    fun clear()
 
     /**
      * Check whether the local cache is full.
@@ -31,6 +43,9 @@ interface ILocalCache {
      */
     fun isFull(): Boolean
 
+    /**
+     * @return Cache metrics and performance statistics.
+     */
     fun getCacheInfo() : CacheInfo
 
 }

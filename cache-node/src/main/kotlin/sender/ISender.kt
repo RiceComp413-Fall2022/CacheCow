@@ -29,6 +29,21 @@ interface ISender {
     fun storeToNode(kvPair: KeyVersionPair, value: ByteArray, destNodeId: NodeId)
 
     /**
+     * Removes a specified element from the node's local cache.
+     * @param kvPair The key-version pair to look up
+     * @param destNodeId The node to which the value should be stored
+     * @return the previous value associated with the key-version pair, or null if there
+     * was no mapping for the key-version pair.
+     */
+    fun removeFromNode(kvPair: KeyVersionPair, destNodeId: NodeId) : ByteArray?
+
+    /**
+     * Clears all elements from the node's local cache.
+     * @param destNodeId The node to which the value should be stored
+     */
+    fun clearNode(destNodeId: NodeId)
+
+    /**
      * Gets the sender usage info
      * @return SenderUsageInfo data type of the info
      */
@@ -39,7 +54,7 @@ interface ISender {
 /**
  * Information about what the sender has done so far
  */
-data class SenderUsageInfo(var storeAttempts: Int,
-                           var storeSuccesses: Int,
-                           var fetchAttempts: Int,
-                           var fetchSuccesses: Int)
+data class SenderUsageInfo(var storeAttempts: Int, var storeSuccesses: Int,
+                           var fetchAttempts: Int, var fetchSuccesses: Int,
+                           var removeAttempts: Int, var removeSuccesses: Int,
+                           var clearAttempts: Int, var clearSuccesses: Int)

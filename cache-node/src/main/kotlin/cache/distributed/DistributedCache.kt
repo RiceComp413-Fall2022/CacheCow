@@ -5,15 +5,12 @@ import cache.distributed.hasher.NodeHasher
 import NodeId
 import cache.distributed.hasher.INodeHasher
 import cache.local.ILocalCache
-import cache.local.LocalCache
-import exception.KeyNotFoundException
 import sender.ISender
-import sender.Sender
 
 /**
  * A concrete distributed cache that assigns keys to nodes using a NodeHasher.
  */
-class DistributedCache(private val nodeId: NodeId, nodeCount: Int, private val cache: ILocalCache, var sender: ISender):
+class DistributedCache(private val nodeId: NodeId, private val nodeCount: Int, private val cache: ILocalCache, var sender: ISender):
     IDistributedCache {
 
     /**
@@ -26,18 +23,11 @@ class DistributedCache(private val nodeId: NodeId, nodeCount: Int, private val c
 
         print("DISTRIBUTED CACHE: Hash value of key ${kvPair.key} is ${primaryNodeId}\n")
 
-        val value: ByteArray? = if (nodeId == primaryNodeId) {
+        return if (nodeId == primaryNodeId) {
             cache.fetch(kvPair)
         } else {
-            sender.fetchFromNode(
-                kvPair,
-                primaryNodeId
-            )
+            sender.fetchFromNode(kvPair, primaryNodeId)
         }
-        if (value == null) {
-            throw KeyNotFoundException(kvPair.key)
-        }
-        return value
     }
 
     override fun store(kvPair: KeyVersionPair, value: ByteArray, senderId: NodeId?) {
@@ -48,11 +38,29 @@ class DistributedCache(private val nodeId: NodeId, nodeCount: Int, private val c
         if (nodeId == primaryNodeId) {
             cache.store(kvPair, value)
         } else {
-            sender.storeToNode(
-                kvPair,
-                value,
-                primaryNodeId
-            )
+            sender.storeToNode(kvPair, value, primaryNodeId)
+        }
+    }
+
+    override fun remove(kvPair: KeyVersionPair, senderId: NodeId?): ByteArray? {
+        val primaryNodeId = nodeHasher.primaryHash(kvPair)
+
+        print("DISTRIBUTED CACHE: Hash value of key ${kvPair.key} is ${primaryNodeId}\n")
+
+        return if (nodeId == primaryNodeId) {
+            cache.remove(kvPair)
+        } else {
+            sender.removeFromNode(kvPair,primaryNodeId)
+        }
+    }
+
+    override fun clearAll() {
+        for (primaryNodeId in 0 until nodeCount ) {
+            if (primaryNodeId == nodeId) {
+                cache.clear()
+            } else {
+                sender.clearNode(primaryNodeId)
+            }
         }
     }
 }
