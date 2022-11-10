@@ -7,7 +7,6 @@ import os
 import requests # pip install requests
 import boto3 # pip install boto3[crt]
 from fabric import Connection # pip install fabric
-from paramiko.ssh_exception import NoValidConnectionsError
 
 # TODO: dynamically create VPC (with subnet, etc.), keypair, security group
 # TODO: automatic teardown
@@ -75,13 +74,16 @@ def connect_retry(host, user, key):
                 user=user,
                 connect_kwargs={
                     "key_filename": key,
+                    "timeout": 5,
+                    "banner_timeout": 5,
+                    "auth_timeout": 5
                 },
             )
             c.open()
             return c
-        except (NoValidConnectionsError, ConnectionResetError):
-            pass
-    time.sleep(5)
+        except Exception as e:
+            print(f"Exception while connecting to host {host}: {e}")
+            time.sleep(5)
 
 for i, node in enumerate(node_dns):
     c = connect_retry(node, "ec2-user", "CacheCow.pem")

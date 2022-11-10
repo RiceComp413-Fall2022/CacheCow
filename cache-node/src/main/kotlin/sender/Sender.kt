@@ -9,6 +9,7 @@ import exception.KeyNotFoundException
 import org.eclipse.jetty.http.HttpStatus
 import java.net.ConnectException
 import java.net.URI
+import java.net.URLEncoder
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
@@ -32,8 +33,8 @@ class Sender(private val nodeId: NodeId, private val nodeList: List<String>) : I
         senderUsageInfo.fetchAttempts.addAndGet(1)
 
         val client = HttpClient.newBuilder().build()
-
-        val destUrl = URI.create("http://${nodeList[destNodeId]}/v1/blobs/${kvPair.key}/${kvPair.version}?senderId=${nodeId}")
+        val key = URLEncoder.encode(kvPair.key, "UTF-8")
+        val destUrl = URI.create("http://${nodeList[destNodeId]}/v1/blobs/${key}/${kvPair.version}?senderId=${nodeId}")
         val request = HttpRequest.newBuilder()
             .uri(destUrl)
             .GET()
@@ -66,9 +67,9 @@ class Sender(private val nodeId: NodeId, private val nodeList: List<String>) : I
         senderUsageInfo.storeAttempts.addAndGet(1)
 
         val client = HttpClient.newBuilder().build()
-
+        val key = URLEncoder.encode(kvPair.key, "UTF-8")
         val destUrl =
-            URI.create("http://${nodeList[destNodeId]}/v1/blobs/${kvPair.key}/${kvPair.version}?senderId=${nodeId}")
+            URI.create("http://${nodeList[destNodeId]}/v1/blobs/${key}/${kvPair.version}?senderId=${nodeId}")
         val requestBody =
             mapper.writerWithDefaultPrettyPrinter().writeValueAsString(value)
         val request = HttpRequest.newBuilder()

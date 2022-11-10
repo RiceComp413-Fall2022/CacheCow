@@ -12,6 +12,8 @@ import io.javalin.validation.ValidationException
 import node.Node
 import org.eclipse.jetty.http.HttpStatus
 import java.util.concurrent.atomic.AtomicInteger
+import kotlin.system.*
+import java.util.concurrent.TimeUnit
 
 /**
  * A concrete receiver that accepts requests over HTTP.
@@ -28,12 +30,16 @@ class Receiver(private val port: Int, private val nodeCount: Int, private val no
     }
 
     /**
-     * count the number of requests that are received
+     * Counts the number of requests that are received
      */
     private var receiverUsageInfo: ReceiverUsageInfo =
         ReceiverUsageInfo(AtomicInteger(0), AtomicInteger(0), AtomicInteger(0),
             AtomicInteger(0),  AtomicInteger(0))
 
+    /**
+     * Time spent (in seconds) to perform store and fetch requests.
+     */
+    private var totalRequestTiming: TotalRequestTiming = TotalRequestTiming(0.0, 0.0)
 
     init {
         app.get("/v1/hello-world") { ctx ->
@@ -42,46 +48,53 @@ class Receiver(private val port: Int, private val nodeCount: Int, private val no
 
         /* Handle fetch requests */
         app.get("/v1/blobs/{key}/{version}") { ctx ->
-            print("\n*********FETCH REQUEST*********\n")
-            receiverUsageInfo.fetchAttempts.addAndGet(1)
+            totalRequestTiming.fetchTiming += 1/1000.0 * measureTimeMillis {
+                print("\n*********FETCH REQUEST*********\n")
+                receiverUsageInfo.fetchAttempts.addAndGet(1)
 
-            val key = ctx.pathParam("key")
-            val version = ctx.pathParamAsClass("version", Int::class.java)
-                .check({ it >= 0}, "Version number cannot be negative")
-                .get()
-            val senderNum = if (ctx.queryParam("senderId") == null) null else
-                ctx.queryParamAsClass("senderId", Int::class.java)
-                    .check({ it in 0 until nodeCount }, "Sender id must be in range (0, ${nodeCount - 1})")
+                val key = ctx.pathParam("key")
+                val version = ctx.pathParamAsClass("version", Int::class.java)
+                    .check({ it >= 0 }, "Version number cannot be negative")
                     .get()
+                val senderNum = if (ctx.queryParam("senderId") == null) null else
+                    ctx.queryParamAsClass("senderId", Int::class.java)
+                        .check(
+                            { it in 0 until nodeCount },
+                            "Sender id must be in range (0, ${nodeCount - 1})"
+                        )
+                        .get()
 
             val value = distributedCache.fetch(KeyVersionPair(key, version), senderNum)
             receiverUsageInfo.fetchSuccesses.addAndGet(1)
 
-            ctx.result(value).status(HttpStatus.OK_200)
+                ctx.result(value).status(HttpStatus.OK_200)
+            }
         }
 
         /* Handle store requests */
         app.post("/v1/blobs/{key}/{version}") { ctx ->
-            print("\n*********STORE REQUEST*********\n")
-            receiverUsageInfo.storeAttempts.addAndGet(1)
+            totalRequestTiming.storeTiming += 1/1000.0 * measureTimeMillis {
+                print("\n*********STORE REQUEST*********\n")
+                receiverUsageInfo.storeAttempts.addAndGet(1)
 
-            val key = ctx.pathParam("key")
-            val version = ctx.pathParamAsClass("version", Int::class.java)
-                .check({ it >= 0}, "Version number cannot be negative")
-                .get()
-            val senderNum = if (ctx.queryParam("senderId") == null) null else
-                ctx.queryParamAsClass("senderId", Int::class.java)
-                    .check({ it in 0 until nodeCount }, "Sender id must be in range (0, ${nodeCount - 1})")
+                val key = ctx.pathParam("key")
+                val version = ctx.pathParamAsClass("version", Int::class.java)
+                    .check({ it >= 0}, "Version number cannot be negative")
                     .get()
+                val senderNum = if (ctx.queryParam("senderId") == null) null else
+                    ctx.queryParamAsClass("senderId", Int::class.java)
+                        .check({ it in 0 until nodeCount }, "Sender id must be in range (0, ${nodeCount - 1})")
+                        .get()
 
-            val value = ctx.bodyAsBytes()
-            if (value.isEmpty()) {
-                throw ValidationException(mapOf("REQUEST_BODY" to listOf(ValidationError("Binary blob cannot be empty"))))
+                val value = ctx.bodyAsBytes()
+                if (value.isEmpty()) {
+                    throw ValidationException(mapOf("REQUEST_BODY" to listOf(ValidationError("Binary blob cannot be empty"))))
+                }
+                distributedCache.store(KeyVersionPair(key, version), value, senderNum)
+                receiverUsageInfo.storeSuccesses.addAndGet(1)
+
+                ctx.json(KeyVersionReply(key, version)).status(HttpStatus.CREATED_201)
             }
-            distributedCache.store(KeyVersionPair(key, version), value, senderNum)
-            receiverUsageInfo.storeSuccesses.addAndGet(1)
-
-            ctx.json(KeyVersionReply(key, version)).status(HttpStatus.CREATED_201)
         }
 
         /* Handle requests to monitor information about the node of this receiver */
@@ -128,6 +141,10 @@ class Receiver(private val port: Int, private val nodeCount: Int, private val no
 
     override fun getReceiverUsageInfo(): ReceiverUsageInfo {
         return receiverUsageInfo
+    }
+
+    override fun getTotalRequestTiming(): TotalRequestTiming {
+        return totalRequestTiming
     }
 }
 
