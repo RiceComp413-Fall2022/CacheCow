@@ -26,7 +26,7 @@ class LocalCache(private var maxCapacity: Int = 100) : ILocalCache {
     }
     override fun store(kvPair: KeyVersionPair, value: ByteArray) {
         print("CACHE: Attempting to store (${kvPair.key}, $value)\n")
-        if (cache.size > maxCapacity) {
+        if (cache.size >= maxCapacity) {
             print("CACHE: Full\n")
             // TODO: Remove arbitrary element. Difficult without breaking concurrency.
             return

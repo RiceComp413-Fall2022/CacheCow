@@ -18,7 +18,7 @@ class DistributedCache(private val nodeId: NodeId, private val nodeCount: Int, p
      */
     private val nodeHasher: INodeHasher = NodeHasher(nodeCount)
 
-    override fun fetch(kvPair: KeyVersionPair, senderId: NodeId?): ByteArray {
+    override fun fetch(kvPair: KeyVersionPair): ByteArray {
         val primaryNodeId = nodeHasher.primaryHash(kvPair)
 
         print("DISTRIBUTED CACHE: Hash value of key ${kvPair.key} is ${primaryNodeId}\n")
@@ -30,7 +30,7 @@ class DistributedCache(private val nodeId: NodeId, private val nodeCount: Int, p
         }
     }
 
-    override fun store(kvPair: KeyVersionPair, value: ByteArray, senderId: NodeId?) {
+    override fun store(kvPair: KeyVersionPair, value: ByteArray) {
         val primaryNodeId = nodeHasher.primaryHash(kvPair)
 
         print("DISTRIBUTED CACHE: Hash value of key ${kvPair.key} is ${primaryNodeId}\n")
@@ -42,7 +42,7 @@ class DistributedCache(private val nodeId: NodeId, private val nodeCount: Int, p
         }
     }
 
-    override fun remove(kvPair: KeyVersionPair, senderId: NodeId?): ByteArray? {
+    override fun remove(kvPair: KeyVersionPair): ByteArray? {
         val primaryNodeId = nodeHasher.primaryHash(kvPair)
 
         print("DISTRIBUTED CACHE: Hash value of key ${kvPair.key} is ${primaryNodeId}\n")

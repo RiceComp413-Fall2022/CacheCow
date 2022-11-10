@@ -24,7 +24,7 @@ class ReceiverTest {
     @BeforeTest
     fun beforeAll() {
         val nodeList = listOf("localhost:7070", "localhost:7071")
-        node = Node(0, nodeList, 7070, 10)
+        node = Node(0, nodeList, 7070)
         app = node.receiver.app
     }
 
@@ -126,5 +126,30 @@ class ReceiverTest {
         assertThat(fetchResponse.code).isEqualTo(HttpStatus.OK_200)
         assertThat(fetchResponse.body).isNotNull
         assertThat(fetchResponse.body!!.string()).isEqualTo("123")
+    }
+
+    @Test
+    internal fun `Remove returns 204 if item removed from cache`() = JavalinTest.test(app) { _, client ->
+        val storeResponse = client.post("/v1/blobs/a/1?requestId=1", "123")
+        assertThat(storeResponse.code).isEqualTo(HttpStatus.CREATED_201)
+        assertThat(client.delete("/v1/blobs/a/1").code).isEqualTo(HttpStatus.NO_CONTENT_204)
+    }
+
+    @Test
+    internal fun `Remove returns 404 if item is not in cache`() = JavalinTest.test(app) { _, client ->
+        assertThat(client.delete("/v1/blobs/a/1").code).isEqualTo(HttpStatus.NOT_FOUND_404)
+    }
+
+    @Test
+    internal fun `Server cache call returns 204 for clear call`() = JavalinTest.test(app) { _, client ->
+        assertThat(client.delete("/v1/clear?senderId=1").code).isEqualTo(HttpStatus.NO_CONTENT_204)
+    }
+
+    @Test
+    internal fun `Cache returns 204 for clear call`() = JavalinTest.test(app) { _, client ->
+        val mockSender = this.sender
+        every { mockSender.clearNode(1) } returns Unit
+
+        assertThat(client.delete("/v1/clear").code).isEqualTo(HttpStatus.NO_CONTENT_204)
     }
 }

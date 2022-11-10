@@ -1,9 +1,10 @@
 import cache.local.LocalCache
+import exception.KeyNotFoundException
+import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.nio.charset.Charset
 import kotlin.test.assertEquals
-import kotlin.test.assertNull
 
 class LocalCacheTest {
 
@@ -31,7 +32,9 @@ class LocalCacheTest {
 
         this.cache.store(key, convertToBytes("value1"))
 
-        assertNull(this.cache.fetch(invalidKey))
+        assertThrows(KeyNotFoundException::class.java) {
+            this.cache.fetch(invalidKey)
+        }
     }
 
     @Test
@@ -46,7 +49,10 @@ class LocalCacheTest {
         }
 
         assertEquals("value$maxCapacity", convertFromBytes(this.cache.fetch(maxCapacityKey)))
-        assertNull(this.cache.fetch(overMaxCapacityKey))
+        assertThrows(KeyNotFoundException::class.java) {
+            this.cache.fetch(overMaxCapacityKey)
+        }
+//        assertNull(this.cache.fetch(overMaxCapacityKey))
     }
 }
 

@@ -33,7 +33,8 @@ class Receiver(private val port: Int, private val nodeCount: Int, private val no
      * Counts the number of requests that are received
      */
     private var receiverUsageInfo: ReceiverUsageInfo = ReceiverUsageInfo(
-        0, 0, 0, 0,  0, 0, 0, 0, 0)
+        0, 0, 0, 0,
+        0, 0, 0, 0, 0)
 
     /**
      * Time spent (in seconds) to perform client requests.
@@ -80,9 +81,9 @@ class Receiver(private val port: Int, private val nodeCount: Int, private val no
 
                 // Fetch Data
                 val value = if (isClientRequest) {
-                    localCache.fetch(KeyVersionPair(key, version))
+                    distributedCache.fetch(KeyVersionPair(key, version))
                 } else {
-                    distributedCache.fetch(KeyVersionPair(key, version), senderNum)
+                    localCache.fetch(KeyVersionPair(key, version))
                 }
                 ctx.result(value).status(HttpStatus.OK_200)
             }
@@ -120,9 +121,9 @@ class Receiver(private val port: Int, private val nodeCount: Int, private val no
                     throw ValidationException(mapOf("REQUEST_BODY" to listOf(ValidationError("Binary blob cannot be empty"))))
                 }
                 if (isClientRequest) {
-                    localCache.store(KeyVersionPair(key, version), value)
+                    distributedCache.store(KeyVersionPair(key, version), value)
                 } else {
-                    distributedCache.store(KeyVersionPair(key, version), value, senderNum)
+                    localCache.store(KeyVersionPair(key, version), value)
                 }
                 ctx.json(KeyVersionReply(key, version)).status(HttpStatus.CREATED_201)
             }
@@ -160,9 +161,9 @@ class Receiver(private val port: Int, private val nodeCount: Int, private val no
 
                 // Remove Data
                 val value = if (isClientRequest) {
-                    localCache.remove(KeyVersionPair(key, version))
+                    distributedCache.remove(KeyVersionPair(key, version))
                 } else {
-                    distributedCache.remove(KeyVersionPair(key, version), senderNum)
+                    localCache.remove(KeyVersionPair(key, version))
                 }
 
                 if (value != null) {
