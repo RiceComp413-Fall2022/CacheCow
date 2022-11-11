@@ -3,10 +3,16 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@emotion/react": "^11.10.4",
+    "@emotion/styled": "^11.10.4",
+    "@mui/material": "^5.10.11",
+    "axios": "^1.1.3",
     "chart.js": "^3.6.0",
     "faker": "5.5.3",
+    "mui": "0.0.1",
     "react": "18.0.0",
     "react-chartjs-2": "^4.0.0",
+    "react-charts": "^3.0.0-beta.50",
     "react-dom": "18.0.0",
     "react-scripts": "5.0.0"
   },
