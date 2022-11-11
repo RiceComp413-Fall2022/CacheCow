@@ -6,7 +6,6 @@ import requests # pip install requests
 import boto3 # pip install boto3[crt]
 from fabric import Connection # pip install fabric
 
-# TODO: dynamically create VPC (with subnet, etc.), keypair, security group
 # TODO: automatic teardown
 
 port = 7070
@@ -14,6 +13,51 @@ port = 7070
 num_nodes = int(sys.argv[1])
 
 ec2 = boto3.resource('ec2')
+
+def get_vpc_and_subnet(ec2, zone):
+    all_vpcs = list(ec2.vpcs.all())
+
+    if len(all_vpcs) == 0:
+        return None, None
+
+    for subnet in all_vpcs[0].subnets.all():
+        if (subnet.availability_zone == zone):
+            return all_vpcs[0].id, subnet.id
+
+    return all_vpcs[0].id, None
+
+vpc_id, subnet_id = get_vpc_and_subnet(ec2, 'us-east-1b')
+
+security_group = ec2.create_security_group(
+    GroupName='cachecow-security',
+    Description='Security group for CacheCow',
+    VpcId=vpc_id,
+)
+
+security_group.authorize_ingress(
+    IpPermissions=[
+            {
+                'IpProtocol': 'tcp',
+                'FromPort': 7070,
+                'ToPort': 7070,
+                'IpRanges': [
+                    {
+                        'CidrIp': '0.0.0.0/0'
+                    }
+                ]
+            },
+            {
+                'IpProtocol': 'tcp',
+                'FromPort': 22,
+                'ToPort': 22,
+                'IpRanges': [
+                    {
+                        'CidrIp': '0.0.0.0/0'
+                    }
+                ]
+            }
+        ]
+)
 
 instances = ec2.create_instances(
     ImageId='ami-079466db464206b00', # Custom AMI with dependencies preinstalled
@@ -26,7 +70,7 @@ instances = ec2.create_instances(
         'AvailabilityZone': 'us-east-1b'
     },
     SecurityGroups=[
-        'cachecow', # security group for firewall
+        'cachecow-security', # security group for firewall
     ],
     TagSpecifications=[
         {
@@ -93,22 +137,6 @@ for i, node in enumerate(node_dns):
 
     c.close()
 
-def test_node(node):
-    success = True
-    try:
-        requests.get(f"http://{node}:{port}", timeout=5)
-    except:
-        success = False
-    return success
-
-def wait_node(node):
-    print(f"Waiting for {node}")
-    while not test_node(node):
-        time.sleep(5)
-
-for node in node_dns:
-    wait_node(node)
-
 elb = boto3.client('elbv2')
 
 target_group = elb.create_target_group(
@@ -116,7 +144,7 @@ target_group = elb.create_target_group(
     Protocol='TCP',
     Port=7070,
     TargetType='instance',
-    VpcId='vpc-0b0b55be375992f99'
+    VpcId=vpc_id
 )
 
 target_group_arn = target_group['TargetGroups'][0]['TargetGroupArn']
@@ -129,7 +157,7 @@ targets = elb.register_targets(
 balancer = elb.create_load_balancer(
     Name='cachecow-balancer',
     Subnets=[
-        'subnet-0f380160653779f61'
+        subnet_id
     ],
     Scheme='internet-facing',
     Type='network',
@@ -160,5 +188,21 @@ listener = elb.create_listener(
 elb.get_waiter('load_balancer_available').wait(LoadBalancerArns=[balancer_arn])
 
 elb_dns = elb.describe_load_balancers(LoadBalancerArns=[balancer_arn])['LoadBalancers'][0]['DNSName']
+
+def test_node(node):
+    success = True
+    try:
+        requests.get(f"http://{node}:{port}", timeout=5)
+    except:
+        success = False
+    return success
+
+def wait_node(node):
+    print(f"Waiting for {node}")
+    while not test_node(node):
+        time.sleep(5)
+
+for node in node_dns:
+    wait_node(node)
 
 wait_node(elb_dns)
