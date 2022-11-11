@@ -42,7 +42,7 @@ class LocalScalableCache(private var nodeHasher: INodeHasher, private var maxCap
         TreeMap()
     )
 
-    private var copyKvPairs = mutableListOf<KeyValuePair>()
+    private var copyHashes = mutableListOf<Int>()
 
     private var copyIndex = 0
 
@@ -53,29 +53,29 @@ class LocalScalableCache(private var nodeHasher: INodeHasher, private var maxCap
         usedMemory = memoryUsageInfo.allocated
         maxMemory = (memoryUsageInfo.max * memoryUtilizationLimit).toLong()
 
-        Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate({
-            monitorMemoryUsage()
-        }, 1, 5, TimeUnit.SECONDS)
+//        Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate({
+//            monitorMemoryUsage()
+//        }, 1, 5, TimeUnit.SECONDS)
 
     }
 
     override fun fetch(kvPair: KeyVersionPair): ByteArray? {
-        print("CACHE: Attempting to fetch ${kvPair.key}\n")
+        print("LOCAL CACHE: Attempting to fetch ${kvPair.key}\n")
+        printCacheContents()
         if (cache.containsKey(kvPair)) {
-            print("CACHE: Found value ${cache[kvPair]}\n")
+            print("LOCAL CACHE: Found value ${cache[kvPair]}\n")
             val node : LRUNode? = cache[kvPair]
             remove(node)
             insert(node)
             return node?.value
         }
-        print("CACHE: Key not found\n")
+        print("LOCAL CACHE: Key not found\n")
         return null
     }
 
     override fun store(kvPair: KeyVersionPair, value: ByteArray): Boolean {
-        print("CACHE: Attempting to store (${kvPair.key}, $value)\n")
-
-
+        print("LOCAL CACHE: Attempting to store (${kvPair.key}, $value)\n")
+        printCacheContents()
         val hashValue = nodeHasher.primaryHashValue(kvPair)
         val prevVal = cache[kvPair]?.value
         val prevKvByteSize = if(prevVal == null) 0 else (prevVal.size + kvPair.key.length + 4)
@@ -92,9 +92,9 @@ class LocalScalableCache(private var nodeHasher: INodeHasher, private var maxCap
         return true
     }
 
-    private fun insert(nullableNode : LRUNode?) {
-        if (nullableNode != null) {
-            val node : LRUNode =  nullableNode
+    private fun insert(node : LRUNode?) {
+        if (node != null) {
+            print("LOCAL CACHE: Inserting key ${node.kvPair}\n")
 
             node.next = head.next;
             node.prev = head;
@@ -103,6 +103,9 @@ class LocalScalableCache(private var nodeHasher: INodeHasher, private var maxCap
             head.next = node;
 
             cache[node.kvPair] = node
+
+            print("LOCAL CACHE: Finished insert\n")
+            printCacheContents()
         }
     }
 
@@ -159,7 +162,7 @@ class LocalScalableCache(private var nodeHasher: INodeHasher, private var maxCap
     }
 
     override fun monitorMemoryUsage() {
-        print("Monitoring Memory Usage")
+        print("Monitoring Memory Usage\n")
         if (isCacheFull()) {
             for (i in 1..(cache.size - (maxCapacity * memoryUtilizationLimit).toInt()) + 1) {
                 removeLRU()
@@ -185,35 +188,73 @@ class LocalScalableCache(private var nodeHasher: INodeHasher, private var maxCap
     }
 
     override fun initializeCopy(start: Int, end: Int) {
-        copyKvPairs = mutableListOf()
+        print("LOCAL CACHE: Finding keys to copy in range ($start, $end)\n")
+        printSortedLocalKeys()
+        copyHashes = mutableListOf()
         if (start > end) {
-            for (e in sortedLocalKeys.tailMap(end)) {
-                addKeyToCopyPairs(e.value)
+            print("CASE 1\n")
+            for (e in sortedLocalKeys.headMap(end)) {
+                if (e.key != null) {
+                    copyHashes.add(e.key)
+                }
             }
-            for (e in sortedLocalKeys.headMap(start)) {
-                addKeyToCopyPairs(e.value)
+            for (e in sortedLocalKeys.tailMap(start)) {
+                if (e.key != null) {
+                    copyHashes.add(e.key)
+                }
             }
         } else {
+            print("CASE 2\n")
             for (e in sortedLocalKeys.subMap(start, end)) {
-                addKeyToCopyPairs(e.value)
+                if (e.key != null) {
+                    copyHashes.add(e.key)
+                }
             }
+        }
+        print("\nLOCAL CACHE: Found ${copyHashes.size} keys to copy\n")
+        for (hashValue in copyHashes) {
+            print("Hash value $hashValue\n")
         }
     }
 
     override fun streamCopyKeys(count: Int): MutableList<KeyValuePair> {
         // Check bounds here and elsewhere
-        val topIndex = Integer.max(copyIndex + count, copyKvPairs.count())
-        val streamKeys = copyKvPairs.subList(copyIndex, topIndex)
+        val topIndex = Integer.min(copyIndex + count, copyHashes.count())
+        val streamKeys = mutableListOf<KeyValuePair>()
+        for (i in copyIndex until topIndex) {
+            val kvPair = sortedLocalKeys[copyHashes[i]]
+            if (kvPair != null) {
+                val node = cache[kvPair]
+                if (node != null) {
+                    streamKeys.add(KeyValuePair(kvPair.key, kvPair.version, node.value))
+                }
+            }
+        }
         copyIndex = topIndex
         return streamKeys
     }
 
-    private fun addKeyToCopyPairs(kvPair: KeyVersionPair?) {
-        if (kvPair != null) {
+    override fun cleanupCopy() {
+        print("LOCAL CACHE: Cleaning up copied keys\n")
+        for (hashValue in copyHashes) {
+            val kvPair = sortedLocalKeys[hashValue]
             val node = cache[kvPair]
-            if (node != null) {
-                copyKvPairs.add(KeyValuePair(kvPair.key, kvPair.version, node.value))
-            }
+            remove(node)
+            sortedLocalKeys.remove(hashValue)
+        }
+    }
+
+    private fun printCacheContents() {
+        print("Cache size is ${cache.size}\n")
+        for (node in cache) {
+            print("Node: ${node.key} ${node.value.kvPair} ${node.value.value}\n")
+        }
+    }
+
+    private fun printSortedLocalKeys() {
+        print("There are ${sortedLocalKeys.size} local keys\n")
+        for (key in sortedLocalKeys.asIterable()) {
+            print("Hash value ${key.key} and kv pair ${key.value}\n")
         }
     }
 

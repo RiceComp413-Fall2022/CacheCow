@@ -85,7 +85,7 @@ open class Sender(private val nodeId: NodeId, private val nodeList: List<String>
             throw ConnectionRefusedException()
         }
 
-        print("SENDER: Got fetch response with status code ${response.statusCode()}\n")
+        print("SENDER: Got store response with status code ${response.statusCode()}\n")
 
         if (response.statusCode() in 400..599) {
             throw InternalErrorException()

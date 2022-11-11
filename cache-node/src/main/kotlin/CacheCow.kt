@@ -2,7 +2,6 @@ import node.Node
 import java.io.File
 
 const val nodeListPath = "nodes.txt"
-const val capacity = 2
 
 /**
  * The entry point to CacheCow.
@@ -22,7 +21,7 @@ fun main(args: Array<String>) {
         }
     }
 
-    val node = Node(nodeId, File(nodeListPath).bufferedReader().readLines().toMutableList(), port, capacity, true)
+    val node = Node(nodeId, File(nodeListPath).bufferedReader().readLines().toMutableList(), port, true)
 
     node.start()
 }

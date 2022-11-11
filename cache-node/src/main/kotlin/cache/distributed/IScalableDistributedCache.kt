@@ -9,7 +9,7 @@ interface IScalableDistributedCache: IDistributedCache {
 
     fun initiateCopy(hostName: String)
 
-    fun markCopyComplete(nodeId: NodeId)
+    fun markCopyComplete(senderId: NodeId)
 
     fun bulkLocalStore(kvPairs: MutableList<KeyValuePair>)
 }

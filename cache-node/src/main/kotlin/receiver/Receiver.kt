@@ -100,7 +100,7 @@ open class Receiver(private val port: Int, private val nodeId: NodeId, private v
         /* Catch and format any errors resulting from request validation */
         app.exception(ValidationException::class.java) { e, ctx ->
             val firstError = e.errors.asIterable().iterator().next()
-            print("RECEIVER: Caught validation exception for field ${firstError.key}\n")
+            print("RECEIVER: Caught validation exception for field ${firstError.key}: ${firstError.value[0].message}\n")
 
             // TODO: Return message in JSON response body, extract more info from exception
             ctx.result(firstError.value[0].message).status(HttpStatus.BAD_REQUEST_400)

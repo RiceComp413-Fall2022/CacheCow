@@ -7,4 +7,6 @@ interface ILocalScalableCache: ILocalEvictingCache {
     fun initializeCopy(start: Int, end: Int)
 
     fun streamCopyKeys(count: Int): MutableList<KeyValuePair>
+
+    fun cleanupCopy()
 }

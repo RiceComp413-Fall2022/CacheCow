@@ -14,4 +14,6 @@ interface IScalableSender: ISender {
     fun sendBulkCopy(kvPairs: BulkCopyRequest, destNodeId: NodeId): Boolean
 
     fun broadcastScalableMessage(message: ScalableMessage): Boolean
+
+    fun sendScalableMessage(message: ScalableMessage, destNodeId: NodeId): Boolean
 }

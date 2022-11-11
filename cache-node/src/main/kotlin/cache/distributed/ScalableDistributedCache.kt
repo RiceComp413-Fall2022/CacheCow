@@ -42,8 +42,14 @@ class ScalableDistributedCache(private val nodeId: NodeId, private var nodeList:
     private lateinit var copyThread: Thread
 
     init {
-        for (i in 1..nodeCount) {
+        for (i in 0 until nodeCount) {
             sortedNodes[nodeHasher.nodeHashValue(i)] = i
+        }
+
+        // If the node was just booted up
+        if (nodeId == nodeCount) {
+            sortedNodes[nodeHasher.nodeHashValue(nodeId)] = nodeId
+            sender.broadcastScalableMessage(ScalableMessage(nodeId, "localhost:${7070 + nodeId}", ScalableMessageType.READY))
         }
     }
 
@@ -54,13 +60,17 @@ class ScalableDistributedCache(private val nodeId: NodeId, private var nodeList:
         print("SCALABLE CACHE: Hash value of key ${kvPair.key} is ${hashValue}\n")
 
         val primaryNodeId = findPrimaryNode(hashValue)
+
+        print("SCALABLE CACHE: Primary node id is $primaryNodeId\n")
         val prevPrimaryNodeId = findPrevPrimaryNode(hashValue)
 
         val value: ByteArray? = if (!copyInProgress || primaryNodeId != nodeCount - 1 || nodeId != prevPrimaryNodeId) {
             // Normal case
+            print("SCALABLE CACHE: Fetch entered normal case\n")
             if (nodeId == primaryNodeId) cache.fetch(kvPair) else sender.fetchFromNode(kvPair, primaryNodeId)
         } else {
             // This key is being copied to new node, check both locations
+            print("SCALABLE CACHE: Fetch entered copy case\n")
             cache.fetch(kvPair) ?: sender.fetchFromNode(kvPair, primaryNodeId)
         }
 
@@ -77,10 +87,14 @@ class ScalableDistributedCache(private val nodeId: NodeId, private var nodeList:
         print("SCALABLE CACHE: Hash value of key ${kvPair.key} is ${hashValue}\n")
 
         val primaryNodeId = findPrimaryNode(hashValue)
+        print("SCALABLE CACHE: Primary node id is $primaryNodeId\n")
+
         if (nodeId == primaryNodeId) {
+            print("SCALABLE CACHE: Store entered local case\n")
             // Always store to new location, even during copying
             cache.store(kvPair, value)
         } else {
+            print("SCALABLE CACHE: Store entered remote case\n")
             sender.storeToNode(
                 kvPair,
                 value,
@@ -98,52 +112,61 @@ class ScalableDistributedCache(private val nodeId: NodeId, private var nodeList:
     }
 
     override fun broadcastLaunchIntentions() {
-        val success = sender.broadcastScalableMessage(ScalableMessage(nodeId, nodeList[nodeId], ScalableMessageType.LAUNCH_NODE))
+        val success = sender.broadcastScalableMessage(ScalableMessage(nodeId, "", ScalableMessageType.LAUNCH_NODE))
         print("SCALABLE CACHE: Result of broadcasting launch intentions was $success\n")
     }
 
-    override fun markCopyComplete(nodeId: NodeId) {
-        if (!copyComplete[nodeId]) {
-            copyComplete[nodeId] = true
+    override fun markCopyComplete(senderId: NodeId) {
+        print("SCALABLE CACHE: Marking that node $senderId has completed copying\n")
+        if (!copyComplete[senderId]) {
+            copyComplete[senderId] = true
             copyCompleteCount++
-            if (copyCompleteCount == nodeCount - 1) {
-                sender.broadcastScalableMessage(ScalableMessage(nodeId, nodeList[nodeId], ScalableMessageType.SCALE_COMPLETE))
+            print("SCALABLE CACHE: Complete count is now $copyCompleteCount out of $nodeCount\n")
+            if (copyCompleteCount == nodeCount) {
+                print("SCALABLE CACHE: Going to broadcast SCALE_COMPLETE message\n")
+                sender.broadcastScalableMessage(ScalableMessage(nodeId, "", ScalableMessageType.SCALE_COMPLETE))
             }
         }
     }
 
     override fun bulkLocalStore(kvPairs: MutableList<KeyValuePair>) {
+        print("SCALABLE CACHE: Completing bulk local store with ${kvPairs.size} pairs\n")
         for (kvPair in kvPairs) {
             cache.store(KeyVersionPair(kvPair.key, kvPair.version), kvPair.value)
         }
     }
 
     override fun initiateCopy(hostName: String) {
+        print("SCALABLE CACHE: Beginning copying process\n")
         if (!copyInProgress) {
             copyInProgress = true
             val newHashValue = nodeHasher.nodeHashValue(nodeCount)
-            val nextNodeId = findPrimaryNode(newHashValue)
-            val nextHashValue = nodeHasher.nodeHashValue(nextNodeId)
 
             // Update the sorted nodes and node count
-            sortedNodes[nodeCount] = newHashValue
+            sortedNodes[newHashValue] = nodeCount
             nodeList.add(hostName)
             nodeCount = nodeList.size
+            printSortedNodes()
 
             // Start the thread to copy asynchronously
-            copyThread = Thread { copyKeysByHashValues(newHashValue, nextHashValue) }
+            copyThread = Thread { copyKeysByHashValues(nodeHasher.nodeHashValue(nodeId), newHashValue) }
             copyThread.start()
         }
     }
 
     private fun copyKeysByHashValues(start: Int, end: Int) {
+        Thread.sleep(5_000)
         cache.initializeCopy(start, end)
         var kvPairs: MutableList<KeyValuePair>
         do {
             kvPairs = cache.streamCopyKeys(copyBatchSize)
-            sender.sendBulkCopy(BulkCopyRequest(nodeId, kvPairs),  nodeCount)
+            if (kvPairs.size > 0) {
+                sender.sendBulkCopy(BulkCopyRequest(nodeId, kvPairs),  nodeCount - 1)
+            }
 
         } while(kvPairs.size == copyBatchSize)
+        sender.sendScalableMessage(ScalableMessage(nodeId, "", ScalableMessageType.COPY_COMPLETE), nodeCount - 1)
+        cache.cleanupCopy()
         copyInProgress = false
     }
 
@@ -162,5 +185,12 @@ class ScalableDistributedCache(private val nodeId: NodeId, private var nodeList:
         }
         val tailMap = sortedNodes.tailMap(hashValue)
         return tailMap[tailMap.lastKey()]!!
+    }
+
+    private fun printSortedNodes() {
+        print("There are ${sortedNodes.size} sorted nodes\n")
+        for (pair in sortedNodes.asIterable()) {
+            print("Hash value ${pair.key} and node id ${pair.value}\n")
+        }
     }
 }

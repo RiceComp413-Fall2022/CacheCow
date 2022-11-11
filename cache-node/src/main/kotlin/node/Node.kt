@@ -13,7 +13,7 @@ import receiver.ScalableReceiver
  * distributed cache.
  */
 
-class Node(nodeId: NodeId, nodeList: MutableList<String>, port: Int, capacity: Int, scalable: Boolean) {
+class Node(nodeId: NodeId, nodeList: MutableList<String>, port: Int, scalable: Boolean) {
 
     /**
      * The distributed cache
@@ -26,7 +26,7 @@ class Node(nodeId: NodeId, nodeList: MutableList<String>, port: Int, capacity: I
     private val receiver: Receiver
 
     init {
-        print("Initializing node $nodeId on port $port with cache capacity $capacity\n")
+        print("Initializing node $nodeId on port $port\n")
         if (scalable) {
             distributedCache = ScalableDistributedCache(nodeId, nodeList)
             receiver = ScalableReceiver(port, nodeId, nodeList.size, distributedCache as IScalableDistributedCache)

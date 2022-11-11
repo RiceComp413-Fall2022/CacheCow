@@ -12,7 +12,7 @@ import java.net.http.HttpResponse
 
 class ScalableSender(private val nodeId: NodeId, private val nodeList: List<String>): Sender(nodeId, nodeList), IScalableSender {
 
-    // TODO: Add retry logic since failures a less tolerable
+    // TODO: Add retry logic since failures are less tolerable
 
     override fun sendBulkCopy(kvPairs: BulkCopyRequest, destNodeId: NodeId): Boolean {
         val client = HttpClient.newBuilder().build()
@@ -32,7 +32,7 @@ class ScalableSender(private val nodeId: NodeId, private val nodeList: List<Stri
         try {
             response = client.send(request, HttpResponse.BodyHandlers.ofString())
         } catch (e: ConnectException) {
-            print("SENDER: Caught connection refused exception\n")
+            print("SCALABLE SENDER: Caught connection refused exception\n")
             throw ConnectionRefusedException()
         }
 
@@ -45,7 +45,7 @@ class ScalableSender(private val nodeId: NodeId, private val nodeList: List<Stri
 
         for (i in nodeList.indices) {
             if (i != nodeId) {
-               if (!broadcastHelper(message, i)) {
+               if (!sendScalableMessage(message, i)) {
                    return false
                }
             }
@@ -53,13 +53,16 @@ class ScalableSender(private val nodeId: NodeId, private val nodeList: List<Stri
         return true
     }
 
-    private fun broadcastHelper(message: ScalableMessage, destNodeId: NodeId): Boolean {
+    override fun sendScalableMessage(message: ScalableMessage, destNodeId: NodeId): Boolean {
         val client = HttpClient.newBuilder().build()
 
         val destUrl =
-            URI.create("http://${nodeList[destNodeId]}/v1/bulk-copy")
+            URI.create("http://${nodeList[destNodeId]}/v1/inform")
         val requestBody =
             mapper.writerWithDefaultPrettyPrinter().writeValueAsString(message)
+
+        print("SCALABLE SENDER: Sending scalable message request to $destUrl\n")
+
         val request = HttpRequest.newBuilder()
             .uri(destUrl)
             .POST(HttpRequest.BodyPublishers.ofString(requestBody))
@@ -71,7 +74,7 @@ class ScalableSender(private val nodeId: NodeId, private val nodeList: List<Stri
             response = client.send(request, HttpResponse.BodyHandlers.ofString())
             success = response.statusCode() !in 400..599
         } catch (e: ConnectException) {
-            print("SENDER: Caught connection refused exception\n")
+            print("SCALABLE SENDER: Caught connection refused exception\n")
         }
 
         return success
