@@ -1,6 +1,8 @@
 import sys
 import io
 import time
+import subprocess
+import os
 
 import requests # pip install requests
 import boto3 # pip install boto3[crt]
@@ -109,7 +111,14 @@ for instance in instances:
     instance.load()
     node_dns.append(instance.public_dns_name)
 
-node_dns_f = io.StringIO("\n".join(x + f":{port}" for x in node_dns))
+node_dns_str = "\n".join(x + f":{port}" for x in node_dns)
+node_dns_f = io.StringIO(node_dns_str)
+
+node_dns_real_f = os.path.dirname(__file__) + 'monitor-node/src/nodes.txt'
+
+with open(node_dns_real_f, 'w') as nodeList:
+    nodeList.write(node_dns_str)
+    nodeList.truncate()
 
 def connect_retry(host, user, key):
     while True:
@@ -154,6 +163,9 @@ for i, node in enumerate(node_dns):
     c.run("tmux new-session -d \"cd CacheCow/monitor-node/ && npm start", asynchronous=True)
 
     c.close()
+
+#start the react app here, so it can read nodes.txt
+subprocess.call(['npm', 'start', '--prefix', os.path.dirname(__file__) + '/monitor-node'])
 
 elb = boto3.client('elbv2')
 
