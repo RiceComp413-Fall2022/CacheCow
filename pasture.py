@@ -48,6 +48,16 @@ security_group.authorize_ingress(
             },
             {
                 'IpProtocol': 'tcp',
+                'FromPort': 3000,
+                'ToPort': 3000,
+                'IpRanges': [
+                    {
+                        'CidrIp': '0.0.0.0/0'
+                    }
+                ]
+            },
+            {
+                'IpProtocol': 'tcp',
                 'FromPort': 22,
                 'ToPort': 22,
                 'IpRanges': [
@@ -134,6 +144,14 @@ for i, node in enumerate(node_dns):
     c.put(node_dns_f, remote='CacheCow/cache-node/nodes.txt')
 
     c.run(f"tmux new-session -d \"cd CacheCow/cache-node/ && ./gradlew run --args '{i} {port}'\"", asynchronous=True)
+
+    c.run("curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.34.0/install.sh | bash")
+    c.run(". ~/.nvm/nvm.sh")
+    c.run("nvm install 16")
+
+    c.put(node_dns_f, remote='CacheCow/monitor-node/src/nodes.txt') # TODO: use the same file
+
+    c.run("tmux new-session -d \"cd CacheCow/monitor-node/ && npm start", asynchronous=True)
 
     c.close()
 
