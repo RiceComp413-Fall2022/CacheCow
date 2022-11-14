@@ -15,16 +15,19 @@ num_nodes = int(sys.argv[1])
 ec2 = boto3.resource('ec2')
 
 def get_vpc_and_subnet(ec2, zone):
-    all_vpcs = list(ec2.vpcs.all())
+    default_vpc = None
+    for vpc in ec2.vpcs.all():
+        if vpc.is_default:
+            default_vpc = vpc
 
-    if len(all_vpcs) == 0:
+    if default_vpc is None:
         return None, None
 
-    for subnet in all_vpcs[0].subnets.all():
-        if (subnet.availability_zone == zone):
-            return all_vpcs[0].id, subnet.id
+    for subnet in default_vpc.subnets.all():
+        if subnet.availability_zone == zone:
+            return default_vpc.id, subnet.id
 
-    return all_vpcs[0].id, None
+    return default_vpc.id, None
 
 vpc_id, subnet_id = get_vpc_and_subnet(ec2, 'us-east-1b')
 
@@ -70,8 +73,8 @@ security_group.authorize_ingress(
 )
 
 instances = ec2.create_instances(
-    ImageId='ami-079466db464206b00', # Custom AMI with dependencies preinstalled
-    # ImageId='ami-09d3b3274b6c5d4aa', # Amazon Linux 2 Kernel 5.10 AMI 2.0.20221004.0 x86_64 HVM gp2
+    # ImageId='ami-079466db464206b00', # Custom AMI with dependencies preinstalled
+    ImageId='ami-09d3b3274b6c5d4aa', # Amazon Linux 2 Kernel 5.10 AMI 2.0.20221004.0 x86_64 HVM gp2
     InstanceType='t3.medium', # 2 vCPU, 4 GiB memory
     KeyName='CacheCow', # keypair for authentication
     MaxCount=num_nodes,
@@ -151,7 +154,7 @@ for i, node in enumerate(node_dns):
 
     c.put(node_dns_f, remote='CacheCow/monitor-node/src/nodes.txt') # TODO: use the same file
 
-    c.run("tmux new-session -d \"cd CacheCow/monitor-node/ && npm start", asynchronous=True)
+    c.run("tmux new-session -d \"cd CacheCow/monitor-node/ && . ~/.nvm/nvm.sh && npm install && npm start\"", asynchronous=True)
 
     c.close()
 
