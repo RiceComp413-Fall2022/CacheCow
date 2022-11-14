@@ -5,11 +5,17 @@ import NodeId
 
 interface IScalableDistributedCache: IDistributedCache {
 
-    fun broadcastLaunchIntentions()
+    fun start()
 
-    fun initiateLaunch(): Boolean
+    fun scaleInProgress(): Boolean
 
-    fun initiateCopy(hostName: String)
+    fun handleLaunchRequest(senderId: NodeId): Boolean
+
+    fun handleScaleCompleteRequest()
+
+    fun initiateLaunch()
+
+    fun initiateCopy(newHostName: String)
 
     fun markCopyComplete(senderId: NodeId)
 

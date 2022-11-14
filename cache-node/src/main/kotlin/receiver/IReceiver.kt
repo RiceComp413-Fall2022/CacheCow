@@ -35,11 +35,12 @@ data class MemoryUsageInfo(val allocated: Long, val max: Long, val usage: Double
 /**
  * Encapsulates information about the usage of this node into one object
  */
-data class SystemInfo(val nodeId: Int,
-                      val memUsage: MemoryUsageInfo,
-                      val cacheInfo: CacheInfo,
-                      val receiverUsageInfo: ReceiverUsageInfo,
-                      val senderUsageInfo: SenderUsageInfo
+data class SystemInfo(
+    val nodeId: Int,
+    val memUsage: MemoryUsageInfo,
+    val cacheInfo: CacheInfo,
+    var receiverUsageInfo: ReceiverUsageInfo?,
+    val senderUsageInfo: SenderUsageInfo?
 )
 
 /**

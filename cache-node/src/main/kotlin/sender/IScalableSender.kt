@@ -5,6 +5,14 @@ import NodeId
 import ScalableMessage
 
 interface IScalableSender: ISender {
+
+
+    /**
+     * Add a new host name to the set of reachable hosts.
+     * @param hostName URI of new host machine
+     */
+    fun addHost(hostName: String)
+
     /**
      * Copy a list of key value pairs to another node.
      * @param kvPairs list of key value pairs

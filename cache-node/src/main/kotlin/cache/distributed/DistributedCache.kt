@@ -4,11 +4,10 @@ import KeyVersionPair
 import NodeId
 import cache.distributed.hasher.INodeHasher
 import cache.distributed.hasher.NodeHasher
-import cache.local.CacheInfo
 import cache.local.LocalCache
 import exception.KeyNotFoundException
+import receiver.SystemInfo
 import sender.Sender
-import sender.SenderUsageInfo
 
 /**
  * A concrete distributed cache that assigns keys to nodes using a NodeHasher.
@@ -59,11 +58,12 @@ class DistributedCache(private val nodeId: NodeId, nodeList: List<String>): IDis
         }
     }
 
-    override fun getCacheInfo(): CacheInfo {
-        return cache.getCacheInfo()
-    }
-
-    override fun getSenderInfo(): SenderUsageInfo {
-        return sender.getSenderUsageInfo()
+    override fun getSystemInfo(): SystemInfo {
+        return SystemInfo(
+            nodeId,
+            getMemoryUsage(),
+            cache.getCacheInfo(),
+            null,
+            sender.getSenderUsageInfo())
     }
 }

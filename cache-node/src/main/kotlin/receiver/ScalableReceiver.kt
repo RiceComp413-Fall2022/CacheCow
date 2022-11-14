@@ -1,43 +1,17 @@
 package receiver
 
 import BulkCopyRequest
-import KeyValuePair
 import NodeId
 import ScalableMessage
 import ScalableMessageType
 import cache.distributed.IScalableDistributedCache
-import com.fasterxml.jackson.databind.ObjectMapper
 import org.eclipse.jetty.http.HttpStatus
-import java.util.*
 
-class ScalableReceiver(port: Int, nodeId: NodeId, private var nodeCount: Int, distributedCache: IScalableDistributedCache): Receiver(port, nodeId, nodeCount, distributedCache), IScalableReceiver {
-
-    // TODO: Move message passing logic to different module (should not keep track of timers and flags)
-
-    /**
-     * Flag indicating whether the current node intends to launch
-     */
-    private var desireToLaunch = false
-
-    /**
-     * Flag indicating whether the scaling process has begun
-     */
-    private var scaleInProgress = nodeId == nodeCount
-
-    /**
-     * Timer used to ensure that nodes achieve launching consensus
-     */
-    private var launchTimer = Timer()
-
-    /**
-     * Minimum id of a node that is currently intending to launch another node
-     */
-    private var minLaunchingNode = nodeCount
-
-    /**
-     * TODO: Remove
-     */
-    private val mapper: ObjectMapper = ObjectMapper()
+class ScalableReceiver(port: Int, nodeId: NodeId, private var nodeCount: Int, private val distributedCache: IScalableDistributedCache): Receiver(
+    port,
+    nodeCount,
+    distributedCache
+), IScalableReceiver {
 
     init {
 
@@ -48,7 +22,7 @@ class ScalableReceiver(port: Int, nodeId: NodeId, private var nodeCount: Int, di
 
             print("SCALABLE RECEIVER: Deserialized message from node ${message.nodeId}\n")
 
-            if (!scaleInProgress && message.type != ScalableMessageType.LAUNCH_NODE) {
+            if (!distributedCache.scaleInProgress() && message.type != ScalableMessageType.LAUNCH_NODE) {
                 throw simpleValidationException("Scaling not currently in progress")
             }
 
@@ -67,39 +41,37 @@ class ScalableReceiver(port: Int, nodeId: NodeId, private var nodeCount: Int, di
             }
 
             var accepted = true
-            if (message.type == ScalableMessageType.LAUNCH_NODE) {
-                print("SCALABLE RECEIVER: Got LAUNCH_NODE request from node ${message.nodeId}\n")
-                // Sender intends to launch a new node
-                scaleInProgress = true
-                if (message.nodeId < minLaunchingNode) {
-                    minLaunchingNode = message.nodeId
-                    if (desireToLaunch) {
-                        desireToLaunch = false
-                        launchTimer.cancel()
+            when (message.type) {
+                ScalableMessageType.LAUNCH_NODE -> {
+                    print("SCALABLE RECEIVER: Got LAUNCH_NODE request from node ${message.nodeId}\n")
+                    // Sender intends to launch a new node
+                    accepted = distributedCache.handleLaunchRequest(message.nodeId)
+                }
+
+                ScalableMessageType.READY -> {
+                    print("SCALABLE RECEIVER: Got READY request from node ${message.nodeId}\n")
+                    // New node just booted up and is ready to receive copied values
+                    if (message.hostName.isBlank()) {
+                        throw simpleValidationException("Missing host name")
                     }
-                } else {
-                    accepted = false
+                    distributedCache.initiateCopy(message.hostName)
                 }
-            } else if (message.type == ScalableMessageType.READY) {
-                print("SCALABLE RECEIVER: Got READY request from node ${message.nodeId}\n")
-                // New node just booted up and is ready to receive copied values
-                if (message.hostName.isBlank()) {
-                    throw simpleValidationException("Missing host name")
+
+                ScalableMessageType.COPY_COMPLETE -> {
+                    print("SCALABLE RECEIVER: Got COPY_COMPLETE request from node ${message.nodeId}\n")
+                    // Sender finished copying values to this node
+                    if (nodeId != nodeCount) {
+                        throw simpleValidationException("Only new node can accept this message type")
+                    }
+                    distributedCache.markCopyComplete(message.nodeId)
                 }
-                distributedCache.initiateCopy(message.hostName)
-            } else if (message.type == ScalableMessageType.COPY_COMPLETE) {
-                print("SCALABLE RECEIVER: Got COPY_COMPLETE request from node ${message.nodeId}\n")
-                // Sender finished copying values to this node
-                if (nodeId != nodeCount) {
-                    throw simpleValidationException("Only new node can accept this message type")
+
+                ScalableMessageType.SCALE_COMPLETE -> {
+                    print("SCALABLE RECEIVER: Got SCALE_COMPLETE request from node ${message.nodeId}\n")
+                    // New node has received all copied values, scaling has completed
+                    distributedCache.handleScaleCompleteRequest()
+                    nodeCount++
                 }
-                distributedCache.markCopyComplete(message.nodeId)
-            } else if (message.type == ScalableMessageType.SCALE_COMPLETE) {
-                print("SCALABLE RECEIVER: Got SCALE_COMPLETE request from node ${message.nodeId}\n")
-                // New node has received all copied values, scaling has completed
-                scaleInProgress = false
-                nodeCount++
-                minLaunchingNode = nodeCount
             }
 
             if (accepted) {
@@ -114,7 +86,7 @@ class ScalableReceiver(port: Int, nodeId: NodeId, private var nodeCount: Int, di
             print("SCALABLE RECEIVER: Received bulk copy request\n")
             val bulkCopy: BulkCopyRequest = ctx.bodyAsClass(BulkCopyRequest::class.java)
 
-            if (!scaleInProgress || nodeId != nodeCount) {
+            if (!distributedCache.scaleInProgress() || nodeId != nodeCount) {
                 throw simpleValidationException("New node can only receive bulk copy requests while scaling is in progress")
             }
             if (bulkCopy.nodeId < 0 || bulkCopy.nodeId >= nodeCount) {
@@ -130,40 +102,13 @@ class ScalableReceiver(port: Int, nodeId: NodeId, private var nodeCount: Int, di
         app.get("/v1/launch-node") { ctx ->
             print("*********LAUNCH NODE REQUEST*********\n")
 
-            if (minLaunchingNode == nodeCount) {
-                desireToLaunch = true
-                scaleInProgress = true
-
-                // Broadcast launch intentions to all other nodes (should be async)
-                distributedCache.broadcastLaunchIntentions()
-
-                // If this node has minimum node id, launch new node
-                launchTimer.schedule(object : TimerTask() {
-                    override fun run() {
-                        print("SCALABLE SENDER: Launching new node\n")
-                        distributedCache.initiateLaunch()
-                    }
-                }, 2 * 1000)
-            }
-
+            distributedCache.initiateLaunch()
             ctx.status(HttpStatus.OK_200)
         }
+    }
 
-        /**
-         * Test endpoint to check json of bulk copy request
-         */
-        app.get("/v1/test-bulk-send") { ctx ->
-            val kvPairs = BulkCopyRequest(
-                nodeId,
-                mutableListOf(
-                    KeyValuePair(
-                        "1",
-                        1,
-                        "1".encodeToByteArray()
-                    )
-                )
-            )
-            ctx.result(mapper.writeValueAsString(kvPairs)).status(HttpStatus.OK_200)
-        }
+    override fun start() {
+        super.start()
+        distributedCache.start()
     }
 }

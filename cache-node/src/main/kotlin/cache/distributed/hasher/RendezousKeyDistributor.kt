@@ -3,7 +3,7 @@ package cache.distributed.hasher
 import KeyVersionPair
 import NodeId
 
-class RendezousKeyDistributor: IKeyDistributor {
+class RendezvousKeyDistributor: IKeyDistributor {
     override fun getPrimaryNode(kvPair: KeyVersionPair): NodeId {
         TODO("Not yet implemented")
     }
@@ -12,7 +12,7 @@ class RendezousKeyDistributor: IKeyDistributor {
         TODO("Not yet implemented")
     }
 
-    override fun addNode(newNodeId: NodeId): Pair<Int, Int> {
+    override fun addNode(): Pair<Int, Int> {
         TODO("Not yet implemented")
     }
 }

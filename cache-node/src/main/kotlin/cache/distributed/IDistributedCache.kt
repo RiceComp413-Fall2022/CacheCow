@@ -2,8 +2,8 @@ package cache.distributed
 
 import KeyVersionPair
 import NodeId
-import cache.local.CacheInfo
-import sender.SenderUsageInfo
+import receiver.MemoryUsageInfo
+import receiver.SystemInfo
 
 /**
  * An interface specifying the behavior of a distributed data cache.
@@ -28,7 +28,16 @@ interface IDistributedCache {
      */
     fun store(kvPair: KeyVersionPair, value: ByteArray, senderId: NodeId?)
 
-    fun getCacheInfo(): CacheInfo
+    fun getSystemInfo(): SystemInfo
 
-    fun getSenderInfo(): SenderUsageInfo
+    /**
+     * Get memory usage information from JVM runtime.
+     */
+    fun getMemoryUsage(): MemoryUsageInfo {
+        val runtime = Runtime.getRuntime()
+        val allocatedMemory = runtime.totalMemory() - runtime.freeMemory()
+        val maxMemory = runtime.maxMemory()
+        val usage = allocatedMemory/(maxMemory * 1.0)
+        return MemoryUsageInfo(allocatedMemory, maxMemory, usage)
+    }
 }

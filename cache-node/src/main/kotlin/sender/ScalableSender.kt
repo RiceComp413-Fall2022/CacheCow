@@ -16,11 +16,15 @@ import java.util.stream.Collectors
 import kotlin.streams.asStream
 import kotlin.streams.toList
 
-class ScalableSender(private val nodeId: NodeId, private val nodeList: List<String>): Sender(nodeId, nodeList), IScalableSender {
+class ScalableSender(private val nodeId: NodeId, private var nodeList: MutableList<String>): Sender(nodeId, nodeList), IScalableSender {
 
     // TODO: Add retry logic since failures are less tolerable
 
     private val retryCount = 3
+
+    override fun addHost(hostName: String) {
+        nodeList.add(hostName)
+    }
 
     override fun sendBulkCopy(kvPairs: BulkCopyRequest, destNodeId: NodeId): Boolean {
         val client = HttpClient.newBuilder().build()
@@ -54,7 +58,7 @@ class ScalableSender(private val nodeId: NodeId, private val nodeList: List<Stri
             CompletableFuture.allOf(
                 *nodeList.indices.asSequence().asStream()
                     .filter{ it != nodeId }
-                    .map { CompletableFuture.supplyAsync { createRetryFuture(requestBody, it) } }
+                    .map { CompletableFuture.supplyAsync { retryScalableMessage(requestBody, it) } }
                     .toArray { arrayOfNulls<CompletableFuture<HttpResponse<String>>>(it) }
             ).join()
             true
@@ -64,7 +68,7 @@ class ScalableSender(private val nodeId: NodeId, private val nodeList: List<Stri
         }
     }
 
-    private fun createRetryFuture(requestBody: String, destNodeId: NodeId): HttpResponse<String>? {
+    private fun retryScalableMessage(requestBody: String, destNodeId: NodeId): HttpResponse<String>? {
         val client = HttpClient.newBuilder().build()
         val request = HttpRequest.newBuilder()
             .uri(URI.create("http://${nodeList[destNodeId]}/v1/inform"))

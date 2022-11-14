@@ -23,7 +23,7 @@ class Node(nodeId: NodeId, nodeList: MutableList<String>, port: Int, scalable: B
     /**
      * The receiver, used to receive requests from users and other nodes
      */
-    private val receiver: Receiver
+    private var receiver: Receiver
 
     init {
         print("Initializing node $nodeId on port $port\n")
@@ -32,7 +32,7 @@ class Node(nodeId: NodeId, nodeList: MutableList<String>, port: Int, scalable: B
             receiver = ScalableReceiver(port, nodeId, nodeList.size, distributedCache as IScalableDistributedCache)
         } else {
             distributedCache = DistributedCache(nodeId, nodeList)
-            receiver = Receiver(port, nodeId, nodeList.size, distributedCache)
+            receiver = Receiver(port, nodeList.size, distributedCache)
         }
     }
 

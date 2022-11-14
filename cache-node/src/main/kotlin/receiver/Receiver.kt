@@ -1,7 +1,6 @@
 package receiver
 
 import KeyVersionPair
-import NodeId
 import cache.distributed.IDistributedCache
 import exception.CacheNodeException
 import io.javalin.Javalin
@@ -15,7 +14,11 @@ import org.eclipse.jetty.http.HttpStatus
 /**
  * A concrete receiver that accepts requests over HTTP.
  */
-open class Receiver(private val port: Int, private val nodeId: NodeId, private val nodeCount: Int, private val distributedCache: IDistributedCache) : IReceiver {
+open class Receiver(
+    private val port: Int,
+    private val nodeCount: Int,
+    private val distributedCache: IDistributedCache
+) : IReceiver {
 
     /**
      * The Javalin server used to route HTTP requests to handlers
@@ -26,7 +29,6 @@ open class Receiver(private val port: Int, private val nodeId: NodeId, private v
         }
     }
 
-
     /**
      * Count the number of requests that are received
      */
@@ -35,6 +37,7 @@ open class Receiver(private val port: Int, private val nodeId: NodeId, private v
 
 
     init {
+        print("RECEIVER: Initializing Javalin\n")
 
         /* Check if receiver is up and running */
         app.get("/v1/hello-world") { ctx ->
@@ -138,23 +141,9 @@ open class Receiver(private val port: Int, private val nodeId: NodeId, private v
     }
 
     override fun getSystemInfo(): SystemInfo {
-        return SystemInfo(
-            nodeId,
-            getMemoryUsage(),
-            distributedCache.getCacheInfo(),
-            getReceiverUsageInfo(),
-            distributedCache.getSenderInfo())
-    }
-
-    /**
-     * Get memory usage information from JVM runtime.
-     */
-    private fun getMemoryUsage(): MemoryUsageInfo {
-        val runtime = Runtime.getRuntime()
-        val allocatedMemory = runtime.totalMemory() - runtime.freeMemory()
-        val maxMemory = runtime.maxMemory()
-        val usage = allocatedMemory/(maxMemory * 1.0)
-        return MemoryUsageInfo(allocatedMemory, maxMemory, usage)
+        val systemInfo = distributedCache.getSystemInfo()
+        systemInfo.receiverUsageInfo = getReceiverUsageInfo()
+        return systemInfo
     }
 }
 
