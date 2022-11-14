@@ -90,7 +90,11 @@ class Receiver(private val port: Int, private val nodeCount: Int, private val no
                 } else {
                     localCache.fetch(KeyVersionPair(key, version))
                 }
-                ctx.result(value).status(HttpStatus.OK_200)
+                if (value != null) {
+                    ctx.result(value).status(HttpStatus.OK_200)
+                } else {
+                    ctx.status(HttpStatus.NOT_FOUND_404)
+                }
             }
 
             // Increment node statistics
@@ -209,7 +213,7 @@ class Receiver(private val port: Int, private val nodeCount: Int, private val no
                 if (isClientRequest) {
                     distributedCache.clearAll()
                 } else {
-                    localCache.clear()
+                    localCache.clearAll()
                 }
                 ctx.status(HttpStatus.NO_CONTENT_204)
             }
