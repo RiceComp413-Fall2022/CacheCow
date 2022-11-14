@@ -7,6 +7,8 @@ interface IScalableDistributedCache: IDistributedCache {
 
     fun broadcastLaunchIntentions()
 
+    fun initiateLaunch(): Boolean
+
     fun initiateCopy(hostName: String)
 
     fun markCopyComplete(senderId: NodeId)

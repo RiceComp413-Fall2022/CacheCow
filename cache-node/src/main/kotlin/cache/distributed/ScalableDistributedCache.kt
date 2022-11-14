@@ -1,5 +1,6 @@
 import cache.distributed.IScalableDistributedCache
 import cache.distributed.hasher.NodeHasher
+import cache.distributed.launcher.LocalNodeLauncher
 import cache.local.CacheInfo
 import cache.local.LocalScalableCache
 import exception.KeyNotFoundException
@@ -20,6 +21,8 @@ class ScalableDistributedCache(private val nodeId: NodeId, private var nodeList:
 
     private val nodeHasher = NodeHasher(nodeCount)
 
+    private val nodeLauncher = LocalNodeLauncher()
+
     private val cache = LocalScalableCache(nodeHasher)
 
     private val sender = ScalableSender(nodeId, nodeList)
@@ -39,7 +42,7 @@ class ScalableDistributedCache(private val nodeId: NodeId, private var nodeList:
 
     private var copyCompleteCount = 0
 
-    private lateinit var copyThread: Thread
+    private lateinit var scaleThread: Thread
 
     init {
         for (i in 0 until nodeCount) {
@@ -49,7 +52,8 @@ class ScalableDistributedCache(private val nodeId: NodeId, private var nodeList:
         // If the node was just booted up
         if (nodeId == nodeCount) {
             sortedNodes[nodeHasher.nodeHashValue(nodeId)] = nodeId
-            sender.broadcastScalableMessage(ScalableMessage(nodeId, "localhost:${7070 + nodeId}", ScalableMessageType.READY))
+            scaleThread = Thread { sender.broadcastScalableMessage(ScalableMessage(nodeId, "localhost:${7070 + nodeId}", ScalableMessageType.READY)) }
+            scaleThread.start()
         }
     }
 
@@ -112,8 +116,10 @@ class ScalableDistributedCache(private val nodeId: NodeId, private var nodeList:
     }
 
     override fun broadcastLaunchIntentions() {
-        val success = sender.broadcastScalableMessage(ScalableMessage(nodeId, "", ScalableMessageType.LAUNCH_NODE))
-        print("SCALABLE CACHE: Result of broadcasting launch intentions was $success\n")
+        // val success = sender.broadcastScalableMessage(ScalableMessage(nodeId, "", ScalableMessageType.LAUNCH_NODE))
+        scaleThread = Thread { sender.broadcastScalableMessageAsync(ScalableMessage(nodeId, "", ScalableMessageType.LAUNCH_NODE)) }
+        scaleThread.start()
+        print("SCALABLE CACHE: Created and running broadcast thread")
     }
 
     override fun markCopyComplete(senderId: NodeId) {
@@ -124,7 +130,8 @@ class ScalableDistributedCache(private val nodeId: NodeId, private var nodeList:
             print("SCALABLE CACHE: Complete count is now $copyCompleteCount out of $nodeCount\n")
             if (copyCompleteCount == nodeCount) {
                 print("SCALABLE CACHE: Going to broadcast SCALE_COMPLETE message\n")
-                sender.broadcastScalableMessage(ScalableMessage(nodeId, "", ScalableMessageType.SCALE_COMPLETE))
+                scaleThread = Thread { sender.broadcastScalableMessage(ScalableMessage(nodeId, "", ScalableMessageType.SCALE_COMPLETE)) }
+                scaleThread.start()
             }
         }
     }
@@ -134,6 +141,10 @@ class ScalableDistributedCache(private val nodeId: NodeId, private var nodeList:
         for (kvPair in kvPairs) {
             cache.store(KeyVersionPair(kvPair.key, kvPair.version), kvPair.value)
         }
+    }
+
+    override fun initiateLaunch(): Boolean {
+        return nodeLauncher.launchNode(nodeCount)
     }
 
     override fun initiateCopy(hostName: String) {
@@ -149,8 +160,8 @@ class ScalableDistributedCache(private val nodeId: NodeId, private var nodeList:
             printSortedNodes()
 
             // Start the thread to copy asynchronously
-            copyThread = Thread { copyKeysByHashValues(nodeHasher.nodeHashValue(nodeId), newHashValue) }
-            copyThread.start()
+            scaleThread = Thread { copyKeysByHashValues(nodeHasher.nodeHashValue(nodeId), newHashValue) }
+            scaleThread.start()
         }
     }
 

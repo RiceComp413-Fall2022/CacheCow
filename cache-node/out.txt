@@ -1,8 +1,17 @@
-Starting a Gradle Daemon, 1 busy Daemon could not be reused, use --status for details
-> Task :processResources NO-SOURCE
-> Task :compileKotlin
+> Task :compileKotlin UP-TO-DATE
 > Task :compileJava NO-SOURCE
+> Task :processResources NO-SOURCE
 > Task :classes UP-TO-DATE
 
 > Task :run
-Initializing node 3 on port 7073
+Initializing node 2 on port 7072
+SCALABLE SENDER: Sending broadcast message READY
+SCALABLE SENDER: Sending scalable message request to http://localhost:7070/v1/inform
+SCALABLE SENDER: Sending scalable message request to http://localhost:7071/v1/inform
+SCALABLE SENDER: Caught connection refused exception
+
+*********INFORM REQUEST*********
+SCALABLE RECEIVER: Deserialized message from node 0
+SCALABLE RECEIVER: Got COPY_COMPLETE request from node 0
+SCALABLE CACHE: Marking that node 0 has completed copying
+SCALABLE CACHE: Complete count is now 1 out of 2

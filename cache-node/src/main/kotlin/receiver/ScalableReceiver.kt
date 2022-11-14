@@ -8,10 +8,11 @@ import ScalableMessageType
 import cache.distributed.IScalableDistributedCache
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.eclipse.jetty.http.HttpStatus
-import java.io.File
 import java.util.*
 
 class ScalableReceiver(port: Int, nodeId: NodeId, private var nodeCount: Int, distributedCache: IScalableDistributedCache): Receiver(port, nodeId, nodeCount, distributedCache), IScalableReceiver {
+
+    // TODO: Move message passing logic to different module (should not keep track of timers and flags)
 
     /**
      * Flag indicating whether the current node intends to launch
@@ -140,7 +141,7 @@ class ScalableReceiver(port: Int, nodeId: NodeId, private var nodeCount: Int, di
                 launchTimer.schedule(object : TimerTask() {
                     override fun run() {
                         print("SCALABLE SENDER: Launching new node\n")
-                        launchNode()
+                        distributedCache.initiateLaunch()
                     }
                 }, 2 * 1000)
             }
@@ -165,20 +166,4 @@ class ScalableReceiver(port: Int, nodeId: NodeId, private var nodeCount: Int, di
             ctx.result(mapper.writeValueAsString(kvPairs)).status(HttpStatus.OK_200)
         }
     }
-
-    /**
-     * Should eventually be abstracted in different class (NodeLauncher)
-     */
-    override fun launchNode() {
-        val args = arrayOf("/bin/bash", "-c", "./gradlew run --args '$nodeCount ${7070 + nodeCount}'")
-        val pb = ProcessBuilder(*args)
-        val currentDirectory = System.getProperty("user.dir")
-        print("Command: ${pb.command()}\n")
-        print("Current directory: $currentDirectory\n")
-
-        pb.directory(File(currentDirectory))
-        pb.redirectOutput(File("$currentDirectory/out.txt"))
-        pb.start()
-    }
-
 }
