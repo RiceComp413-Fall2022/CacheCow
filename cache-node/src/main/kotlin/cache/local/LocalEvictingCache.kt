@@ -48,7 +48,7 @@ class LocalEvictingCache(private var maxCapacity: Int = 100) : ILocalEvictingCac
 
         Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate({
             monitorMemoryUsage()
-        }, 1, 5, TimeUnit.SECONDS)
+        }, 1, 10, TimeUnit.SECONDS)
 
     }
 
@@ -76,8 +76,9 @@ class LocalEvictingCache(private var maxCapacity: Int = 100) : ILocalEvictingCac
         if (cache.containsKey(kvPair)) {
             remove(cache[kvPair])
         }
+        cache[kvPair] = node
         insert(node)
-
+        
         return true
     }
 
@@ -106,6 +107,33 @@ class LocalEvictingCache(private var maxCapacity: Int = 100) : ILocalEvictingCac
         }
     }
 
+    override fun fetchJVMUsage(): MemoryUsageInfo {
+        usedMemory = JVMRuntime.totalMemory() - JVMRuntime.freeMemory()
+        maxMemory = JVMRuntime.maxMemory()
+        return MemoryUsageInfo(usedMemory, maxMemory)
+    }
+
+    override fun isFull(): Boolean {
+        return usedMemory > (maxMemory * memoryUtilizationLimit).toInt()
+    }
+
+    override fun monitorMemoryUsage() {
+        print("Monitoring Memory Usage\n")
+
+        fetchJVMUsage()
+        if (isFull()) {
+            print("Cache is full\n")
+            val estimateToRemove = usedMemory - (maxMemory * (memoryUtilizationLimit - 0.2))
+            print("used $usedMemory maximum ${(maxMemory * memoryUtilizationLimit).toInt()} amount to remove $estimateToRemove\n")
+            var removed = 0
+
+            while (removed < estimateToRemove) {
+                removed += removeLRU()
+                print("removed $removed\n")
+            }
+        }
+    }
+
     private fun removeLRU() : Int {
         if (cache.size == 0) {
             /* consider raising an exception */
@@ -122,43 +150,6 @@ class LocalEvictingCache(private var maxCapacity: Int = 100) : ILocalEvictingCac
             return node.value.size + node.kvPair.key.length + 4
         }
         return 0
-    }
-
-    override fun isFull(): Boolean {
-        return isCacheFull() || isJVMFull()
-    }
-
-    override fun isCacheFull(): Boolean {
-        return cache.size >= maxCapacity
-    }
-
-    override fun isJVMFull(): Boolean {
-        return usedMemory.toInt() > (maxMemory.toInt() * memoryUtilizationLimit).toInt()
-    }
-
-    override fun fetchJVMUsage(): MemoryUsageInfo {
-        usedMemory = JVMRuntime.totalMemory() - JVMRuntime.freeMemory()
-        maxMemory = JVMRuntime.maxMemory()
-        return MemoryUsageInfo(usedMemory, maxMemory)
-    }
-
-    override fun monitorMemoryUsage() {
-        print("Monitoring Memory Usage")
-        if (isCacheFull()) {
-            for (i in 1..(cache.size - (maxCapacity * memoryUtilizationLimit).toInt()) + 1) {
-                removeLRU()
-            }
-        }
-
-        fetchJVMUsage()
-        if (isJVMFull()) {
-            val estimateToRemove = (maxMemory * (memoryUtilizationLimit - 0.2)) - usedMemory
-            var removed = 0
-
-            while (removed < estimateToRemove) {
-                removed += removeLRU()
-            }
-        }
     }
 
     /**

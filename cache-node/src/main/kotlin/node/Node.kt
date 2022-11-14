@@ -6,6 +6,7 @@ import sender.ISender
 import cache.distributed.DistributedCache
 import cache.local.CacheInfo
 import cache.local.LocalCache
+import cache.local.LocalEvictingCache
 import receiver.Receiver
 import receiver.ReceiverUsageInfo
 import sender.Sender
@@ -39,7 +40,7 @@ open class Node(private val nodeId: NodeId, nodeList: List<String>, port: Int, c
 
     init {
         print("Initializing node $nodeId on port $port with cache capacity $capacity\n")
-        localCache = LocalCache(capacity)
+        localCache = LocalEvictingCache(capacity)
         sender = Sender(nodeId, nodeList)
         distributedCache = DistributedCache(nodeId, nodeList.size, localCache, sender)
         receiver = Receiver(port, nodeList.size, this, distributedCache)
