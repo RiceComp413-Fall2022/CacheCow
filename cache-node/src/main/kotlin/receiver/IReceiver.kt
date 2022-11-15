@@ -1,7 +1,6 @@
 package receiver
 
-import cache.local.CacheInfo
-import sender.SenderUsageInfo
+import cache.distributed.IDistributedCache
 
 /**
  * An interface specifying the behavior of a receiver, which receives request from other
@@ -23,25 +22,9 @@ interface IReceiver {
     /**
      * Get system info for distributed cache, including memory usage
      */
-    fun getSystemInfo(): SystemInfo
+    fun getSystemInfo(): IDistributedCache.SystemInfo
 
 }
-
-/**
- * Client response giving memory usage of the JVM.
- */
-data class MemoryUsageInfo(val allocated: Long, val max: Long, val usage: Double)
-
-/**
- * Encapsulates information about the usage of this node into one object
- */
-data class SystemInfo(
-    val nodeId: Int,
-    val memUsage: MemoryUsageInfo,
-    val cacheInfo: CacheInfo,
-    var receiverUsageInfo: ReceiverUsageInfo?,
-    val senderUsageInfo: SenderUsageInfo?
-)
 
 /**
  * Information about what the receiver has done so far

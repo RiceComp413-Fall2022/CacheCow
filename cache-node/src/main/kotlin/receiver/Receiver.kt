@@ -140,7 +140,7 @@ open class Receiver(
         return receiverUsageInfo
     }
 
-    override fun getSystemInfo(): SystemInfo {
+    override fun getSystemInfo(): IDistributedCache.SystemInfo {
         val systemInfo = distributedCache.getSystemInfo()
         systemInfo.receiverUsageInfo = getReceiverUsageInfo()
         return systemInfo

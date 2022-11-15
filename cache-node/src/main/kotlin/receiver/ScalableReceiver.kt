@@ -97,7 +97,7 @@ class ScalableReceiver(port: Int, nodeId: NodeId, private var nodeCount: Int, pr
     }
 
     override fun start() {
-        super.start()
+        app.start()
         distributedCache.start()
     }
 }
