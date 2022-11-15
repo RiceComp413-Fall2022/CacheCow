@@ -12,7 +12,7 @@ class RendezvousKeyDistributor: IKeyDistributor {
         TODO("Not yet implemented")
     }
 
-    override fun addNode(): Pair<Int, Int> {
+    override fun addNode(): MutableList<Pair<Int, Int>> {
         TODO("Not yet implemented")
     }
 }

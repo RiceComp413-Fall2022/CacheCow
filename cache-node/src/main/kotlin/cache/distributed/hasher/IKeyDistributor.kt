@@ -8,5 +8,5 @@ interface IKeyDistributor {
 
     fun getPrimaryAndPrevNode(kvPair: KeyVersionPair): Pair<NodeId, NodeId>
 
-    fun addNode(): Pair<Int, Int>
+    fun addNode(): MutableList<Pair<Int, Int>>
 }

@@ -2,6 +2,7 @@ package cache.local
 
 import KeyValuePair
 import KeyVersionPair
+import cache.distributed.IScalableDistributedCache
 import cache.distributed.hasher.INodeHasher
 import receiver.MemoryUsageInfo
 import java.util.*
@@ -12,7 +13,7 @@ import java.util.concurrent.TimeUnit
 /**
  * A concrete local cache that stores data in a ConcurrentHashMap.
  */
-class LocalScalableCache(private var nodeHasher: INodeHasher, private var maxCapacity: Int = 100): ILocalScalableCache {
+class LocalScalableCache(private var nodeHasher: INodeHasher, private val distributedCache: IScalableDistributedCache, private var maxCapacity: Int = 3): ILocalScalableCache {
 
     /* A process-safe concurrent hash map that is used to store LRU payload-containing node refferences */
     private val cache: ConcurrentHashMap<KeyVersionPair, LRUNode> = ConcurrentHashMap<KeyVersionPair, LRUNode>(maxCapacity)
@@ -78,7 +79,7 @@ class LocalScalableCache(private var nodeHasher: INodeHasher, private var maxCap
         printCacheContents()
         val hashValue = nodeHasher.primaryHashValue(kvPair)
         val prevVal = cache[kvPair]?.value
-        val prevKvByteSize = if(prevVal == null) 0 else (prevVal.size + kvPair.key.length + 4)
+        val prevKvByteSize = if (prevVal == null) 0 else (prevVal.size + kvPair.key.length + 4)
         kvByteSize += (value.size + kvPair.key.length + 4) - prevKvByteSize
 
         val node = LRUNode(kvPair, value)
@@ -88,6 +89,11 @@ class LocalScalableCache(private var nodeHasher: INodeHasher, private var maxCap
             sortedLocalKeys[hashValue] = kvPair
         }
         insert(node)
+
+        // TODO: Remove, temporary way to launch new node
+        if (cache.size ==  maxCapacity) {
+            distributedCache.initiateLaunch()
+        }
 
         return true
     }
@@ -187,27 +193,29 @@ class LocalScalableCache(private var nodeHasher: INodeHasher, private var maxCap
         return CacheInfo(cache.size, kvByteSize)
     }
 
-    override fun initializeCopy(start: Int, end: Int) {
-        print("LOCAL CACHE: Finding keys to copy in range ($start, $end)\n")
+    override fun initializeCopy(copyRanges: MutableList<Pair<Int, Int>>) {
         printSortedLocalKeys()
         copyHashes = mutableListOf()
-        if (start > end) {
-            print("CASE 1\n")
-            for (e in sortedLocalKeys.headMap(end)) {
-                if (e.key != null) {
-                    copyHashes.add(e.key)
+        for (copyRange in copyRanges) {
+            print("LOCAL CACHE: Finding keys to copy in range (${copyRange.first}, ${copyRange.second})\n")
+            if (copyRange.first > copyRange.second) {
+                print("CASE 1\n")
+                for (e in sortedLocalKeys.headMap(copyRange.second)) {
+                    if (e.key != null) {
+                        copyHashes.add(e.key)
+                    }
                 }
-            }
-            for (e in sortedLocalKeys.tailMap(start)) {
-                if (e.key != null) {
-                    copyHashes.add(e.key)
+                for (e in sortedLocalKeys.tailMap(copyRange.first)) {
+                    if (e.key != null) {
+                        copyHashes.add(e.key)
+                    }
                 }
-            }
-        } else {
-            print("CASE 2\n")
-            for (e in sortedLocalKeys.subMap(start, end)) {
-                if (e.key != null) {
-                    copyHashes.add(e.key)
+            } else {
+                print("CASE 2\n")
+                for (e in sortedLocalKeys.subMap(copyRange.first, copyRange.second)) {
+                    if (e.key != null) {
+                        copyHashes.add(e.key)
+                    }
                 }
             }
         }

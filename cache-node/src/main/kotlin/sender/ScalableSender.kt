@@ -5,16 +5,13 @@ import NodeId
 import ScalableMessage
 import exception.BroadcastException
 import exception.ConnectionRefusedException
-import org.eclipse.jetty.webapp.MetaData.Complete
 import java.net.ConnectException
 import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 import java.util.concurrent.CompletableFuture
-import java.util.stream.Collectors
 import kotlin.streams.asStream
-import kotlin.streams.toList
 
 class ScalableSender(private val nodeId: NodeId, private var nodeList: MutableList<String>): Sender(nodeId, nodeList), IScalableSender {
 

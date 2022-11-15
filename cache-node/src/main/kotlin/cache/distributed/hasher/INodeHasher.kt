@@ -19,6 +19,15 @@ interface INodeHasher {
     fun nodeHashValue(nodeId: NodeId): Int
 
     /**
+     * Get the hash value for the (node, index) pair.
+     *
+     * @param nodeId The node id
+     * @param index Integer used to adjust hash value
+     * @return The hash value of the (node, index) pair
+     */
+    fun extendedNodeHashValue(nodeId: NodeId, index: Int): Int
+
+    /**
      * Get the hash value for given key-version pair.
      *
      * @param kvPair The key version pair

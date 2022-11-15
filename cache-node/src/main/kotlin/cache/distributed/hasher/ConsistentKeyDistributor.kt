@@ -4,7 +4,7 @@ import KeyVersionPair
 import NodeId
 import java.util.*
 
-class ConsistentKeyDistributor(private val nodeId: NodeId, private var nodeCount: Int, k: Int): IKeyDistributor {
+class ConsistentKeyDistributor(nodeId: NodeId, private var nodeCount: Int, private val pointsPerNode: Int = 10): IKeyDistributor {
 
     private var sortedNodes: SortedMap<Int, Int> = Collections.synchronizedSortedMap(
         TreeMap()
@@ -13,12 +13,11 @@ class ConsistentKeyDistributor(private val nodeId: NodeId, private var nodeCount
     private val nodeHasher = NodeHasher(nodeCount)
 
     init {
-        for (i in 0 until nodeCount) {
-            sortedNodes[nodeHasher.nodeHashValue(i)] = i
-        }
-
-        if (nodeId == nodeCount) {
-            sortedNodes[nodeHasher.nodeHashValue(nodeId)] = nodeId
+        val trueNodeCount = if (nodeId == nodeCount) nodeCount + 1 else nodeCount
+        for (i in 0 until trueNodeCount) {
+            for (j in 0 until pointsPerNode) {
+                sortedNodes[nodeHasher.extendedNodeHashValue(i, j)] = i
+            }
         }
     }
 
@@ -47,18 +46,38 @@ class ConsistentKeyDistributor(private val nodeId: NodeId, private var nodeCount
        return Pair(primaryNodeId, prevNodeId)
     }
 
-    override fun addNode(): Pair<Int, Int> {
+    override fun addNode(): MutableList<Pair<Int, Int>> {
         print("CONSISTENT DISTRIBUTOR: Beginning copying process\n")
         printSortedNodes()
-        
-        val newHashValue = nodeHasher.nodeHashValue(nodeCount)
 
-        // Update the sorted nodes and node count
-        sortedNodes[newHashValue] = nodeCount
+        // Add hash values of new node to the circle
+        var hashValue: Int
+        val newHashValues = mutableListOf<Int>()
+        for (j in 0 until pointsPerNode) {
+            hashValue = nodeHasher.extendedNodeHashValue(nodeCount, j)
+            newHashValues.add(hashValue)
+            sortedNodes[hashValue] = nodeCount
+        }
+
+        // Determine the ranges where keys must be copied
+        val copyRangeList = mutableListOf<Pair<Int, Int>>()
+        for (newHashValue in newHashValues) {
+            copyRangeList.add(Pair(getPrevNode(newHashValue), newHashValue))
+        }
+
+        // Update the node count
         nodeCount++
 
         // Return range of hash values to be copied
-        return Pair(nodeHasher.nodeHashValue(nodeId), newHashValue)
+        return copyRangeList
+    }
+
+    private fun getPrevNode(hashValue: Int): NodeId {
+        val tailMap = sortedNodes.tailMap(hashValue)
+        val headMap = sortedNodes.headMap(hashValue)
+        return if (headMap.isNotEmpty())
+            headMap[headMap.lastKey()]!!
+        else tailMap[tailMap.lastKey()]!!
     }
 
     private fun printSortedNodes() {

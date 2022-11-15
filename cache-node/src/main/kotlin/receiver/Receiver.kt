@@ -85,7 +85,7 @@ open class Receiver(
             distributedCache.store(KeyVersionPair(key, version), value, senderNum)
             receiverUsageInfo.storeSuccesses++
 
-            ctx.json(KeyVersionReply(key, version)).status(HttpStatus.CREATED_201)
+            ctx.json(KeyVersionPair(key, version)).status(HttpStatus.CREATED_201)
         }
 
         /* Handle requests to monitor information about the node of this receiver */
@@ -146,8 +146,3 @@ open class Receiver(
         return systemInfo
     }
 }
-
-/**
- * Represents a key-version tuple in an HTTP response.
- */
-data class KeyVersionReply(val key: String, val version: Int)

@@ -34,7 +34,7 @@ class ScalableDistributedCache(private val nodeId: NodeId, private var nodeList:
     /**
      * Local cache implementation
      */
-    private val cache = LocalScalableCache(nodeHasher)
+    private val cache = LocalScalableCache(nodeHasher, this)
 
     /**
      * Module used to send all out-going messages
@@ -133,18 +133,10 @@ class ScalableDistributedCache(private val nodeId: NodeId, private var nodeList:
         }
     }
 
-    override fun getSystemInfo(): SystemInfo {
-        return SystemInfo(
-            nodeId,
-            getMemoryUsage(),
-            cache.getCacheInfo(),
-            null,
-            sender.getSenderUsageInfo())
-    }
-
     override fun start() {
         if (nodeId == nodeCount) {
             Thread {
+                // TODO: Get correct host name
                 sender.broadcastScalableMessage(
                     ScalableMessage(
                         nodeId,
@@ -154,6 +146,16 @@ class ScalableDistributedCache(private val nodeId: NodeId, private var nodeList:
                 )
             }.start()
         }
+    }
+
+    override fun getSystemInfo(): SystemInfo {
+        return SystemInfo(
+            nodeId,
+            getMemoryUsage(),
+            cache.getCacheInfo(),
+            null,
+            sender.getSenderUsageInfo()
+        )
     }
 
     override fun handleLaunchRequest(senderId: NodeId): Boolean {
@@ -244,15 +246,15 @@ class ScalableDistributedCache(private val nodeId: NodeId, private var nodeList:
             nodeCount++
 
             // Find range of keys to copy
-            val copyRange = keyDistributor.addNode()
+            val copyRanges = keyDistributor.addNode()
 
             // Start the thread to copy asynchronously
-            Thread { copyKeysByHashValues(copyRange) }.start()
+            Thread { copyKeysByHashValues(copyRanges) }.start()
         }
     }
 
-    private fun copyKeysByHashValues(copyRange: Pair<Int, Int>) {
-        cache.initializeCopy(copyRange.first, copyRange.second)
+    private fun copyKeysByHashValues(copyRanges: MutableList<Pair<Int, Int>>) {
+        cache.initializeCopy(copyRanges)
         var kvPairs: MutableList<KeyValuePair>
         do {
             kvPairs = cache.streamCopyKeys(copyBatchSize)

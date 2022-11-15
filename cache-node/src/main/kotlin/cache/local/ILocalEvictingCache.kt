@@ -10,12 +10,12 @@ interface ILocalEvictingCache : ILocalCache {
     /**
      * Fetches JVM Usage and updates respective LocalEvictingCache attributes
      */
-    fun fetchJVMUsage() : MemoryUsageInfo
+    fun fetchJVMUsage(): MemoryUsageInfo
 
     fun monitorMemoryUsage()
 
-    fun isCacheFull() : Boolean
+    fun isCacheFull(): Boolean
 
-    fun isJVMFull() : Boolean
+    fun isJVMFull(): Boolean
 
 }

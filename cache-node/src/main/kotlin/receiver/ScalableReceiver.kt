@@ -94,17 +94,6 @@ class ScalableReceiver(port: Int, nodeId: NodeId, private var nodeCount: Int, pr
             }
             distributedCache.bulkLocalStore(bulkCopy.values)
         }
-
-        /**
-         * Test endpoint to launch a node, note this would normally be embedded in cache
-         * along with fullness criteria
-         */
-        app.get("/v1/launch-node") { ctx ->
-            print("*********LAUNCH NODE REQUEST*********\n")
-
-            distributedCache.initiateLaunch()
-            ctx.status(HttpStatus.OK_200)
-        }
     }
 
     override fun start() {
