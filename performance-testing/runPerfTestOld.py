@@ -6,9 +6,11 @@
 from functools import reduce
 import json
 import matplotlib.pyplot as plt
+from matplotlib import collections
 from multiprocessing import Pool
 from optparse import OptionParser
 import pandas as pd
+import pylab as pl
 import requests
 import seaborn as sns
 from statistics import mean
@@ -20,17 +22,65 @@ from perfTests import *
 def serialPerfTest(function, data, reduction=lambda a, b: a + b):
     return reduce(reduction, map(function, data))
 
+    # data = map(function, data)
+    #
+    # times = []
+    # total_time = 0
+    # for i, (start_time, end_time, time) in enumerate(data):
+    #     times.append([(start_time, i), (end_time, i)])
+    #     total_time += time
+    #
+    # plot_time_intervals(times, isParallel=False)
+    #
+    # return total_time
+
 def parallelPerfTest(function, data, reduction=lambda a, b: a + b):
     with Pool() as pool:
-      return reduce(reduction, pool.map(function, data))
+        return reduce(reduction, pool.map(function, data))
+    #     data = pool.map(function, data)
+    #
+    # times = []
+    # total_time = 0
+    # for i, (start_time, end_time, time) in enumerate(data):
+    #     times.append([(start_time, i), (end_time, i)])
+    #     total_time += time
+    #
+    # plot_time_intervals(times, isParallel=True)
+    #
+    # return total_time
 
+def plot_time_intervals(times, isParallel):
+    """Plots time intervals
+    """
+
+    if (overlap(times)):
+        print("Overlap!!")
+        lc = collections.LineCollection(times, linewidths=2)
+        fig, ax = pl.subplots()
+        ax.add_collection(lc)
+        ax.autoscale()
+        ax.margins(0.1)
+        if isParallel:
+            ax.set_title("Graph of Operation Time Intervals (in Parallel)")
+        else:
+            ax.set_title("Graph of Operation Time Intervals (in Serial)")
+        ax.set_xlabel("Time")
+        ax.set_ylabel("Operation")
+
+def overlap(times):
+    prev_end = None
+    for start, end in times:
+        if prev_end and (start <= prev_end):
+            return True
+        prev_end = end
+    return False
 
 
 def get_backend_timing(node_url):
     """Fetches request timing data from the backend.
     """
     fetched_data = json.loads(requests.get(url=f'http://{node_url}/v1/node-info').content)
-    request_timing = fetched_data['totalRequestTiming']
+    request_timing = fetched_data['clientRequestTiming']
     store_timing = request_timing['storeTiming']
     fetch_timing = request_timing['fetchTiming']
     return store_timing, fetch_timing
@@ -59,6 +109,9 @@ def runPerfTest(options):
             perfTestFunc = parallelPerfTest
         client_time = options.test(options.url, perfTestFunc=perfTestFunc)
 
+        # Clear cache
+        requests.delete(url=f'http://{options.url}/v1/clear')
+
         # Print Performance Time Metrics
         if options.time_backend:
             store_end_timing, fetch_end_timing = get_backend_timing(options.url)
@@ -85,6 +138,7 @@ def runPerfTest(options):
 
     # Graph
     if options.graph:
+        fig, ax = pl.subplots()
         sns.lineplot(data=timing_df, markers=True)
         plt.xlabel("Trials")
         plt.ylabel("Time (in seconds)")
@@ -136,7 +190,7 @@ if __name__ == "__main__":
                 help="Maximum cache capacity.")
     parser.add_option("--trials",
                 type="int",
-                default=1,
+                default=3,
                 dest="trials",
                 help="Number of performance test trials. These are run " +
                 "back-to-back. The cache state is not reset in between trials." +
