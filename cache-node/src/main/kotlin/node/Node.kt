@@ -18,6 +18,10 @@ import sender.SenderUsageInfo
 /**
  * Node class that intermediates between the receiver, sender, local cache, and
  * distributed cache.
+ * @param nodeId id of the node
+ * @param nodeList the list of node ips
+ * @param port port number
+ * @param capacity key value storage capacity
  */
 
 class Node(private val nodeId: NodeId, nodeList: List<String>, port: Int) {
@@ -43,7 +47,7 @@ class Node(private val nodeId: NodeId, nodeList: List<String>, port: Int) {
 
     init {
         print("Initializing node $nodeId on port $port\n")
-        localCache = OptimalCache()
+        localCache = LocalCache()
         sender = Sender(nodeId, nodeList)
         distributedCache = DistributedCache(nodeId, nodeList.size, localCache, sender)
         receiver = Receiver(port, nodeList.size, this, distributedCache, localCache)
@@ -58,7 +62,6 @@ class Node(private val nodeId: NodeId, nodeList: List<String>, port: Int) {
 
     /**
      * Gets node info for this node, including memory usage, cacheInfo
-     * TODO: also process sender and receiver usage info
      */
     fun getNodeInfo(): NodeInfo {
         val runtime = Runtime.getRuntime()

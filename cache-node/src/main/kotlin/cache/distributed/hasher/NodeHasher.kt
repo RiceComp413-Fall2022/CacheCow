@@ -11,7 +11,7 @@ class NodeHasher(private val nodeCount: Int) : INodeHasher {
 
     override fun primaryHash(kvPair: KeyVersionPair): NodeId {
         val bytes = kvPair.key.encodeToByteArray()
-        return ((MurmurHash3.hash32x86(bytes, 0, bytes.size, 0) % nodeCount) + nodeCount) % nodeCount
+        return (MurmurHash3.hash32x86(bytes, 0, bytes.size, 0) % nodeCount + nodeCount) % nodeCount
     }
 
 }
