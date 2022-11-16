@@ -44,11 +44,11 @@ class LocalCache(private var maxCapacity: Int = 100) : ILocalCache {
         return cache.remove(kvPair)
     }
 
-    override fun clear() {
+    override fun clearAll() {
         cache.clear()
     }
 
-    override fun isFull(): Boolean {
+    fun isFull(): Boolean {
         return this.cache.size >= this.maxCapacity
     }
 
