@@ -1,6 +1,7 @@
 package cache.local.multitable
 
 import KeyVersionPair
+import cache.local.CacheInfo
 
 /**
  * Table implementations are expected to be thread-safe!
@@ -59,12 +60,10 @@ interface ITable {
      * Obtains table performance statistics. Works even if the table itself is invalid.
      * @returns information about the table performance.
      */
-    fun getTableInfo(): TableInfo
+    fun getTableInfo(): CacheInfo
 
 }
 
 enum class Status {
     SUCCESS, FULL, INVALID, MUTATION
 }
-
-data class TableInfo(val capacity: Int, val memorySize: Int)

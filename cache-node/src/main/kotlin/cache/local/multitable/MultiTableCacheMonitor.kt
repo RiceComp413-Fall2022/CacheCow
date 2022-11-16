@@ -3,6 +3,7 @@ package cache.local.multitable
 import KeyVersionPair
 import cache.local.CacheInfo
 import cache.local.ILocalCache
+import cache.local.aggregateTableInfo
 import exception.InvalidInput
 import java.util.concurrent.locks.ReentrantReadWriteLock
 import kotlin.concurrent.read
@@ -14,7 +15,7 @@ import kotlin.concurrent.write
  *
  * This class is thread-safe!
  */
-class MultiTableCacheMonitor(private val numTables: Int = 3) : ILocalCache {
+class MultiTableCacheMonitor(private val numTables: Int = 3): ILocalCache {
 
 
     /**
@@ -41,35 +42,42 @@ class MultiTableCacheMonitor(private val numTables: Int = 3) : ILocalCache {
     init {
         // Validate all internal tables. Then validate the multi-table cache itself.
         multiTableLock.write {
-            print(numTables)
-            for (table in tables) {
-                print("${table}\n")
-            }
+            //print(numTables)
+//            for (table in tables) {
+//                //print("${table}\n")
+//            }
 
             for (index in 0 until numTables) {
                 val tableIndex = (baseIndex + index) % numTables
                 tables[tableIndex].validate()
-                print("MultiTableCacheMonitor: Initialized table ${index}\n")
+                //print("MultiTableCacheMonitor: Initialized table ${index}\n")
             }
-            print("MultiTableCacheMonitor: Initialized\n")
+            //print("MultiTableCacheMonitor: Initialized\n")
         }
     }
 
     override fun fetch(kvPair: KeyVersionPair): ByteArray? {
-        multiTableLock.write() {
-            print("MultiTableCacheMonitor: fetch ${kvPair.key}, ${kvPair.version}\n")
+        multiTableLock.read() {
+            //print("MultiTableCacheMonitor: fetch ${kvPair.key}, ${kvPair.version}\n")
             val base = baseIndex
 
             // Query Element
             for (queryOffset in 0 until numTables) {
                 val queryIndex = hotOffset(base, queryOffset) //TODO: Change baseIndex later!
+                //print("Fetch: Query Table ${queryIndex} ")
                 val value = tables[queryIndex].fetch(kvPair) ?: continue
 
+                //print("Fetch: Finished Querying: ${value}\n")
+
                 // Promote Element: only reaches here if value is not null
+                if (queryOffset == 0) { // Already in the hottest table
+                    //print("Fetch: Returning value ${value}\n")
+                    return value
+                }
                 // TODO: Run this asynchronously
-                if (queryOffset == 0) break // Already in the hottest table
                 for (promoteOffset in queryOffset - 1 downTo 0) {
                     val promoteIndex = hotOffset(base, promoteOffset)
+                    //print("Fetch: Promote Table ${promoteIndex} ")
                     when (tables[promoteIndex].store(kvPair, value)) {
                         Status.SUCCESS -> return value
                         Status.MUTATION -> throw InvalidInput(
@@ -78,16 +86,17 @@ class MultiTableCacheMonitor(private val numTables: Int = 3) : ILocalCache {
                         Status.FULL, Status.INVALID -> continue
                     }
                 }
+                //print("Fetch: Returning value ${value}\n")
                 return value
             }
-
+            //print("Fetch: ERROR NOT FOUND!\n")
             return null // Element not found
         }
     }
 
     override fun store(kvPair: KeyVersionPair, value: ByteArray) {
-        multiTableLock.read() {
-            print("MultiTableCacheMonitor: store ${kvPair.key}, ${kvPair.version}, ${value}\n")
+        multiTableLock.write() {
+            //print("MultiTableCacheMonitor: store ${kvPair.key}, ${kvPair.version}, ${value.toString()}\n")
             val base = baseIndex
 
             // Store element
@@ -111,7 +120,7 @@ class MultiTableCacheMonitor(private val numTables: Int = 3) : ILocalCache {
 
     override fun clearAll() {
         multiTableLock.write {
-            print("MultiTableCacheMonitor: ClearAll\n")
+            //print("MultiTableCacheMonitor: ClearAll\n")
             val base = baseIndex
             // Clears all tables.
             for (offset in 0 until numTables) {
@@ -128,7 +137,7 @@ class MultiTableCacheMonitor(private val numTables: Int = 3) : ILocalCache {
      */
     private fun rotateEvict() {
         multiTableLock.write {
-            print("MultiTableCacheMonitor: Rotate Evict\n")
+            //print("MultiTableCacheMonitor: Rotate Evict\n")
             tables[baseIndex].clearAll() {
                 baseIndex = (baseIndex + 1) % numTables // Shifts the least popular table to the most popular table.
             }
@@ -162,7 +171,14 @@ class MultiTableCacheMonitor(private val numTables: Int = 3) : ILocalCache {
     }
 
     override fun getCacheInfo(): CacheInfo {
-        TODO("Not yet implemented")
+        val base = baseIndex
+        var cacheInfo = CacheInfo(0, 0)
+        for (offset in 0 until numTables) {
+            val infoIndex = coldOffset(base, offset)
+            val tableInfo = tables[infoIndex].getTableInfo()
+            cacheInfo = aggregateTableInfo(cacheInfo, tableInfo)
+        }
+        return cacheInfo
     }
 
 }

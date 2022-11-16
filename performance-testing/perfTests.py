@@ -37,10 +37,15 @@ class PerfTest:
 
         # Store Data
         requests.post(url=f'http://{node_url}/v1/blobs/{key}/{version}',
-                      data = str(value).encode('ascii'))
+                  data = str(value).encode('ascii'))
 
         # End time
-        return time.perf_counter() - start_time
+        end_time = time.perf_counter()
+        total_time = end_time - start_time
+
+        return total_time
+
+        # return [start_time, end_time, total_time]
 
     def fetch_key_test(data):
         node_url, key, version, value = data.unpack()
@@ -49,15 +54,19 @@ class PerfTest:
         start_time = time.perf_counter()
 
         # Fetch Data
-        fetched_data = requests.get(url=f'http://{node_url}/v1/blobs/{key}/{version}').content
+        fetched_data = requests.get(url=f'http://{node_url}/v1/blobs/{key}/{version}', timeout=1).content
 
         # End time
-        end_time = time.perf_counter() - start_time
+        end_time = time.perf_counter()
+        total_time = end_time - start_time
 
         # Validate fetch
-        assert fetched_data.decode('ascii') == str(value)
+        assert fetched_data.decode('ascii') == None, "Unexpected Key: " + fetched_data.decode('ascii')
+        #assert fetched_data.decode('ascii') == str(value)
 
-        return end_time
+        return total_time
+
+        # return [start_time, end_time, total_time]
 
 
     # The following provide full-scale tests based on our core test functions.

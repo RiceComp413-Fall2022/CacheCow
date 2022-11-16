@@ -6,6 +6,7 @@ import sender.ISender
 import cache.distributed.DistributedCache
 import cache.local.CacheInfo
 import cache.local.LocalCache
+import cache.local.OptimalCache
 import cache.local.multitable.MultiTableCache
 import cache.local.multitable.MultiTableCacheMonitor
 import receiver.Receiver
@@ -19,7 +20,7 @@ import sender.SenderUsageInfo
  * distributed cache.
  */
 
-open class Node(private val nodeId: NodeId, nodeList: List<String>, port: Int) {
+class Node(private val nodeId: NodeId, nodeList: List<String>, port: Int) {
     /**
      * The local cache
      */
@@ -42,7 +43,7 @@ open class Node(private val nodeId: NodeId, nodeList: List<String>, port: Int) {
 
     init {
         print("Initializing node $nodeId on port $port\n")
-        localCache = MultiTableCacheMonitor()
+        localCache = OptimalCache()
         sender = Sender(nodeId, nodeList)
         distributedCache = DistributedCache(nodeId, nodeList.size, localCache, sender)
         receiver = Receiver(port, nodeList.size, this, distributedCache, localCache)

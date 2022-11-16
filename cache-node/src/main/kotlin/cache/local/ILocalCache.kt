@@ -14,7 +14,9 @@ interface ILocalCache: IDistributedCache {
 
 }
 
-/**
- * Encapsulates information about the cache in this node
- */
-data class CacheInfo(val totalKeys: Int, val kvBytes: Int)
+fun aggregateTableInfo(info1: CacheInfo, info2: CacheInfo): CacheInfo {
+    return CacheInfo(info1.totalKeys + info2.totalKeys,
+        info1.memorySize + info2.memorySize)
+}
+
+data class CacheInfo(val totalKeys: Int, val memorySize: Int)

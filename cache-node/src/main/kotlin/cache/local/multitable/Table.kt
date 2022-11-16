@@ -1,6 +1,7 @@
 package cache.local.multitable
 
 import KeyVersionPair
+import cache.local.CacheInfo
 import exception.ProgramAssumptionException
 import java.util.concurrent.locks.ReentrantReadWriteLock
 import kotlin.concurrent.read
@@ -56,7 +57,7 @@ class Table(private val maxCapacity: Int = 100, private val maxMemorySize: Int =
 
 
     override fun fetch(kvPair: KeyVersionPair): ByteArray? {
-        print("Table: fetch ${kvPair.key}, ${kvPair.version}\n")
+        //print("Table: fetch ${kvPair.key}, ${kvPair.version}\n")
         tableLock.read() {
             if (!isValid) return null
 
@@ -67,7 +68,7 @@ class Table(private val maxCapacity: Int = 100, private val maxMemorySize: Int =
     }
 
     override fun store(kvPair: KeyVersionPair, value: ByteArray): Status {
-        print("Table: store ${kvPair.key}, ${kvPair.version}, ${value}\n")
+        //print("Table: store ${kvPair.key}, ${kvPair.version}, ${value}\n")
         tableLock.read() {
             if (!isValid) return Status.INVALID
 
@@ -75,12 +76,17 @@ class Table(private val maxCapacity: Int = 100, private val maxMemorySize: Int =
                 val currentValue = cache[kvPair]
                 if (currentValue != null) {  // Value already stored
                     return if (currentValue.contentEquals(value)) {
+                        //print("Already stored!\n")
                         Status.SUCCESS // Already stored with correct value
                     } else {
+                        //print("Store Mutation!\n")
                         Status.MUTATION // Already stored with different value
                     }
                 }
-                if (isFull()) return Status.FULL
+                if (isFull()) {
+                    //print("Store Error: Full!\n")
+                    return Status.FULL
+                }
 
                 // Update memory usage
                 memorySize += if (cache.containsKey(kvPair)) {
@@ -93,6 +99,7 @@ class Table(private val maxCapacity: Int = 100, private val maxMemorySize: Int =
 
                 // Store data
                 cache[kvPair] = value
+                //print("Successfully stored!\n")
                 return Status.SUCCESS
             }
         }
@@ -130,14 +137,14 @@ class Table(private val maxCapacity: Int = 100, private val maxMemorySize: Int =
 //    }
 
     override fun clearAll(cleanup: () -> Unit) {
-        print("Table: clearAll\n")
+        //print("Table: clearAll\n")
 
         if (!invalidate()) return // Other process already clearing table
 
         // Clear Cache
         cacheLock.write() {
             if (isFull()) {
-                print("Table: Full, Cleared!\n")
+                //print("Table: Full, Cleared!\n")
                 cache.clear()
                 memorySize = 0
             }
@@ -153,10 +160,10 @@ class Table(private val maxCapacity: Int = 100, private val maxMemorySize: Int =
         validate()
     }
 
-    override fun getTableInfo(): TableInfo {
+    override fun getTableInfo(): CacheInfo {
         // TODO: Should this perform when table is invalid?
         cacheLock.read() {
-            return TableInfo(cache.size, memorySize)
+            return CacheInfo(cache.size, memorySize)
         }
     }
 
@@ -172,14 +179,16 @@ class Table(private val maxCapacity: Int = 100, private val maxMemorySize: Int =
      * the table is full. ClearAll() checks this before clearing the table.
      */
     private fun isFull(): Boolean {
-        print("Table: full!\n")
+//        print("Table: checking full!\n")
         cacheLock.read() {
+//            print("Capacity: ${cache.size}/${maxCapacity}\n")
+//            print("Capacity: ${memorySize}/${maxMemorySize}\n")
             return cache.size == maxCapacity || memorySize > maxMemorySize
         }
     }
 
     override fun invalidate(): Boolean {
-        print("Table: invalidated!\n")
+//        print("Table: invalidated!\n")
         tableLock.write() {
             if (!isValid) return false
             isValid = false
@@ -188,7 +197,7 @@ class Table(private val maxCapacity: Int = 100, private val maxMemorySize: Int =
     }
 
     override fun validate(): Boolean {
-        print("Table: validated!\n")
+//        print("Table: validated!\n")
         tableLock.write() {
             if (isValid) return false
             isValid = true
