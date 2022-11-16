@@ -13,7 +13,7 @@ interface IDistributedCache {
      * @param kvPair The key-version pair to look up
      * @return The value if found
      */
-    fun fetch(kvPair: KeyVersionPair): ByteArray
+    fun fetch(kvPair: KeyVersionPair): ByteArray?
 
     /**
      * Store a value to the distributed cache.

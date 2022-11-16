@@ -14,11 +14,11 @@ class DistributedCache(private val nodeId: NodeId, private val nodeCount: Int, p
     IDistributedCache {
 
     /**
-     * The INodeHasher used to map keys to nodes
+     * The node hasher used to map keys to nodes
      */
     private val nodeHasher: INodeHasher = NodeHasher(nodeCount)
 
-    override fun fetch(kvPair: KeyVersionPair): ByteArray {
+    override fun fetch(kvPair: KeyVersionPair): ByteArray? {
         val primaryNodeId = nodeHasher.primaryHash(kvPair)
 
         print("DISTRIBUTED CACHE: Hash value of key ${kvPair.key} is ${primaryNodeId}\n")
@@ -57,7 +57,7 @@ class DistributedCache(private val nodeId: NodeId, private val nodeCount: Int, p
     override fun clearAll() {
         for (primaryNodeId in 0 until nodeCount ) {
             if (primaryNodeId == nodeId) {
-                cache.clear()
+                cache.clearAll()
             } else {
                 sender.clearNode(primaryNodeId)
             }
