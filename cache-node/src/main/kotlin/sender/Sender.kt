@@ -57,7 +57,8 @@ open class Sender(private val nodeId: NodeId, private val nodeList: List<String>
         }
 
         senderUsageInfo.fetchSuccesses++
-        return mapper.readTree(response.body()).binaryValue()
+        print("SENDER: Got fetch response with body ${response.body()}\n")
+        return response.body().encodeToByteArray()
     }
 
     override fun storeToNode(kvPair: KeyVersionPair, value: ByteArray, destNodeId: NodeId) {
@@ -68,14 +69,15 @@ open class Sender(private val nodeId: NodeId, private val nodeList: List<String>
 
         val destUrl =
             URI.create("http://${nodeList[destNodeId]}/v1/blobs/${kvPair.key}/${kvPair.version}?senderId=${nodeId}")
-        val requestBody =
-            mapper.writerWithDefaultPrettyPrinter().writeValueAsString(value)
+//        val requestBody =
+//            mapper.writerWithDefaultPrettyPrinter().writeValueAsBytes(value)
+
         val request = HttpRequest.newBuilder()
             .uri(destUrl)
-            .POST(HttpRequest.BodyPublishers.ofString(requestBody))
+            .POST(HttpRequest.BodyPublishers.ofByteArray(value))
             .build()
 
-        print("SENDER: Sending store request to $destUrl\n")
+        print("SENDER: Sending store request to $destUrl with value ${value.contentToString()}\n")
 
         val response: HttpResponse<String>
         try {

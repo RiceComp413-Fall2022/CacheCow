@@ -20,7 +20,7 @@ class NodeHasher(private val nodeCount: Int, private val seed: Int = 0) : INodeH
 
     override fun extendedNodeHashValue(nodeId: NodeId, index: Int): Int {
         val byteArray = byteArrayOf(nodeId.toByte(), index.toByte())
-        return MurmurHash3.hash32x86(byteArray, 0, 1, seed)
+        return MurmurHash3.hash32x86(byteArray, 0, byteArray.size, seed)
     }
 
     override fun primaryHashNode(kvPair: KeyVersionPair): NodeId {

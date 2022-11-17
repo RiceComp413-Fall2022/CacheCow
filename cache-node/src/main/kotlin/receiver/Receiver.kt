@@ -16,7 +16,7 @@ import org.eclipse.jetty.http.HttpStatus
  */
 open class Receiver(
     private val port: Int,
-    private val nodeCount: Int,
+    private var nodeCount: Int,
     private val distributedCache: IDistributedCache
 ) : IReceiver {
 
@@ -79,6 +79,7 @@ open class Receiver(
                     .get()
 
             val value = ctx.bodyAsBytes()
+            print("RECEIVER: Got value ${value.contentToString()}\n")
             if (value.isEmpty()) {
                 throw simpleValidationException("Binary blob cannot be empty")
             }

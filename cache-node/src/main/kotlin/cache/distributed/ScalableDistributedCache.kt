@@ -1,10 +1,10 @@
+import cache.distributed.IDistributedCache
 import cache.distributed.IScalableDistributedCache
 import cache.distributed.hasher.ConsistentKeyDistributor
 import cache.distributed.hasher.NodeHasher
 import cache.distributed.launcher.LocalNodeLauncher
 import cache.local.LocalScalableCache
 import exception.KeyNotFoundException
-import receiver.SystemInfo
 import sender.ScalableSender
 import java.util.*
 
@@ -14,12 +14,15 @@ import java.util.*
 class ScalableDistributedCache(private val nodeId: NodeId, private var nodeList: MutableList<String>):
     IScalableDistributedCache {
 
+    private val prevNodeCount = nodeList.size
+
+    // TODO: This should come from constructor
     private val isNewNode = nodeId == nodeList.size
 
     /**
      * Updated immediately once copying starts to support re-routing
      */
-    private var nodeCount = if (isNewNode) nodeList.size else nodeList.size + 1
+    private var nodeCount = if (isNewNode) prevNodeCount + 1 else prevNodeCount
 
     /**
      * Computes all hash values used by cache
@@ -44,7 +47,7 @@ class ScalableDistributedCache(private val nodeId: NodeId, private var nodeList:
     /**
      * Module used to determine how keys should be distributed across machines
      */
-    private val keyDistributor = ConsistentKeyDistributor(nodeId, nodeCount, 1)
+    private val keyDistributor = ConsistentKeyDistributor(nodeCount, 3)
 
     /**
      * Flag indicating whether the current node is copying to the new node
@@ -79,7 +82,7 @@ class ScalableDistributedCache(private val nodeId: NodeId, private var nodeList:
     /**
      * Used by a newly booted node to track which other nodes have completed copying
      */
-    private val copyComplete = MutableList(nodeCount) { false }
+    private val copyComplete = MutableList(prevNodeCount) { false }
 
     /**
      * Number of nodes that have completed copying
@@ -134,10 +137,10 @@ class ScalableDistributedCache(private val nodeId: NodeId, private var nodeList:
     }
 
     override fun start() {
-        if (nodeId == nodeCount) {
+        if (isNewNode) {
             Thread {
                 // TODO: Get correct host name
-                sender.broadcastScalableMessage(
+                sender.broadcastScalableMessageAsync(
                     ScalableMessage(
                         nodeId,
                         "localhost:${7070 + nodeId}",
@@ -148,8 +151,8 @@ class ScalableDistributedCache(private val nodeId: NodeId, private var nodeList:
         }
     }
 
-    override fun getSystemInfo(): SystemInfo {
-        return SystemInfo(
+    override fun getSystemInfo(): IDistributedCache.SystemInfo {
+        return IDistributedCache.SystemInfo(
             nodeId,
             getMemoryUsage(),
             cache.getCacheInfo(),
@@ -181,7 +184,8 @@ class ScalableDistributedCache(private val nodeId: NodeId, private var nodeList:
     }
 
     override fun initiateLaunch() {
-        if (minLaunchingNode == nodeCount) {
+        print("SCALABLE CACHE: Received request to initiate node launch\n")
+        if (!scaleInProgress && minLaunchingNode == nodeCount) {
             desireToLaunch = true
             scaleInProgress = true
 
@@ -195,7 +199,7 @@ class ScalableDistributedCache(private val nodeId: NodeId, private var nodeList:
                     )
                 )
             }.start()
-            print("SCALABLE CACHE: Created and running broadcast thread")
+            print("SCALABLE CACHE: Created and running broadcast thread\n")
 
             // If this node has minimum node id, launch new node
             launchTimer.schedule(object : TimerTask() {
@@ -212,11 +216,11 @@ class ScalableDistributedCache(private val nodeId: NodeId, private var nodeList:
         if (!copyComplete[senderId]) {
             copyComplete[senderId] = true
             copyCompleteCount++
-            print("SCALABLE CACHE: Complete count is now $copyCompleteCount out of $nodeCount\n")
-            if (copyCompleteCount == nodeCount) {
+            print("SCALABLE CACHE: Complete count is now $copyCompleteCount out of $prevNodeCount\n")
+            if (copyCompleteCount == prevNodeCount) {
                 print("SCALABLE CACHE: Going to broadcast SCALE_COMPLETE message\n")
                 Thread {
-                    sender.broadcastScalableMessage(
+                    sender.broadcastScalableMessageAsync(
                         ScalableMessage(
                             nodeId,
                             "",

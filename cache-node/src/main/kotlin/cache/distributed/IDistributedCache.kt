@@ -54,6 +54,6 @@ interface IDistributedCache {
         val nodeId: Int,
         val memUsage: MemoryUsageInfo,
         val cacheInfo: CacheInfo,
-        var receiverUsageInfo: ReceiverUsageInfo,
-        val senderUsageInfo: SenderUsageInfo?)
+        var receiverUsageInfo: ReceiverUsageInfo?,
+        val senderUsageInfo: SenderUsageInfo)
 }

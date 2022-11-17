@@ -20,7 +20,7 @@ class ScalableReceiver(port: Int, nodeId: NodeId, private var nodeCount: Int, pr
             print("\n*********INFORM REQUEST*********\n")
             val message = ctx.bodyAsClass(ScalableMessage::class.java)
 
-            print("SCALABLE RECEIVER: Deserialized message from node ${message.nodeId}\n")
+            print("SCALABLE RECEIVER: Deserialized message from node ${message.nodeId} with type ${message.type}\n")
 
             if (!distributedCache.scaleInProgress() && message.type != ScalableMessageType.LAUNCH_NODE) {
                 throw simpleValidationException("Scaling not currently in progress")
@@ -86,6 +86,11 @@ class ScalableReceiver(port: Int, nodeId: NodeId, private var nodeCount: Int, pr
             print("SCALABLE RECEIVER: Received bulk copy request\n")
             val bulkCopy: BulkCopyRequest = ctx.bodyAsClass(BulkCopyRequest::class.java)
 
+            for (kvPair in bulkCopy.values) {
+                val byteArray = kvPair.value
+                print("SCALABLE RECEIVER: Received pair ${kvPair.key}, ${kvPair.value.contentToString()}\n")
+            }
+
             if (!distributedCache.scaleInProgress() || nodeId != nodeCount) {
                 throw simpleValidationException("New node can only receive bulk copy requests while scaling is in progress")
             }
@@ -97,7 +102,7 @@ class ScalableReceiver(port: Int, nodeId: NodeId, private var nodeCount: Int, pr
     }
 
     override fun start() {
-        app.start()
+        super.start()
         distributedCache.start()
     }
 }

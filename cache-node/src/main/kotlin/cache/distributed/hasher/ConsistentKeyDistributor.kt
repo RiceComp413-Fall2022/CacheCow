@@ -4,7 +4,10 @@ import KeyVersionPair
 import NodeId
 import java.util.*
 
-class ConsistentKeyDistributor(nodeId: NodeId, private var nodeCount: Int, private val pointsPerNode: Int = 10): IKeyDistributor {
+class ConsistentKeyDistributor(
+    private var nodeCount: Int,
+    private val pointsPerNode: Int = 10
+): IKeyDistributor {
 
     private var sortedNodes: SortedMap<Int, Int> = Collections.synchronizedSortedMap(
         TreeMap()
@@ -13,12 +16,14 @@ class ConsistentKeyDistributor(nodeId: NodeId, private var nodeCount: Int, priva
     private val nodeHasher = NodeHasher(nodeCount)
 
     init {
-        val trueNodeCount = if (nodeId == nodeCount) nodeCount + 1 else nodeCount
-        for (i in 0 until trueNodeCount) {
+        for (i in 0 until nodeCount) {
             for (j in 0 until pointsPerNode) {
-                sortedNodes[nodeHasher.extendedNodeHashValue(i, j)] = i
+                val hashValue = nodeHasher.extendedNodeHashValue(i, j)
+                print("Building points: $i, $j, $hashValue\n")
+                sortedNodes[hashValue] = i
             }
         }
+        printSortedNodes()
     }
 
     override fun getPrimaryNode(kvPair: KeyVersionPair): NodeId {
@@ -62,22 +67,24 @@ class ConsistentKeyDistributor(nodeId: NodeId, private var nodeCount: Int, priva
         // Determine the ranges where keys must be copied
         val copyRangeList = mutableListOf<Pair<Int, Int>>()
         for (newHashValue in newHashValues) {
-            copyRangeList.add(Pair(getPrevNode(newHashValue), newHashValue))
+            copyRangeList.add(Pair(getPrevHashValue(newHashValue), newHashValue))
         }
 
         // Update the node count
         nodeCount++
 
+        print("CONSISTENT DISTRIBUTOR: Added points for new node\n");
+        printSortedNodes()
+
         // Return range of hash values to be copied
         return copyRangeList
     }
 
-    private fun getPrevNode(hashValue: Int): NodeId {
+    private fun getPrevHashValue(hashValue: Int): Int {
         val tailMap = sortedNodes.tailMap(hashValue)
         val headMap = sortedNodes.headMap(hashValue)
         return if (headMap.isNotEmpty())
-            headMap[headMap.lastKey()]!!
-        else tailMap[tailMap.lastKey()]!!
+            headMap.lastKey() else tailMap.lastKey()
     }
 
     private fun printSortedNodes() {

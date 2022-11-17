@@ -43,3 +43,6 @@ bin/
 
 ### Test Files ###
 binary/
+
+### AWS ###
+*.pem

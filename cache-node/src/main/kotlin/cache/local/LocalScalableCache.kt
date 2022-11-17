@@ -2,13 +2,11 @@ package cache.local
 
 import KeyValuePair
 import KeyVersionPair
+import cache.distributed.IDistributedCache
 import cache.distributed.IScalableDistributedCache
 import cache.distributed.hasher.INodeHasher
-import receiver.MemoryUsageInfo
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.Executors
-import java.util.concurrent.TimeUnit
 
 /**
  * A concrete local cache that stores data in a ConcurrentHashMap.
@@ -160,11 +158,11 @@ class LocalScalableCache(private var nodeHasher: INodeHasher, private val distri
         return usedMemory.toInt() > (maxMemory.toInt() * memoryUtilizationLimit).toInt()
     }
 
-    override fun fetchJVMUsage(): MemoryUsageInfo {
+    override fun fetchJVMUsage(): IDistributedCache.MemoryUsageInfo {
         usedMemory = JVMRuntime.totalMemory() - JVMRuntime.freeMemory()
         maxMemory = JVMRuntime.maxMemory()
         val usage = usedMemory/(maxMemory * 1.0)
-        return MemoryUsageInfo(usedMemory, maxMemory, usage)
+        return IDistributedCache.MemoryUsageInfo(usedMemory, maxMemory, usage)
     }
 
     override fun monitorMemoryUsage() {

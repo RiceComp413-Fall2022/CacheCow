@@ -6,7 +6,6 @@ import cache.distributed.hasher.INodeHasher
 import cache.distributed.hasher.NodeHasher
 import cache.local.LocalCache
 import exception.KeyNotFoundException
-import receiver.SystemInfo
 import sender.Sender
 
 /**
@@ -58,12 +57,13 @@ class DistributedCache(private val nodeId: NodeId, nodeList: List<String>): IDis
         }
     }
 
-    override fun getSystemInfo(): SystemInfo {
-        return SystemInfo(
+    override fun getSystemInfo(): IDistributedCache.SystemInfo {
+        return IDistributedCache.SystemInfo(
             nodeId,
             getMemoryUsage(),
             cache.getCacheInfo(),
             null,
-            sender.getSenderUsageInfo())
+            sender.getSenderUsageInfo()
+        )
     }
 }

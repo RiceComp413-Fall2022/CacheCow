@@ -25,7 +25,6 @@ interface IReceiver {
     fun getSystemInfo(): IDistributedCache.SystemInfo
 
 }
-
 /**
  * Information about what the receiver has done so far
  */

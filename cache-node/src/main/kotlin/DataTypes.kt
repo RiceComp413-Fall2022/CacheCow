@@ -12,7 +12,7 @@ data class KeyVersionPair(val key: String, val version: Int)
  * Represents a key-version-value group, where the key is a string, the version is an integer,
  * and the value is a byte array.
  */
-data class KeyValuePair(val key: String, val version : Int, val value: ByteArray)
+data class KeyValuePair(val key: String, val version: Int, val value: ByteArray)
 
 
 /**

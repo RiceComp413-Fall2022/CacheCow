@@ -36,6 +36,9 @@ class ScalableSender(private val nodeId: NodeId, private var nodeList: MutableLi
             .build()
 
         print("SCALABLE SENDER: Sending bulk copy request to $destUrl\n")
+        for (kvPair in kvPairs.values) {
+            print("SCALABLE SENDER: Sending pair ${kvPair.key}, ${kvPair.value.contentToString()}\n")
+        }
 
         val response: HttpResponse<String>
         try {
