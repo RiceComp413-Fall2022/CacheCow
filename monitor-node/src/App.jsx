@@ -34,7 +34,7 @@ function DisplayNodeCharts(props) {
   props.links.map(link => nodeNames.push(link))
 
   useEffect(() => {
-    axios.all(props.links.map(link => axios.get('http://' + link + '/v1/node-info')))
+    axios.all(props.links.map(link => axios.get('http://' + link + '/v1/local-cache-info')))
     .then(axios.spread(function(...res) {
       setNodeInfos(res.map(sres => sres.data));
     }))
@@ -45,7 +45,7 @@ function DisplayNodeCharts(props) {
 
   useEffect(() => {
     let interval = setInterval(() => {
-      axios.all(props.links.map(link => axios.get('http://' + link + '/v1/node-info')))
+      axios.all(props.links.map(link => axios.get('http://' + link + '/v1/local-cache-info')))
       .then(axios.spread(function(...res) {
         setNodeInfos(res.map(sres => sres.data));
       }))
@@ -87,7 +87,7 @@ function DisplayNodeCharts(props) {
         backgroundColor: '#98A8F8',
         borderColor: 'rgba(0,0,0,1)',
         borderWidth: 0,
-        data: nodeInfos.map(nodeInfo => nodeInfo.cacheInfo.kvBytes)
+        data: nodeInfos.map(nodeInfo => nodeInfo.cacheInfo.memorySize)
       }
     ]
   };
