@@ -16,9 +16,11 @@ import org.eclipse.jetty.http.HttpStatus
  */
 open class Receiver(
     private val port: Int,
-    private var nodeCount: Int,
+    count: Int,
     private val distributedCache: IDistributedCache
 ) : IReceiver {
+
+    protected var nodeCount = count
 
     /**
      * The Javalin server used to route HTTP requests to handlers

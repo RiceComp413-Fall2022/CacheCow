@@ -1,2 +1,2 @@
-localhost:7070
-localhost:7071
+localhost:6060
+localhost:6061

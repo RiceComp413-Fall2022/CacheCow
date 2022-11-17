@@ -19,12 +19,10 @@ class ScalableSender(private val nodeId: NodeId, private var nodeList: MutableLi
 
     private val retryCount = 3
 
-    override fun addHost(hostName: String) {
-        nodeList.add(hostName)
-    }
-
     override fun sendBulkCopy(kvPairs: BulkCopyRequest, destNodeId: NodeId): Boolean {
         val client = HttpClient.newBuilder().build()
+
+        print("SCALABLE SENDER: Entered bulk copy request\n")
 
         val destUrl =
             URI.create("http://${nodeList[destNodeId]}/v1/bulk-copy")
@@ -87,6 +85,7 @@ class ScalableSender(private val nodeId: NodeId, private var nodeList: MutableLi
             }
             retryRemaining--
         } while (retryRemaining > 0)
+        print("Broadcast exception for node ${destNodeId}\n")
         throw BroadcastException(destNodeId)
     }
 

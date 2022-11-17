@@ -5,11 +5,10 @@ import io.javalin.testtools.JavalinTest
 import io.mockk.every
 import io.mockk.mockkClass
 import node.Node
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
 import org.assertj.core.api.Assertions.assertThat
 import org.eclipse.jetty.http.HttpStatus
-import sender.ISender
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 import sender.Sender
 import kotlin.test.BeforeTest
 
@@ -19,20 +18,19 @@ class ReceiverTest {
 
     private lateinit var app: Javalin
 
-    private lateinit var sender: ISender
+    private lateinit var sender: Sender
 
     @BeforeTest
     fun beforeAll() {
-        val nodeList = listOf("localhost:7070", "localhost:7071")
-        node = Node(0, nodeList, 7070, 10)
+        val nodeList = mutableListOf("localhost:7070", "localhost:7071")
+        node = Node(0, nodeList, 7070, false)
         app = node.receiver.app
     }
 
     @BeforeEach
     internal fun beforeEach() {
         sender = mockkClass(Sender::class)
-        node.sender = sender
-        node.distributedCache.sender = sender
+        node.distributedCache.mockSender(sender)
     }
 
     @Test

@@ -10,7 +10,7 @@ const val nodeListPath = "nodes.txt"
  */
 fun main(args: Array<String>) {
     var nodeId = 0
-    var port = 7070
+    var port = 6060
     var scalable = false
 
     if (args.size >= 2) {

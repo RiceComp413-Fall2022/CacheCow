@@ -4,6 +4,8 @@ import KeyVersionPair
 import NodeId
 import cache.local.CacheInfo
 import receiver.ReceiverUsageInfo
+import sender.ISender
+import sender.Sender
 import sender.SenderUsageInfo
 
 /**
@@ -41,6 +43,8 @@ interface IDistributedCache {
         val usage = allocatedMemory/(maxMemory * 1.0)
         return MemoryUsageInfo(allocatedMemory, maxMemory, usage)
     }
+
+    fun mockSender(mock: Sender)
 
     /**
      * Client response giving memory usage of the JVM.

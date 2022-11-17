@@ -6,7 +6,7 @@ import java.util.*
 
 class ConsistentKeyDistributor(
     private var nodeCount: Int,
-    private val pointsPerNode: Int = 10
+    private val pointsPerNode: Int = 25
 ): IKeyDistributor {
 
     private var sortedNodes: SortedMap<Int, Int> = Collections.synchronizedSortedMap(

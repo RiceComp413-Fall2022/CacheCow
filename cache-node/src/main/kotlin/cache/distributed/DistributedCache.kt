@@ -6,6 +6,7 @@ import cache.distributed.hasher.INodeHasher
 import cache.distributed.hasher.NodeHasher
 import cache.local.LocalCache
 import exception.KeyNotFoundException
+import sender.ISender
 import sender.Sender
 
 /**
@@ -18,9 +19,15 @@ class DistributedCache(private val nodeId: NodeId, nodeList: List<String>): IDis
      */
     private val nodeHasher: INodeHasher = NodeHasher(nodeList.size)
 
-    private val cache = LocalCache()
+    /**
+     * Local cache implementation
+     */
+    private var cache = LocalCache()
 
-    private val sender = Sender(nodeId, nodeList)
+    /**
+     * Module used to send all out-going messages (public for testing)
+     */
+    var sender = Sender(nodeId, nodeList)
 
     override fun fetch(kvPair: KeyVersionPair, senderId: NodeId?): ByteArray {
         val primaryNodeId = nodeHasher.primaryHashNode(kvPair)
@@ -65,5 +72,9 @@ class DistributedCache(private val nodeId: NodeId, nodeList: List<String>): IDis
             null,
             sender.getSenderUsageInfo()
         )
+    }
+
+    override fun mockSender(mock: Sender) {
+        sender = mock
     }
 }

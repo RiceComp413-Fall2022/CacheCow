@@ -17,7 +17,7 @@ interface IScalableDistributedCache: IDistributedCache {
 
     fun initiateCopy(newHostName: String)
 
-    fun markCopyComplete(senderId: NodeId)
+    fun markCopyComplete(senderId: NodeId): Boolean
 
     fun bulkLocalStore(kvPairs: MutableList<KeyValuePair>)
 }

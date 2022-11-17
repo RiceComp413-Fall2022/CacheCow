@@ -11,7 +11,7 @@ import java.util.concurrent.ConcurrentHashMap
 /**
  * A concrete local cache that stores data in a ConcurrentHashMap.
  */
-class LocalScalableCache(private var nodeHasher: INodeHasher, private val distributedCache: IScalableDistributedCache, private var maxCapacity: Int = 3): ILocalScalableCache {
+class LocalScalableCache(private var nodeHasher: INodeHasher, private val distributedCache: IScalableDistributedCache, private var maxCapacity: Int = 5): ILocalScalableCache {
 
     /* A process-safe concurrent hash map that is used to store LRU payload-containing node refferences */
     private val cache: ConcurrentHashMap<KeyVersionPair, LRUNode> = ConcurrentHashMap<KeyVersionPair, LRUNode>(maxCapacity)
@@ -89,7 +89,7 @@ class LocalScalableCache(private var nodeHasher: INodeHasher, private val distri
         insert(node)
 
         // TODO: Remove, temporary way to launch new node
-        if (cache.size ==  maxCapacity) {
+        if (cache.size >= maxCapacity) {
             distributedCache.initiateLaunch()
         }
 
@@ -248,6 +248,8 @@ class LocalScalableCache(private var nodeHasher: INodeHasher, private val distri
             remove(node)
             sortedLocalKeys.remove(hashValue)
         }
+        copyHashes = mutableListOf()
+        copyIndex = 0
     }
 
     private fun printCacheContents() {

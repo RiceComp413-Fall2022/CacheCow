@@ -7,9 +7,9 @@ import ScalableMessageType
 import cache.distributed.IScalableDistributedCache
 import org.eclipse.jetty.http.HttpStatus
 
-class ScalableReceiver(port: Int, nodeId: NodeId, private var nodeCount: Int, private val distributedCache: IScalableDistributedCache): Receiver(
+class ScalableReceiver(port: Int, nodeId: NodeId, count: Int, private val distributedCache: IScalableDistributedCache): Receiver(
     port,
-    nodeCount,
+    count,
     distributedCache
 ), IScalableReceiver {
 
@@ -23,19 +23,23 @@ class ScalableReceiver(port: Int, nodeId: NodeId, private var nodeCount: Int, pr
             print("SCALABLE RECEIVER: Deserialized message from node ${message.nodeId} with type ${message.type}\n")
 
             if (!distributedCache.scaleInProgress() && message.type != ScalableMessageType.LAUNCH_NODE) {
+                print("FAIL 1\n")
                 throw simpleValidationException("Scaling not currently in progress")
             }
 
             if (message.nodeId < 0 || message.nodeId > nodeCount) {
+                print("FAIL 2\n")
                 throw simpleValidationException("Invalid node id")
             }
 
             if (message.type == ScalableMessageType.COPY_COMPLETE || message.type == ScalableMessageType.LAUNCH_NODE) {
                 if (message.nodeId == nodeCount) {
+                    print("FAIL 3\n")
                     throw simpleValidationException("New node cannot send this message type")
                 }
             } else {
                 if (message.nodeId != nodeCount) {
+                    print("FAIL 4\n")
                     throw simpleValidationException("Only new node can send this message type")
                 }
             }
@@ -63,7 +67,9 @@ class ScalableReceiver(port: Int, nodeId: NodeId, private var nodeCount: Int, pr
                     if (nodeId != nodeCount) {
                         throw simpleValidationException("Only new node can accept this message type")
                     }
-                    distributedCache.markCopyComplete(message.nodeId)
+                    if (distributedCache.markCopyComplete(message.nodeId)) {
+                        nodeCount++
+                    }
                 }
 
                 ScalableMessageType.SCALE_COMPLETE -> {
@@ -87,7 +93,6 @@ class ScalableReceiver(port: Int, nodeId: NodeId, private var nodeCount: Int, pr
             val bulkCopy: BulkCopyRequest = ctx.bodyAsClass(BulkCopyRequest::class.java)
 
             for (kvPair in bulkCopy.values) {
-                val byteArray = kvPair.value
                 print("SCALABLE RECEIVER: Received pair ${kvPair.key}, ${kvPair.value.contentToString()}\n")
             }
 
