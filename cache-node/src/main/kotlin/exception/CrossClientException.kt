@@ -1,12 +1,13 @@
 package exception
+import NodeId
 import org.eclipse.jetty.http.HttpStatus
 
-class KeyNotFoundException(key: String): LocalNodeException(HttpStatus.NOT_FOUND_404, "Key $key not found in cache") {
+class CrossClientException(destNodeId: NodeId): CrossNodeException(HttpStatus.INTERNAL_SERVER_ERROR_500, "Internal server error", destNodeId) {
 
     /**
      * Returns the exception id unique to the exception type.
      */
     override fun getExceptionID(): Int {
-        return 3
+        return 1
     }
 }

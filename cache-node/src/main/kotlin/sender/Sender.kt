@@ -4,7 +4,7 @@ import KeyVersionPair
 import NodeId
 import com.fasterxml.jackson.databind.ObjectMapper
 import exception.ConnectionRefusedException
-import exception.InternalErrorException
+import exception.CrossServerException
 import exception.KeyNotFoundException
 import org.eclipse.jetty.http.HttpStatus
 import java.net.ConnectException
@@ -45,7 +45,7 @@ open class Sender(private val nodeId: NodeId, private val nodeList: List<String>
             response = client.send(request, HttpResponse.BodyHandlers.ofString())
         } catch (e: ConnectException) {
             print("SENDER: Caught connection refused exception\n")
-            throw ConnectionRefusedException()
+            throw ConnectionRefusedException(destNodeId)
         }
 
         print("SENDER: Got fetch response with status code ${response.statusCode()}\n")
@@ -53,7 +53,7 @@ open class Sender(private val nodeId: NodeId, private val nodeList: List<String>
         if (response.statusCode() == HttpStatus.NOT_FOUND_404) {
             throw KeyNotFoundException(kvPair.key)
         } else if (response.statusCode() in 400..599) {
-            throw InternalErrorException()
+            throw CrossServerException(destNodeId)
         }
 
         senderUsageInfo.fetchSuccesses++
@@ -69,8 +69,6 @@ open class Sender(private val nodeId: NodeId, private val nodeList: List<String>
 
         val destUrl =
             URI.create("http://${nodeList[destNodeId]}/v1/blobs/${kvPair.key}/${kvPair.version}?senderId=${nodeId}")
-//        val requestBody =
-//            mapper.writerWithDefaultPrettyPrinter().writeValueAsBytes(value)
 
         val request = HttpRequest.newBuilder()
             .uri(destUrl)
@@ -84,13 +82,13 @@ open class Sender(private val nodeId: NodeId, private val nodeList: List<String>
             response = client.send(request, HttpResponse.BodyHandlers.ofString())
         } catch (e: ConnectException) {
             print("SENDER: Caught connection refused exception\n")
-            throw ConnectionRefusedException()
+            throw ConnectionRefusedException(destNodeId)
         }
 
         print("SENDER: Got store response with status code ${response.statusCode()}\n")
 
         if (response.statusCode() in 400..599) {
-            throw InternalErrorException()
+            throw CrossServerException(destNodeId)
         }
         senderUsageInfo.storeSuccesses++
     }

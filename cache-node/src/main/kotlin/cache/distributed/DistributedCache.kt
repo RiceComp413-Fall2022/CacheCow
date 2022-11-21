@@ -6,7 +6,6 @@ import cache.distributed.hasher.INodeHasher
 import cache.distributed.hasher.NodeHasher
 import cache.local.LocalCache
 import exception.KeyNotFoundException
-import sender.ISender
 import sender.Sender
 
 /**

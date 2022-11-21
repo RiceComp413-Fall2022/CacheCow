@@ -1,4 +1,4 @@
-import exception.InternalErrorException
+import exception.CrossServerException
 import exception.KeyNotFoundException
 import io.javalin.Javalin
 import io.javalin.testtools.JavalinTest
@@ -92,8 +92,8 @@ class ReceiverTest {
     @Test
     internal fun `Store and fetch key-value pair to node that returns error`() = JavalinTest.test(app) { _, client ->
         val mockSender = this.sender
-        every { mockSender.storeToNode(any(), any(), 1) } throws InternalErrorException()
-        every { mockSender.fetchFromNode(any(), 1) } throws InternalErrorException()
+        every { mockSender.storeToNode(any(), any(), 1) } throws CrossServerException(1)
+        every { mockSender.fetchFromNode(any(), 1) } throws CrossServerException(1)
 
         val storeResponse = client.post("/v1/blobs/b/1", "123")
         assertThat(storeResponse.code).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR_500)
