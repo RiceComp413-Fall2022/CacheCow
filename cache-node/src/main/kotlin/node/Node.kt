@@ -13,7 +13,7 @@ import receiver.ScalableReceiver
  * distributed cache.
  */
 
-class Node(nodeId: NodeId, nodeList: MutableList<String>, port: Int, scalable: Boolean) {
+class Node(nodeId: NodeId, nodeList: MutableList<String>, port: Int, isAWS: Boolean, scalable: Boolean, newNode: Boolean) {
 
     /**
      * The distributed cache (public for testing)
@@ -29,18 +29,19 @@ class Node(nodeId: NodeId, nodeList: MutableList<String>, port: Int, scalable: B
         print("Initializing node $nodeId on port $port\n")
         if (scalable) {
             val prevNodeCount: Int
-            val isNewNode: Boolean = if (nodeId >= nodeList.size) {
-                // TODO: Support new node on 2nd, 3rd, etc. boot
+            var isNewNode = newNode
+            if (!isNewNode && nodeId >= nodeList.size) {
+                // Run on localhost
+                isNewNode = true
                 for (i in nodeList.size..nodeId) {
-                    nodeList.add("localhost:${6060 + i}")
+                    nodeList.add("localhost:${7070 + i}")
                 }
                 prevNodeCount = nodeList.size - 1
-                true
             } else {
                 prevNodeCount = nodeList.size
-                false
             }
-            distributedCache = ScalableDistributedCache(nodeId, nodeList, isNewNode)
+
+            distributedCache = ScalableDistributedCache(nodeId, nodeList, isAWS, isNewNode)
             receiver = ScalableReceiver(port, nodeId, prevNodeCount, distributedCache as IScalableDistributedCache)
         } else {
             distributedCache = DistributedCache(nodeId, nodeList)

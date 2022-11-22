@@ -23,7 +23,7 @@ class ReceiverTest {
     @BeforeTest
     fun beforeAll() {
         val nodeList = mutableListOf("localhost:7070", "localhost:7071")
-        node = Node(0, nodeList, 7070, false)
+        node = Node(0, nodeList, 7070, isAWS = false, scalable = false, newNode = false)
         app = node.receiver.app
     }
 

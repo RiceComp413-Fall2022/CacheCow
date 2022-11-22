@@ -10,15 +10,21 @@ const val nodeListPath = "nodes.txt"
  */
 fun main(args: Array<String>) {
     var nodeId = 0
-    var port = 6060
+    var port = 7070
+    var isAWS = false
     var scalable = false
+    var isNewNode = false
 
     if (args.size >= 2) {
         try {
-            nodeId = Integer.parseInt(args[0])
-            port = Integer.parseInt(args[1])
-            if (args.size == 3 && args[2] == "-s") {
-                scalable = true
+            isAWS = args[0] == "aws"
+            nodeId = Integer.parseInt(args[1])
+            port = Integer.parseInt(args[2])
+            if (args.size >= 4) {
+                scalable = args[3] == "-s"
+                if (args.size >= 5 && scalable) {
+                    isNewNode = args[4] == "-n"
+                }
             }
         } catch (e: NumberFormatException) {
             System.err.println("Invalid node ID or port.")
@@ -26,7 +32,7 @@ fun main(args: Array<String>) {
         }
     }
 
-    val node = Node(nodeId, File(nodeListPath).bufferedReader().readLines().toMutableList(), port, scalable)
+    val node = Node(nodeId, File(nodeListPath).bufferedReader().readLines().toMutableList(), port, isAWS, scalable, isNewNode)
 
     node.start()
 }

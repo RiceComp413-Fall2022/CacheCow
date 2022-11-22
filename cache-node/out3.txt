@@ -209,171 +209,79 @@ Hash value 2116086290 and node id 3
 Hash value 2146525591 and node id 1
 RECEIVER: Initializing Javalin
 SCALABLE CACHE: Started with is new node true
-SCALABLE RECEIVER: Received bulk copy request
-SCALABLE RECEIVER: Received bulk copy request
 
 *********INFORM REQUEST*********
-SCALABLE RECEIVER: Deserialized message from node 0 with type COPY_COMPLETE
-SCALABLE RECEIVER: Got COPY_COMPLETE request from node 0
-SCALABLE CACHE: Marking that node 0 has completed copying
-SCALABLE RECEIVER: Received pair j, [49, 50, 51, 52]
-SCALABLE RECEIVER: Received pair k, [49, 50, 51, 52]
-SCALABLE RECEIVER: Received pair h, [49, 50, 51, 52]
-SCALABLE RECEIVER: Received pair m, [49, 50, 51, 52]
-SCALABLE CACHE: Completing bulk local store with 4 pairs
-LOCAL CACHE: Attempting to store (j, [B@257991c3)
-Cache size is 0
+SCALABLE RECEIVER: Received bulk copy request
+SCALABLE RECEIVER: Received bulk copy request
 SCALABLE RECEIVER: Received pair g, [49, 50, 51, 52]
-LOCAL CACHE: Inserting key KeyVersionPair(key=j, version=1)
-LOCAL CACHE: Finished insert
-Cache size is 1
-Node: KeyVersionPair(key=j, version=1) KeyVersionPair(key=j, version=1) [B@257991c3
-LOCAL CACHE: Attempting to store (k, [B@5a993ee5)
-Cache size is 1
-Node: KeyVersionPair(key=j, version=1) KeyVersionPair(key=j, version=1) [B@257991c3
-LOCAL CACHE: Inserting key KeyVersionPair(key=k, version=1)
-LOCAL CACHE: Finished insert
-Cache size is 2
-Node: KeyVersionPair(key=k, version=1) KeyVersionPair(key=k, version=1) [B@5a993ee5
-Node: KeyVersionPair(key=j, version=1) KeyVersionPair(key=j, version=1) [B@257991c3
-LOCAL CACHE: Attempting to store (h, [B@4346abf)
-Cache size is 2
-Node: KeyVersionPair(key=k, version=1) KeyVersionPair(key=k, version=1) [B@5a993ee5
-Node: KeyVersionPair(key=j, version=1) KeyVersionPair(key=j, version=1) [B@257991c3
-LOCAL CACHE: Inserting key KeyVersionPair(key=h, version=1)
-LOCAL CACHE: Finished insert
-Cache size is 3
-Node: KeyVersionPair(key=h, version=1) KeyVersionPair(key=h, version=1) [B@4346abf
-Node: KeyVersionPair(key=k, version=1) KeyVersionPair(key=k, version=1) [B@5a993ee5
-Node: KeyVersionPair(key=j, version=1) KeyVersionPair(key=j, version=1) [B@257991c3
-LOCAL CACHE: Attempting to store (m, [B@14ec5468)
-Cache size is 3
-Node: KeyVersionPair(key=h, version=1) KeyVersionPair(key=h, version=1) [B@4346abf
-Node: KeyVersionPair(key=k, version=1) KeyVersionPair(key=k, version=1) [B@5a993ee5
-Node: KeyVersionPair(key=j, version=1) KeyVersionPair(key=j, version=1) [B@257991c3
-LOCAL CACHE: Inserting key KeyVersionPair(key=m, version=1)
-LOCAL CACHE: Finished insert
-Cache size is 4
-Node: KeyVersionPair(key=h, version=1) KeyVersionPair(key=h, version=1) [B@4346abf
-Node: KeyVersionPair(key=m, version=1) KeyVersionPair(key=m, version=1) [B@14ec5468
-Node: KeyVersionPair(key=k, version=1) KeyVersionPair(key=k, version=1) [B@5a993ee5
-Node: KeyVersionPair(key=j, version=1) KeyVersionPair(key=j, version=1) [B@257991c3
 SCALABLE RECEIVER: Received pair c, [49, 50, 51, 52]
 SCALABLE CACHE: Completing bulk local store with 2 pairs
-LOCAL CACHE: Attempting to store (g, [B@1db6db6d)
-Cache size is 4
-Node: KeyVersionPair(key=h, version=1) KeyVersionPair(key=h, version=1) [B@4346abf
-Node: KeyVersionPair(key=m, version=1) KeyVersionPair(key=m, version=1) [B@14ec5468
-Node: KeyVersionPair(key=k, version=1) KeyVersionPair(key=k, version=1) [B@5a993ee5
-Node: KeyVersionPair(key=j, version=1) KeyVersionPair(key=j, version=1) [B@257991c3
+LOCAL CACHE: Attempting to store (g, [B@5c09d85b)
+Cache size is 0
 LOCAL CACHE: Inserting key KeyVersionPair(key=g, version=1)
 LOCAL CACHE: Finished insert
-Cache size is 5
-Node: KeyVersionPair(key=h, version=1) KeyVersionPair(key=h, version=1) [B@4346abf
-Node: KeyVersionPair(key=g, version=1) KeyVersionPair(key=g, version=1) [B@1db6db6d
-Node: KeyVersionPair(key=m, version=1) KeyVersionPair(key=m, version=1) [B@14ec5468
-Node: KeyVersionPair(key=k, version=1) KeyVersionPair(key=k, version=1) [B@5a993ee5
-Node: KeyVersionPair(key=j, version=1) KeyVersionPair(key=j, version=1) [B@257991c3
-SCALABLE CACHE: Received request to initiate node launch
-LOCAL CACHE: Attempting to store (c, [B@f8dfe7e)
-Cache size is 5
-Node: KeyVersionPair(key=h, version=1) KeyVersionPair(key=h, version=1) [B@4346abf
-Node: KeyVersionPair(key=g, version=1) KeyVersionPair(key=g, version=1) [B@1db6db6d
-Node: KeyVersionPair(key=m, version=1) KeyVersionPair(key=m, version=1) [B@14ec5468
-Node: KeyVersionPair(key=k, version=1) KeyVersionPair(key=k, version=1) [B@5a993ee5
-Node: KeyVersionPair(key=j, version=1) KeyVersionPair(key=j, version=1) [B@257991c3
+Cache size is 1
+Node: KeyVersionPair(key=g, version=1) KeyVersionPair(key=g, version=1) [B@5c09d85b
+LOCAL CACHE: Attempting to store (c, [B@2af48cc8)
+Cache size is 1
+Node: KeyVersionPair(key=g, version=1) KeyVersionPair(key=g, version=1) [B@5c09d85b
 LOCAL CACHE: Inserting key KeyVersionPair(key=c, version=1)
 LOCAL CACHE: Finished insert
-Cache size is 6
-Node: KeyVersionPair(key=m, version=1) KeyVersionPair(key=m, version=1) [B@14ec5468
-Node: KeyVersionPair(key=k, version=1) KeyVersionPair(key=k, version=1) [B@5a993ee5
-Node: KeyVersionPair(key=j, version=1) KeyVersionPair(key=j, version=1) [B@257991c3
-Node: KeyVersionPair(key=h, version=1) KeyVersionPair(key=h, version=1) [B@4346abf
-Node: KeyVersionPair(key=g, version=1) KeyVersionPair(key=g, version=1) [B@1db6db6d
-Node: KeyVersionPair(key=c, version=1) KeyVersionPair(key=c, version=1) [B@f8dfe7e
+Cache size is 2
+Node: KeyVersionPair(key=g, version=1) KeyVersionPair(key=g, version=1) [B@5c09d85b
+Node: KeyVersionPair(key=c, version=1) KeyVersionPair(key=c, version=1) [B@2af48cc8
+SCALABLE RECEIVER: Received pair n, [49, 50, 51, 52]
+SCALABLE RECEIVER: Received pair h, [49, 50, 51, 52]
+SCALABLE RECEIVER: Received pair m, [49, 50, 51, 52]
+SCALABLE CACHE: Completing bulk local store with 3 pairs
+LOCAL CACHE: Attempting to store (n, [B@5db4bb76)
+Cache size is 2
+Node: KeyVersionPair(key=g, version=1) KeyVersionPair(key=g, version=1) [B@5c09d85b
+Node: KeyVersionPair(key=c, version=1) KeyVersionPair(key=c, version=1) [B@2af48cc8
+LOCAL CACHE: Inserting key KeyVersionPair(key=n, version=1)
+LOCAL CACHE: Finished insert
+Cache size is 3
+Node: KeyVersionPair(key=g, version=1) KeyVersionPair(key=g, version=1) [B@5c09d85b
+Node: KeyVersionPair(key=n, version=1) KeyVersionPair(key=n, version=1) [B@5db4bb76
+Node: KeyVersionPair(key=c, version=1) KeyVersionPair(key=c, version=1) [B@2af48cc8
+LOCAL CACHE: Attempting to store (h, [B@18896d3c)
+Cache size is 3
+Node: KeyVersionPair(key=g, version=1) KeyVersionPair(key=g, version=1) [B@5c09d85b
+Node: KeyVersionPair(key=n, version=1) KeyVersionPair(key=n, version=1) [B@5db4bb76
+Node: KeyVersionPair(key=c, version=1) KeyVersionPair(key=c, version=1) [B@2af48cc8
+LOCAL CACHE: Inserting key KeyVersionPair(key=h, version=1)
+LOCAL CACHE: Finished insert
+Cache size is 4
+Node: KeyVersionPair(key=h, version=1) KeyVersionPair(key=h, version=1) [B@18896d3c
+Node: KeyVersionPair(key=g, version=1) KeyVersionPair(key=g, version=1) [B@5c09d85b
+Node: KeyVersionPair(key=n, version=1) KeyVersionPair(key=n, version=1) [B@5db4bb76
+Node: KeyVersionPair(key=c, version=1) KeyVersionPair(key=c, version=1) [B@2af48cc8
+LOCAL CACHE: Attempting to store (m, [B@2c18679e)
+Cache size is 4
+Node: KeyVersionPair(key=h, version=1) KeyVersionPair(key=h, version=1) [B@18896d3c
+Node: KeyVersionPair(key=g, version=1) KeyVersionPair(key=g, version=1) [B@5c09d85b
+Node: KeyVersionPair(key=n, version=1) KeyVersionPair(key=n, version=1) [B@5db4bb76
+Node: KeyVersionPair(key=c, version=1) KeyVersionPair(key=c, version=1) [B@2af48cc8
+LOCAL CACHE: Inserting key KeyVersionPair(key=m, version=1)
+LOCAL CACHE: Finished insert
+Cache size is 5
+Node: KeyVersionPair(key=h, version=1) KeyVersionPair(key=h, version=1) [B@18896d3c
+Node: KeyVersionPair(key=g, version=1) KeyVersionPair(key=g, version=1) [B@5c09d85b
+Node: KeyVersionPair(key=n, version=1) KeyVersionPair(key=n, version=1) [B@5db4bb76
+Node: KeyVersionPair(key=m, version=1) KeyVersionPair(key=m, version=1) [B@2c18679e
+Node: KeyVersionPair(key=c, version=1) KeyVersionPair(key=c, version=1) [B@2af48cc8
 SCALABLE CACHE: Received request to initiate node launch
+
+*********INFORM REQUEST*********
 
 *********INFORM REQUEST*********
 SCALABLE RECEIVER: Deserialized message from node 1 with type COPY_COMPLETE
-SCALABLE RECEIVER: Got COPY_COMPLETE request from node 1
-SCALABLE CACHE: Marking that node 1 has completed copying
-
-*********INFORM REQUEST*********
 SCALABLE RECEIVER: Deserialized message from node 2 with type COPY_COMPLETE
 SCALABLE RECEIVER: Got COPY_COMPLETE request from node 2
 SCALABLE CACHE: Marking that node 2 has completed copying
+SCALABLE RECEIVER: Got COPY_COMPLETE request from node 1
+SCALABLE CACHE: Marking that node 1 has completed copying
+SCALABLE RECEIVER: Deserialized message from node 0 with type COPY_COMPLETE
+SCALABLE RECEIVER: Got COPY_COMPLETE request from node 0
+SCALABLE CACHE: Marking that node 0 has completed copying
 SCALABLE CACHE: Going to broadcast SCALE_COMPLETE message
-
-*********FETCH REQUEST*********
-SCALABLE CACHE: Primary node id is 3
-SCALABLE CACHE: Fetch entered normal case
-LOCAL CACHE: Attempting to fetch c
-Cache size is 6
-Node: KeyVersionPair(key=m, version=1) KeyVersionPair(key=m, version=1) [B@14ec5468
-Node: KeyVersionPair(key=k, version=1) KeyVersionPair(key=k, version=1) [B@5a993ee5
-Node: KeyVersionPair(key=j, version=1) KeyVersionPair(key=j, version=1) [B@257991c3
-Node: KeyVersionPair(key=h, version=1) KeyVersionPair(key=h, version=1) [B@4346abf
-Node: KeyVersionPair(key=g, version=1) KeyVersionPair(key=g, version=1) [B@1db6db6d
-Node: KeyVersionPair(key=c, version=1) KeyVersionPair(key=c, version=1) [B@f8dfe7e
-LOCAL CACHE: Found value cache.local.LocalScalableCache$LRUNode@4e534489
-LOCAL CACHE: Inserting key KeyVersionPair(key=c, version=1)
-LOCAL CACHE: Finished insert
-Cache size is 6
-Node: KeyVersionPair(key=m, version=1) KeyVersionPair(key=m, version=1) [B@14ec5468
-Node: KeyVersionPair(key=k, version=1) KeyVersionPair(key=k, version=1) [B@5a993ee5
-Node: KeyVersionPair(key=j, version=1) KeyVersionPair(key=j, version=1) [B@257991c3
-Node: KeyVersionPair(key=h, version=1) KeyVersionPair(key=h, version=1) [B@4346abf
-Node: KeyVersionPair(key=g, version=1) KeyVersionPair(key=g, version=1) [B@1db6db6d
-Node: KeyVersionPair(key=c, version=1) KeyVersionPair(key=c, version=1) [B@f8dfe7e
-
-*********FETCH REQUEST*********
-SCALABLE CACHE: Primary node id is 2
-SCALABLE CACHE: Fetch entered normal case
-SENDER: Delegating fetch key d to node 2
-SENDER: Sending fetch request to http://localhost:6062/v1/blobs/d/1?senderId=3
-SENDER: Got fetch response with status code 200
-SENDER: Got fetch response with body 1234
-
-*********FETCH REQUEST*********
-SCALABLE CACHE: Primary node id is 3
-SCALABLE CACHE: Fetch entered normal case
-LOCAL CACHE: Attempting to fetch g
-Cache size is 6
-Node: KeyVersionPair(key=m, version=1) KeyVersionPair(key=m, version=1) [B@14ec5468
-Node: KeyVersionPair(key=k, version=1) KeyVersionPair(key=k, version=1) [B@5a993ee5
-Node: KeyVersionPair(key=j, version=1) KeyVersionPair(key=j, version=1) [B@257991c3
-Node: KeyVersionPair(key=h, version=1) KeyVersionPair(key=h, version=1) [B@4346abf
-Node: KeyVersionPair(key=g, version=1) KeyVersionPair(key=g, version=1) [B@1db6db6d
-Node: KeyVersionPair(key=c, version=1) KeyVersionPair(key=c, version=1) [B@f8dfe7e
-LOCAL CACHE: Found value cache.local.LocalScalableCache$LRUNode@d241918
-LOCAL CACHE: Inserting key KeyVersionPair(key=g, version=1)
-LOCAL CACHE: Finished insert
-Cache size is 6
-Node: KeyVersionPair(key=m, version=1) KeyVersionPair(key=m, version=1) [B@14ec5468
-Node: KeyVersionPair(key=k, version=1) KeyVersionPair(key=k, version=1) [B@5a993ee5
-Node: KeyVersionPair(key=j, version=1) KeyVersionPair(key=j, version=1) [B@257991c3
-Node: KeyVersionPair(key=h, version=1) KeyVersionPair(key=h, version=1) [B@4346abf
-Node: KeyVersionPair(key=g, version=1) KeyVersionPair(key=g, version=1) [B@1db6db6d
-Node: KeyVersionPair(key=c, version=1) KeyVersionPair(key=c, version=1) [B@f8dfe7e
-
-*********FETCH REQUEST*********
-SCALABLE CACHE: Primary node id is 3
-SCALABLE CACHE: Fetch entered normal case
-LOCAL CACHE: Attempting to fetch h
-Cache size is 6
-Node: KeyVersionPair(key=m, version=1) KeyVersionPair(key=m, version=1) [B@14ec5468
-Node: KeyVersionPair(key=k, version=1) KeyVersionPair(key=k, version=1) [B@5a993ee5
-Node: KeyVersionPair(key=j, version=1) KeyVersionPair(key=j, version=1) [B@257991c3
-Node: KeyVersionPair(key=h, version=1) KeyVersionPair(key=h, version=1) [B@4346abf
-Node: KeyVersionPair(key=g, version=1) KeyVersionPair(key=g, version=1) [B@1db6db6d
-Node: KeyVersionPair(key=c, version=1) KeyVersionPair(key=c, version=1) [B@f8dfe7e
-LOCAL CACHE: Found value cache.local.LocalScalableCache$LRUNode@6d761d38
-LOCAL CACHE: Inserting key KeyVersionPair(key=h, version=1)
-LOCAL CACHE: Finished insert
-Cache size is 6
-Node: KeyVersionPair(key=m, version=1) KeyVersionPair(key=m, version=1) [B@14ec5468
-Node: KeyVersionPair(key=k, version=1) KeyVersionPair(key=k, version=1) [B@5a993ee5
-Node: KeyVersionPair(key=j, version=1) KeyVersionPair(key=j, version=1) [B@257991c3
-Node: KeyVersionPair(key=h, version=1) KeyVersionPair(key=h, version=1) [B@4346abf
-Node: KeyVersionPair(key=g, version=1) KeyVersionPair(key=g, version=1) [B@1db6db6d
-Node: KeyVersionPair(key=c, version=1) KeyVersionPair(key=c, version=1) [B@f8dfe7e

@@ -2,6 +2,7 @@ import cache.distributed.IDistributedCache
 import cache.distributed.IScalableDistributedCache
 import cache.distributed.hasher.ConsistentKeyDistributor
 import cache.distributed.hasher.NodeHasher
+import cache.distributed.launcher.AWSNodeLauncher
 import cache.distributed.launcher.LocalNodeLauncher
 import cache.local.LocalScalableCache
 import exception.KeyNotFoundException
@@ -15,7 +16,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock
 /**
  * A concrete distributed cache that assigns keys to nodes using a NodeHasher.
  */
-class ScalableDistributedCache(private val nodeId: NodeId, private var nodeList: MutableList<String>, private var isNewNode: Boolean):
+class ScalableDistributedCache(private val nodeId: NodeId, private var nodeList: MutableList<String>, isAWS: Boolean, private var isNewNode: Boolean):
     IScalableDistributedCache {
 
     /**
@@ -36,7 +37,7 @@ class ScalableDistributedCache(private val nodeId: NodeId, private var nodeList:
     /**
      * Supports launching a new node
      */
-    private val nodeLauncher = LocalNodeLauncher()
+    private val nodeLauncher = if (isAWS) AWSNodeLauncher() else LocalNodeLauncher()
 
     /**
      * Local cache implementation
