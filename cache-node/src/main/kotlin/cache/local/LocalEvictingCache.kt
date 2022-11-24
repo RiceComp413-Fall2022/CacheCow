@@ -4,8 +4,11 @@ import KeyVersionPair
 import node.MemoryUsageInfo
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.locks.ReentrantReadWriteLock
 
 /**
  * A concrete local cache that stores data in a ConcurrentHashMap.
@@ -15,11 +18,9 @@ class LocalEvictingCache(private var maxCapacity: Int = 100) : ILocalEvictingCac
     /* A process-safe concurrent hash map that is used to store LRU payload-containing node refferences */
     private val cache: ConcurrentHashMap<KeyVersionPair, LRUNode> = ConcurrentHashMap<KeyVersionPair, LRUNode>(maxCapacity)
 
-    /* The head of the LRUQueue - the most recent node */
-    var head : LRUNode
 
-    /* The tail of the LRUQueue - the least recent node */
-    var tail : LRUNode
+    /* The LRU queue */
+    var LRUCache : ConcurrentLinkedQueue<LRUNode>
 
     /* Store the total size of key and value bytes. Note that HashMap's auxiliary objects are not counted */
     private var kvByteSize = 0
@@ -27,7 +28,7 @@ class LocalEvictingCache(private var maxCapacity: Int = 100) : ILocalEvictingCac
     /* The JVM runtime */
     private var JVMRuntime : Runtime
 
-    /* The current amount of memory (bytes) the JVM is using */
+    /* The current amount of memory (bytes) the cache is storing */
     private var usedMemory : Long
 
     /* The maximum memory capacity (bytes) allotted to the JVM */
@@ -37,9 +38,7 @@ class LocalEvictingCache(private var maxCapacity: Int = 100) : ILocalEvictingCac
     private var memoryUtilizationLimit : Float = 0.8F
 
     init {
-        head = LRUNode()
-        tail = LRUNode()
-        head.next = tail
+        LRUCache = ConcurrentLinkedQueue<LRUNode>()
 
         JVMRuntime = Runtime.getRuntime()
         val memoryUsageInfo = fetchJVMUsage()
@@ -48,18 +47,19 @@ class LocalEvictingCache(private var maxCapacity: Int = 100) : ILocalEvictingCac
 
         Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate({
             monitorMemoryUsage()
-        }, 1, 10, TimeUnit.SECONDS)
+        }, 0, 2, TimeUnit.SECONDS)
 
     }
 
     override fun fetch(kvPair: KeyVersionPair): ByteArray? {
         print("CACHE: Attempting to fetch ${kvPair.key}\n")
-        if (cache.containsKey(kvPair)) {
+        val nullableNode : LRUNode? = cache[kvPair]
+        if (nullableNode != null) {
             print("CACHE: Found value ${cache[kvPair]}\n")
-            val node : LRUNode? = cache[kvPair]
+            val node: LRUNode = nullableNode
             remove(node)
             insert(node)
-            return node?.value
+            return node.value
         }
         print("CACHE: Key not found\n")
         return null
@@ -68,43 +68,36 @@ class LocalEvictingCache(private var maxCapacity: Int = 100) : ILocalEvictingCac
     override fun store(kvPair: KeyVersionPair, value: ByteArray): Boolean {
         print("CACHE: Attempting to store (${kvPair.key}, $value)\n")
 
+        if (isFull()) {
+            print("CACHE: Cache full, unable to store (${kvPair.key}, $value)\n")
+            return false
+        }
+
         val prevVal = cache[kvPair]?.value
         val prevKvByteSize = if(prevVal == null) 0 else (prevVal.size + kvPair.key.length + 4)
         kvByteSize += (value.size + kvPair.key.length + 4) - prevKvByteSize
 
-        val node = LRUNode(kvPair, value)
-        if (cache.containsKey(kvPair)) {
-            remove(cache[kvPair])
+        val nullableOldNode : LRUNode? = cache[kvPair]
+        if (nullableOldNode != null) {
+            val oldNode : LRUNode = nullableOldNode
+            remove(oldNode)
         }
-        cache[kvPair] = node
-        insert(node)
-        
+
+        val newNode = LRUNode(kvPair, value)
+        cache[kvPair] = newNode
+        insert(newNode)
+
         return true
     }
 
-    private fun insert(nullableNode : LRUNode?) {
-        if (nullableNode != null) {
-            val node : LRUNode =  nullableNode
-
-            node.next = head.next;
-            node.prev = head;
-
-            head.next?.prev = node;
-            head.next = node;
-
-            cache[node.kvPair] = node
-        }
+    private fun insert(node : LRUNode) {
+        LRUCache.add(node)
+        cache[node.kvPair] = node
     }
 
-    private fun remove(nullableNode : LRUNode?) {
-        if (nullableNode != null) {
-            val node : LRUNode =  nullableNode
-
-            node.prev?.next = node.next;
-            node.next?.prev = node.prev;
-            cache.remove(node.kvPair)
-
-        }
+    private fun remove(node : LRUNode) {
+        LRUCache.remove(node)
+        cache.remove(node.kvPair)
     }
 
     override fun fetchJVMUsage(): MemoryUsageInfo {
@@ -135,21 +128,9 @@ class LocalEvictingCache(private var maxCapacity: Int = 100) : ILocalEvictingCac
     }
 
     private fun removeLRU() : Int {
-        if (cache.size == 0) {
-            /* consider raising an exception */
-            return 0
-        }
-
-        val nullableNode : LRUNode? = tail.prev
-        if (nullableNode != null) {
-            val node : LRUNode = nullableNode
-            node.prev?.next = node.next;
-            node.next?.prev = node.prev;
-            cache.remove(node.kvPair)
-
-            return node.value.size + node.kvPair.key.length + 4
-        }
-        return 0
+        val node = LRUCache.poll()
+        cache.remove(node.kvPair)
+        return node.value.size + node.kvPair.key.length + 4
     }
 
     /**
