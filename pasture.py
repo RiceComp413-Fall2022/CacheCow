@@ -15,6 +15,9 @@ cache_port = 7070
 
 system = "aws"
 
+"""
+Placeholder
+"""
 def get_vpc_and_subnet(ec2, zone):
     default_vpc = None
     for vpc in ec2.vpcs.all():
@@ -31,6 +34,9 @@ def get_vpc_and_subnet(ec2, zone):
     return default_vpc.id, None
 
 
+"""
+Placeholder
+"""
 def connect_retry(host, user, key):
     while True:
         try:
@@ -51,6 +57,9 @@ def connect_retry(host, user, key):
             time.sleep(5)
 
 
+"""
+Placeholder
+"""
 def test_node(node):
     success = True
     try:
@@ -60,12 +69,18 @@ def test_node(node):
     return success
 
 
+"""
+Placeholder
+"""
 def wait_node(node):
     print(f"Waiting for {node}")
     while not test_node(node):
         time.sleep(5)
 
 
+"""
+Placeholder
+"""
 def create_instances(ec2, num_nodes):
     return ec2.create_instances(
         # ImageId='ami-079466db464206b00', # Custom AMI with dependencies preinstalled
@@ -102,7 +117,10 @@ def create_instances(ec2, num_nodes):
     )
 
 
-def setup_services(c, id, scaleable, new_node):
+"""
+Placeholder
+"""
+def setup_services(c, id, node_dns_f, scaleable, new_node):
     print("ACTION: Cloning Repo")
 
     c.run("sudo yum update -y")
@@ -142,7 +160,7 @@ def setup_services(c, id, scaleable, new_node):
     c.put(node_dns_f, remote='CacheCow/cache-node/nodes.txt')
 
     scaleable_str = "-s" if scaleable else ""
-    new_str = "-n" if new_str else ""
+    new_str = "-n" if new_node else ""
     c.run(f"tmux new-session -d \"cd CacheCow/cache-node/ && ./gradlew run --args '{system} {id} {cache_port} {scaleable_str} {new_str}'\"", asynchronous=True)
 
     c.run("curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.34.0/install.sh | bash")
@@ -153,6 +171,9 @@ def setup_services(c, id, scaleable, new_node):
     c.run("tmux new-session -d \"cd CacheCow/monitor-node/ && . ~/.nvm/nvm.sh && npm install && npm start\"", asynchronous=True)
 
 
+"""
+Placeholder
+"""
 def launch_cluster(num_nodes, scaleable):
     ec2 = boto3.resource('ec2')
 
@@ -213,7 +234,7 @@ def launch_cluster(num_nodes, scaleable):
     for i, node in enumerate(node_dns):
         c = connect_retry(node, "ec2-user", "CacheCow.pem")
 
-        setup_services(c, i, scaleable, False)
+        setup_services(c, i, node_dns_f, scaleable, False)
 
         c.close()
 
@@ -275,6 +296,9 @@ def launch_cluster(num_nodes, scaleable):
     wait_node(elb_dns)
 
 
+"""
+Placeholder
+"""
 def scale_cluster(num_nodes):
     ec2 = boto3.resource('ec2')
     vpc_id, subnet_id = get_vpc_and_subnet(ec2, 'us-east-1b')
@@ -305,7 +329,7 @@ def scale_cluster(num_nodes):
 
         id = i + instance_count
 
-        setup_services(c, id, True, True)
+        setup_services(c, id, node_dns_f, True, True)
 
         c.close()
 
@@ -314,16 +338,17 @@ def scale_cluster(num_nodes):
 
 
 # Program entry point
-mode = sys.argv[1]
-num_nodes = int(sys.argv[2])
+if __name__ == "__main__":
+    mode = sys.argv[1]
+    num_nodes = int(sys.argv[2])
 
-scaleable = False
-if len(sys.argv) == 4 and sys.argv[3] == "-s":
-    scaleable = True
+    scaleable = False
+    if len(sys.argv) == 4 and sys.argv[3] == "-s":
+        scaleable = True
 
-if (mode == "create"):
-    launch_cluster(num_nodes, scaleable)
-elif (mode == "add"):
-    scale_cluster(num_nodes)
-else:
-    print(f"Launch mode {mode} not recognized, only 'create' and 'add' supported")
+    if (mode == "create"):
+        launch_cluster(num_nodes, scaleable)
+    elif (mode == "add"):
+        scale_cluster(num_nodes)
+    else:
+        print(f"Launch mode {mode} not recognized, only 'create' and 'add' supported")
