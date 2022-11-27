@@ -286,11 +286,13 @@ def scale_cluster(num_nodes):
 
     all_node_dns = []
     new_node_dns = []
-    instance_count = len(ec2.instances.all())
-    print(f"Existing instance count is {instance_count}")
+    instance_count = 0
 
     for instance in ec2.instances.all():
         all_node_dns.append(instance.public_dns_name)
+        instance_count += 1
+
+    print(f"Existing instance count is {instance_count}")
 
     new_instances = ec2.create_instances(
         # ImageId='ami-079466db464206b00', # Custom AMI with dependencies preinstalled
