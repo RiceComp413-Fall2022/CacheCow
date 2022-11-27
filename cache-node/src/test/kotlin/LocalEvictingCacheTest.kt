@@ -3,7 +3,10 @@ import cache.local.LocalEvictingCache
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.nio.charset.Charset
+import java.util.*
+import java.util.concurrent.TimeUnit
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -35,14 +38,31 @@ class LocalEvictingCacheTest {
         assertNull(this.cache.fetch(invalidKey))
     }
 
+//    @Test
+//    internal fun testCapacity() {
+//        var failed = false
+//        val maxCapacity = cache.fetchJVMUsage().maxMemory
+//        var key: KeyVersionPair?
+//        for (i in 1..10) {
+//            key = KeyVersionPair("x", 0)
+//            val value = "y".repeat((maxCapacity / 10).toInt())
+//            failed = failed || this.cache.store(key, convertToBytes(value))
+//            TimeUnit.SECONDS.sleep(1)
+//
+//        }
+//        assertFalse(failed)
+//    }
+
     @Test
-    internal fun testCapacity() {
+    internal fun testExceedCapacity() {
+        var failed = false
+        val maxCapacity = cache.fetchJVMUsage().maxMemory
         var key: KeyVersionPair?
         for (i in 1..1000) {
-            key = KeyVersionPair("key$i", 0)
-            val value = "value$i".repeat(100000)
-            val successful = this.cache.store(key, convertToBytes(value))
-            assertTrue(successful)
+            key = KeyVersionPair("x", 0)
+            val value = "y".repeat((maxCapacity / 1000).toInt())
+            failed = failed || this.cache.store(key, convertToBytes(value))
         }
+        assertTrue(failed)
     }
 }
