@@ -5,13 +5,23 @@ import time
 import requests # pip install requests
 import boto3 # pip install boto3[crt]
 from fabric import Connection # pip install fabric
+# from ilogue.fexpect import expect, expecting, run  # pip install fexpect
+
+# USAGE: python3 pasture.py <mode> <number of nodes> [-s]
 
 # TODO: automatic teardown
 # TODO: set up aws configs and permissions
 
-port = 7070
+cache_port = 7070
 
 system = "aws"
+
+aws_configure_prompts = {
+    'AWS Access Key ID [None]:': '',
+    'AWS Secret Access Key [None]:': '',
+    'Default region name [None]:': '',
+    'Default output format [None]:': ''
+}
 
 def get_vpc_and_subnet(ec2, zone):
     default_vpc = None
@@ -76,8 +86,8 @@ def launch_cluster(num_nodes, scaleable_param):
         IpPermissions=[
                 {
                     'IpProtocol': 'tcp',
-                    'FromPort': 7070,
-                    'ToPort': 7070,
+                    'FromPort': cache_port,
+                    'ToPort': cache_port,
                     'IpRanges': [
                         {
                             'CidrIp': '0.0.0.0/0'
@@ -159,8 +169,26 @@ def launch_cluster(num_nodes, scaleable_param):
 
         c.run("git clone https://github.com/RiceComp413-Fall2022/CacheCow")
         # c.run("cd CacheCow/cache-node/ && git switch ec2-support")
+        c.run("cd CacheCow/cache-node/ && git switch Autoscale-POC")
 
         c.put(node_dns_f, remote='CacheCow/cache-node/nodes.txt')
+
+        # TODO: Verify new stuff as working
+        c.put("CacheCow.pem", remote="CacheCow.pem")
+        c.put("rootkey.csv", remote="rootkey.csv")
+
+        aws_configure_prompts['AWS Access Key ID [None]:'] = c.run("awk -F: '{$1 = substr($1, index($1, \"=\") + 1, 100)} NR==1{print $1}' rootkey.csv")
+        aws_configure_prompts['AWS Secret Access Key [None]:'] = c.run("awk -F: '{$1 = substr($1, index($1, \"=\") + 1, 100)} NR==2{print $1}' rootkey.csv")
+        print(f"Captured key id {aws_configure_prompts['AWS Access Key ID [None]:']} and access key {aws_configure_prompts['AWS Secret Access Key [None]:']}")
+
+        c.put("CacheCow.pem", remote="CacheCow.pem")
+        c.run("curl https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip -o awscliv2.zip")
+        c.run("unzip awscliv2.zip")
+        c.run("sudo ./aws/install")
+
+        with settings(prompts=aws_configure_prompts):
+            c.run("aws configure")
+        c.run("pip install requests boto3 fabric fexpect")
 
         c.run(f"tmux new-session -d \"cd CacheCow/cache-node/ && ./gradlew run --args '{system} {i} {port} {scaleable_param}'\"", asynchronous=True)
 
@@ -179,7 +207,7 @@ def launch_cluster(num_nodes, scaleable_param):
     target_group = elb.create_target_group(
         Name='cachecow-nodes',
         Protocol='TCP',
-        Port=7070,
+        Port=cache_port,
         TargetType='instance',
         VpcId=vpc_id
     )
@@ -188,7 +216,7 @@ def launch_cluster(num_nodes, scaleable_param):
 
     targets = elb.register_targets(
         TargetGroupArn=target_group_arn,
-        Targets=[{'Id': x.id, 'Port': 7070} for x in instances]
+        Targets=[{'Id': x.id, 'Port': cache_port} for x in instances]
     )
 
     balancer = elb.create_load_balancer(
@@ -206,7 +234,7 @@ def launch_cluster(num_nodes, scaleable_param):
     listener = elb.create_listener(
         LoadBalancerArn=balancer_arn,
         Protocol='TCP',
-        Port=7070,
+        Port=cache_port,
         DefaultActions=[
             {
                 'Type': 'forward',
@@ -236,10 +264,11 @@ def scale_cluster(num_nodes):
 
     vpc_id, subnet_id = get_vpc_and_subnet(ec2, 'us-east-1b')
 
-    node_dns = []
+    all_node_dns = []
+    new_node_dns = []
     instance_count = len(ec2.instances.all())
     for instance in ec2.instances.all():
-        node_dns.append(instance.public_dns_name)
+        all_node_dns.append(instance.public_dns_name)
 
     new_instances = ec2.create_instances(
         # ImageId='ami-079466db464206b00', # Custom AMI with dependencies preinstalled
@@ -278,11 +307,12 @@ def scale_cluster(num_nodes):
     for instance in new_instances:
         instance.wait_until_running()
         instance.load()
-        node_dns.append(instance.public_dns_name)
+        all_node_dns.append(instance.public_dns_name)
+        new_node_dns.append(instance.public_dns_name)
 
-    node_dns_f = io.StringIO("\n".join(x + f":{port}" for x in node_dns))
+    node_dns_f = io.StringIO("\n".join(x + f":{port}" for x in all_node_dns))
 
-    for i, node in enumerate(node_dns):
+    for i, node in enumerate(new_node_dns):
         c = connect_retry(node, "ec2-user", "CacheCow.pem")
 
         c.run("sudo yum update -y")
@@ -308,11 +338,11 @@ def scale_cluster(num_nodes):
 
         c.close()
 
-    for node in node_dns:
+    for node in new_node_dns:
         wait_node(node)
 
+# Program entry point
 mode = sys.argv[1]
-
 num_nodes = int(sys.argv[2])
 
 scaleable_param = ""
