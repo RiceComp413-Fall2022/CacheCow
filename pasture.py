@@ -5,7 +5,7 @@ import time
 import requests # pip install requests
 import boto3 # pip install boto3[crt]
 from fabric import Connection # pip install fabric
-from fabric.context_managers import settings
+from invoke import Responder
 # from ilogue.fexpect import expect, expecting, run  # pip install fexpect
 
 # USAGE: python3 pasture.py <mode> <number of nodes> [-s]
@@ -17,12 +17,12 @@ cache_port = 7070
 
 system = "aws"
 
-aws_configure_prompts = {
-    'AWS Access Key ID [None]:': '',
-    'AWS Secret Access Key [None]:': '',
-    'Default region name [None]:': '',
-    'Default output format [None]:': ''
-}
+# aws_configure_prompts = {
+#     'AWS Access Key ID [None]:': '',
+#     'AWS Secret Access Key [None]:': '',
+#     'Default region name [None]:': '',
+#     'Default output format [None]:': ''
+# }
 
 def get_vpc_and_subnet(ec2, zone):
     default_vpc = None
@@ -62,7 +62,8 @@ def connect_retry(host, user, key):
 def test_node(node):
     success = True
     try:
-        requests.get(f"http://{node}:{port}", timeout=5)
+        print("Retry")
+        requests.get(f"http://{node}:{cache_port}", timeout=5)
     except:
         success = False
     return success
@@ -178,24 +179,36 @@ def launch_cluster(num_nodes, scaleable_param):
 
         # TODO: Verify new stuff as working
         print("ACTION: Setting Up AWS")
-        c.put("CacheCow.pem", remote="CacheCow.pem")
-        c.put("rootkey.csv", remote="rootkey.csv")
+        c.put("CacheCow.pem", remote="CacheCow/CacheCow.pem")
+        c.put("rootkey.csv", remote="CacheCow/rootkey.csv")
 
-        aws_configure_prompts['AWS Access Key ID [None]:'] = c.run("awk -F: '{$1 = substr($1, index($1, \"=\") + 1, 100)} NR==1{print $1}' rootkey.csv").stdout
-        aws_configure_prompts['AWS Secret Access Key [None]:'] = c.run("awk -F: '{$1 = substr($1, index($1, \"=\") + 1, 100)} NR==2{print $1}' rootkey.csv").stdout
-        print(f"Captured key id {aws_configure_prompts['AWS Access Key ID [None]:']} and access key {aws_configure_prompts['AWS Secret Access Key [None]:']}")
+        access_id = c.run("awk -F: '{$1 = substr($1, index($1, \"=\") + 1, 100)} NR==1{print $1}' CacheCow/rootkey.csv").stdout.strip()
+        access_secret = c.run("awk -F: '{$1 = substr($1, index($1, \"=\") + 1, 100)} NR==2{print $1}' CacheCow/rootkey.csv").stdout.strip()
+        print(f"Captured key id {access_id} and access key {access_secret}")
+
+        aws_watchers = [
+            Responder(pattern=r'[.]*ID[.]*', response=access_id + "\n"),
+            Responder(pattern=r'[.]*Secret[.]*', response=access_secret + "\n"),
+            Responder(pattern=r'[.]*region[.]*', response="us-east-1b\n"),
+            Responder(pattern=r'[.]*output[.]*', response="\n")
+        ]
+
+        # aws_configure_prompts['AWS Access Key ID [None]:'] = c.run("awk -F: '{$1 = substr($1, index($1, \"=\") + 1, 100)} NR==1{print $1}' rootkey.csv").stdout
+        # aws_configure_prompts['AWS Secret Access Key [None]:'] = c.run("awk -F: '{$1 = substr($1, index($1, \"=\") + 1, 100)} NR==2{print $1}' rootkey.csv").stdout
+        # print(f"Captured key id {aws_configure_prompts['AWS Access Key ID [None]:']} and access key {aws_configure_prompts['AWS Secret Access Key [None]:']}")
 
         c.run("curl https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip -o awscliv2.zip")
         c.run("unzip awscliv2.zip")
         c.run("sudo ./aws/install")
 
         print("ACTION: Configuring AWS")
-        with settings(prompts=aws_configure_prompts):
-            c.run("aws configure")
+        c.run("aws configure", pty=True, watchers=aws_watchers)
+        # with settings(prompts=aws_configure_prompts):
+        #     c.run("aws configure")
         c.run("pip3 install requests boto3 fabric")
 
         print("ACTION: Starting services")
-        c.run(f"tmux new-session -d \"cd CacheCow/cache-node/ && ./gradlew run --args '{system} {i} {port} {scaleable_param}'\"", asynchronous=True)
+        c.run(f"tmux new-session -d \"cd CacheCow/cache-node/ && ./gradlew run --args '{system} {i} {cache_port} {scaleable_param}'\"", asynchronous=True)
 
         c.run("curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.34.0/install.sh | bash")
         c.run(". ~/.nvm/nvm.sh")
@@ -275,7 +288,7 @@ def scale_cluster(num_nodes):
     new_node_dns = []
     instance_count = len(ec2.instances.all())
     print(f"Existing instance count is {instance_count}")
-    
+
     for instance in ec2.instances.all():
         all_node_dns.append(instance.public_dns_name)
 
@@ -335,7 +348,7 @@ def scale_cluster(num_nodes):
 
         c.put(node_dns_f, remote='CacheCow/cache-node/nodes.txt')
 
-        c.run(f"tmux new-session -d \"cd CacheCow/cache-node/ && ./gradlew run --args '{system} {i + instance_count} {port} -s -n'\"", asynchronous=True)
+        c.run(f"tmux new-session -d \"cd CacheCow/cache-node/ && ./gradlew run --args '{system} {i + instance_count} {cache_port} -s -n'\"", asynchronous=True)
 
         c.run("curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.34.0/install.sh | bash")
         c.run(". ~/.nvm/nvm.sh")
