@@ -9,11 +9,15 @@ from invoke import Responder
 
 # USAGE: python3 pasture.py <mode> <number of nodes> [-s]
 
-# TODO: automatic teardown
+MAX_NODES = 5
 
-cache_port = 7070
+CACHE_PORT = 7070
 
-system = "aws"
+SSH_USER = "ec2-user"
+
+SSH_CREDS = "CacheCow.pem"
+
+AWS_CREDS = "rootkey.csv"
 
 """
 Placeholder
@@ -63,7 +67,7 @@ Placeholder
 def test_node(node):
     success = True
     try:
-        requests.get(f"http://{node}:{cache_port}", timeout=5)
+        requests.get(f"http://{node}:{CACHE_PORT}", timeout=5)
     except:
         success = False
     return success
@@ -135,11 +139,13 @@ def setup_services(c, id, node_dns_f, scaleable, new_node):
     if (scaleable):
         print("ACTION: Setting Up AWS")
 
-        c.put("CacheCow.pem", remote="CacheCow/CacheCow.pem")
-        c.put("rootkey.csv", remote="CacheCow/rootkey.csv")
+        c.put(SSH_CREDS, remote=f"CacheCow/{SSH_CREDS}")
 
-        access_id = c.run("awk -F: '{$1 = substr($1, index($1, \"=\") + 1, 100)} NR==1{print $1}' CacheCow/rootkey.csv").stdout.strip()
-        access_secret = c.run("awk -F: '{$1 = substr($1, index($1, \"=\") + 1, 100)} NR==2{print $1}' CacheCow/rootkey.csv").stdout.strip()
+        remote_credentials = f"CacheCow/{AWS_CREDS}"
+        c.put(AWS_CREDS, remote=remote_credentials)
+
+        access_id = c.run("awk -F: '{$1 = substr($1, index($1, \"=\") + 1, 100)} NR==1{print $1}' " + remote_credentials).stdout.strip()
+        access_secret = c.run("awk -F: '{$1 = substr($1, index($1, \"=\") + 1, 100)} NR==2{print $1}' " + remote_credentials).stdout.strip()
 
         aws_watchers = [
             Responder(pattern=r'[.]*ID[.]*', response=access_id + "\n"),
@@ -161,7 +167,7 @@ def setup_services(c, id, node_dns_f, scaleable, new_node):
 
     scaleable_str = "-s" if scaleable else ""
     new_str = "-n" if new_node else ""
-    c.run(f"tmux new-session -d \"cd CacheCow/cache-node/ && ./gradlew run --args '{system} {id} {cache_port} {scaleable_str} {new_str}'\"", asynchronous=True)
+    c.run(f"tmux new-session -d \"cd CacheCow/cache-node/ && ./gradlew run --args 'aws {id} {CACHE_PORT} {scaleable_str} {new_str}'\"", asynchronous=True)
 
     c.run("curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.34.0/install.sh | bash")
     c.run(". ~/.nvm/nvm.sh")
@@ -175,6 +181,11 @@ def setup_services(c, id, node_dns_f, scaleable, new_node):
 Placeholder
 """
 def launch_cluster(num_nodes, scaleable):
+
+    if num_nodes > MAX_NODES:
+        sys.stderr.write(f"Attempted to create {num_nodes} nodes, max is {MAX_NODES}")
+        return
+
     ec2 = boto3.resource('ec2')
 
     vpc_id, subnet_id = get_vpc_and_subnet(ec2, 'us-east-1b')
@@ -189,8 +200,8 @@ def launch_cluster(num_nodes, scaleable):
         IpPermissions=[
                 {
                     'IpProtocol': 'tcp',
-                    'FromPort': cache_port,
-                    'ToPort': cache_port,
+                    'FromPort': CACHE_PORT,
+                    'ToPort': CACHE_PORT,
                     'IpRanges': [
                         {
                             'CidrIp': '0.0.0.0/0'
@@ -220,6 +231,7 @@ def launch_cluster(num_nodes, scaleable):
             ]
     )
 
+
     instances = create_instances(ec2, num_nodes)
 
     node_dns = []
@@ -229,10 +241,10 @@ def launch_cluster(num_nodes, scaleable):
         node_dns.append(instance.public_dns_name)
         print(f"Node {instance.public_dns_name} finished loading")
 
-    node_dns_f = io.StringIO("\n".join(x + f":{cache_port}" for x in node_dns))
+    node_dns_f = io.StringIO("\n".join(x + f":{CACHE_PORT}" for x in node_dns))
 
     for i, node in enumerate(node_dns):
-        c = connect_retry(node, "ec2-user", "CacheCow.pem")
+        c = connect_retry(node, SSH_USER, SSH_CREDS)
 
         setup_services(c, i, node_dns_f, scaleable, False)
 
@@ -243,7 +255,7 @@ def launch_cluster(num_nodes, scaleable):
     target_group = elb.create_target_group(
         Name='cachecow-nodes',
         Protocol='TCP',
-        Port=cache_port,
+        Port=CACHE_PORT,
         TargetType='instance',
         VpcId=vpc_id
     )
@@ -252,7 +264,7 @@ def launch_cluster(num_nodes, scaleable):
 
     targets = elb.register_targets(
         TargetGroupArn=target_group_arn,
-        Targets=[{'Id': x.id, 'Port': cache_port} for x in instances]
+        Targets=[{'Id': x.id, 'Port': CACHE_PORT} for x in instances]
     )
 
     balancer = elb.create_load_balancer(
@@ -270,7 +282,7 @@ def launch_cluster(num_nodes, scaleable):
     listener = elb.create_listener(
         LoadBalancerArn=balancer_arn,
         Protocol='TCP',
-        Port=cache_port,
+        Port=CACHE_PORT,
         DefaultActions=[
             {
                 'Type': 'forward',
@@ -312,6 +324,10 @@ def scale_cluster(num_nodes):
             all_node_dns.append(instance.public_dns_name)
             instance_count += 1
 
+    if instance_count + num_nodes > MAX_NODES:
+        sys.stderr.write(f"Attempted to scale cluster to {instance_count + num_nodes} nodes, max is {MAX_NODES}")
+        return
+
     print(f"Existing instance count is {instance_count}")
 
     new_instances = create_instances(ec2, num_nodes)
@@ -322,10 +338,10 @@ def scale_cluster(num_nodes):
         all_node_dns.append(instance.public_dns_name)
         new_node_dns.append(instance.public_dns_name)
 
-    node_dns_f = io.StringIO("\n".join(x + f":{cache_port}" for x in all_node_dns))
+    node_dns_f = io.StringIO("\n".join(x + f":{CACHE_PORT}" for x in all_node_dns))
 
     for i, node in enumerate(new_node_dns):
-        c = connect_retry(node, "ec2-user", "CacheCow.pem")
+        c = connect_retry(node, SSH_USER, SSH_CREDS)
 
         id = i + instance_count
 
@@ -335,6 +351,11 @@ def scale_cluster(num_nodes):
 
     for node in new_node_dns:
         wait_node(node)
+
+
+def teardown_cluster():
+    # TODO: automatic teardown
+    pass
 
 
 # Program entry point
@@ -350,5 +371,7 @@ if __name__ == "__main__":
         launch_cluster(num_nodes, scaleable)
     elif (mode == "add"):
         scale_cluster(num_nodes)
+    elif (mode == "delete"):
+        teardown_cluster()
     else:
         print(f"Launch mode {mode} not recognized, only 'create' and 'add' supported")
