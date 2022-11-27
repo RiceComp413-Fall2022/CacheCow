@@ -46,3 +46,5 @@ binary/
 
 ### AWS ###
 *.pem
+helpful.txt
+rootkey.csv

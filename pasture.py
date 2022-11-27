@@ -5,6 +5,7 @@ import time
 import requests # pip install requests
 import boto3 # pip install boto3[crt]
 from fabric import Connection # pip install fabric
+from fabric.context_managers import settings
 # from ilogue.fexpect import expect, expecting, run  # pip install fexpect
 
 # USAGE: python3 pasture.py <mode> <number of nodes> [-s]
@@ -156,12 +157,14 @@ def launch_cluster(num_nodes, scaleable_param):
         instance.wait_until_running()
         instance.load()
         node_dns.append(instance.public_dns_name)
+        print(f"Node {instance.public_dns_name} finished loading")
 
-    node_dns_f = io.StringIO("\n".join(x + f":{port}" for x in node_dns))
+    node_dns_f = io.StringIO("\n".join(x + f":{cache_port}" for x in node_dns))
 
     for i, node in enumerate(node_dns):
         c = connect_retry(node, "ec2-user", "CacheCow.pem")
 
+        print("ACTION: Cloning git repo")
         c.run("sudo yum update -y")
         # c.run("sudo yum install git -y")
         # c.run("sudo amazon-linux-extras install java-openjdk11 -y")
@@ -174,22 +177,24 @@ def launch_cluster(num_nodes, scaleable_param):
         c.put(node_dns_f, remote='CacheCow/cache-node/nodes.txt')
 
         # TODO: Verify new stuff as working
+        print("ACTION: Setting Up AWS")
         c.put("CacheCow.pem", remote="CacheCow.pem")
         c.put("rootkey.csv", remote="rootkey.csv")
 
-        aws_configure_prompts['AWS Access Key ID [None]:'] = c.run("awk -F: '{$1 = substr($1, index($1, \"=\") + 1, 100)} NR==1{print $1}' rootkey.csv")
-        aws_configure_prompts['AWS Secret Access Key [None]:'] = c.run("awk -F: '{$1 = substr($1, index($1, \"=\") + 1, 100)} NR==2{print $1}' rootkey.csv")
+        aws_configure_prompts['AWS Access Key ID [None]:'] = c.run("awk -F: '{$1 = substr($1, index($1, \"=\") + 1, 100)} NR==1{print $1}' rootkey.csv").stdout
+        aws_configure_prompts['AWS Secret Access Key [None]:'] = c.run("awk -F: '{$1 = substr($1, index($1, \"=\") + 1, 100)} NR==2{print $1}' rootkey.csv").stdout
         print(f"Captured key id {aws_configure_prompts['AWS Access Key ID [None]:']} and access key {aws_configure_prompts['AWS Secret Access Key [None]:']}")
 
-        c.put("CacheCow.pem", remote="CacheCow.pem")
         c.run("curl https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip -o awscliv2.zip")
         c.run("unzip awscliv2.zip")
         c.run("sudo ./aws/install")
 
+        print("ACTION: Configuring AWS")
         with settings(prompts=aws_configure_prompts):
             c.run("aws configure")
-        c.run("pip install requests boto3 fabric fexpect")
+        c.run("pip3 install requests boto3 fabric")
 
+        print("ACTION: Starting services")
         c.run(f"tmux new-session -d \"cd CacheCow/cache-node/ && ./gradlew run --args '{system} {i} {port} {scaleable_param}'\"", asynchronous=True)
 
         c.run("curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.34.0/install.sh | bash")
@@ -260,13 +265,17 @@ def launch_cluster(num_nodes, scaleable_param):
     wait_node(elb_dns)
 
 def scale_cluster(num_nodes):
+    print("HERE 1")
     ec2 = boto3.resource('ec2')
 
+    print("HERE 2")
     vpc_id, subnet_id = get_vpc_and_subnet(ec2, 'us-east-1b')
 
     all_node_dns = []
     new_node_dns = []
     instance_count = len(ec2.instances.all())
+    print(f"Existing instance count is {instance_count}")
+    
     for instance in ec2.instances.all():
         all_node_dns.append(instance.public_dns_name)
 
@@ -310,7 +319,7 @@ def scale_cluster(num_nodes):
         all_node_dns.append(instance.public_dns_name)
         new_node_dns.append(instance.public_dns_name)
 
-    node_dns_f = io.StringIO("\n".join(x + f":{port}" for x in all_node_dns))
+    node_dns_f = io.StringIO("\n".join(x + f":{cache_port}" for x in all_node_dns))
 
     for i, node in enumerate(new_node_dns):
         c = connect_retry(node, "ec2-user", "CacheCow.pem")
