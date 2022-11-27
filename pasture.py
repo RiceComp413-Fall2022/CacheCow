@@ -6,23 +6,14 @@ import requests # pip install requests
 import boto3 # pip install boto3[crt]
 from fabric import Connection # pip install fabric
 from invoke import Responder
-# from ilogue.fexpect import expect, expecting, run  # pip install fexpect
 
 # USAGE: python3 pasture.py <mode> <number of nodes> [-s]
 
 # TODO: automatic teardown
-# TODO: set up aws configs and permissions
 
 cache_port = 7070
 
 system = "aws"
-
-# aws_configure_prompts = {
-#     'AWS Access Key ID [None]:': '',
-#     'AWS Secret Access Key [None]:': '',
-#     'Default region name [None]:': '',
-#     'Default output format [None]:': ''
-# }
 
 def get_vpc_and_subnet(ec2, zone):
     default_vpc = None
