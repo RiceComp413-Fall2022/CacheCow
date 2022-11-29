@@ -20,7 +20,7 @@ class ScalableReceiverTest {
     fun beforeAll() {
         val nodeList = mutableListOf("localhost:7070", "localhost:7071")
         distributedCache = ScalableDistributedCache(0, nodeList, isAWS = false, isNewNode = false)
-        app = distributedCache.getApp()
+        app = distributedCache.getJavalinApp()
     }
 
     @BeforeEach

@@ -329,7 +329,7 @@ class ScalableDistributedCache(private val nodeId: NodeId, private var nodeList:
         sender = mockSender
     }
 
-    override fun getApp(): Javalin {
-        return receiver.getApp()
+    override fun getJavalinApp(): Javalin {
+        return receiver.getJavalinApp()
     }
 }

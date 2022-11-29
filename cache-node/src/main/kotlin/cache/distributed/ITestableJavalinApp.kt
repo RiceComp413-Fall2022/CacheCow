@@ -4,6 +4,6 @@ import io.javalin.Javalin
 
 interface ITestableJavalinApp {
 
-    fun getApp(): Javalin
+    fun getJavalinApp(): Javalin
 
 }

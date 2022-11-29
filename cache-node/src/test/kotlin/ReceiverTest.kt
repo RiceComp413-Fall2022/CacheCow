@@ -24,7 +24,7 @@ class ReceiverTest {
     fun beforeAll() {
         val nodeList = mutableListOf("localhost:7070", "localhost:7071")
         distributedCache = DistributedCache(0, nodeList)
-        app = distributedCache.getApp()
+        app = distributedCache.getJavalinApp()
     }
 
     @BeforeEach

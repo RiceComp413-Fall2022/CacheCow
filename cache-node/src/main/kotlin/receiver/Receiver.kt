@@ -24,7 +24,7 @@ open class Receiver(
     /**
      * The Javalin server used to route HTTP requests to handlers
      */
-    val app: Javalin = Javalin.create { config: JavalinConfig ->
+    protected val app: Javalin = Javalin.create { config: JavalinConfig ->
         config.plugins.enableCors { cors: CorsContainer ->
             cors.add { it: CorsPluginConfig -> it.anyHost() }
         }
@@ -136,6 +136,10 @@ open class Receiver(
      */
     override fun start(port: Int) {
         app.start(port)
+    }
+
+    override fun getJavalinApp(): Javalin {
+        return app
     }
 
     override fun getReceiverUsageInfo(): ReceiverUsageInfo {

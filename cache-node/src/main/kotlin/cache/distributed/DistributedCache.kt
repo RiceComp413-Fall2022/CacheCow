@@ -32,7 +32,7 @@ class DistributedCache(private val nodeId: NodeId, nodeList: List<String>): IDis
     /**
      * Receiver implementation
      */
-    private val receiver: IReceiver = Receiver(nodeId, this)
+    private val receiver =  Receiver(nodeId, this)
 
     /**
      * Module used to send all out-going messages (public for testing)
@@ -91,7 +91,7 @@ class DistributedCache(private val nodeId: NodeId, nodeList: List<String>): IDis
         sender = mockSender
     }
 
-    override fun getApp(): Javalin {
-        return receiver.getApp()
+    override fun getJavalinApp(): Javalin {
+        return receiver.getJavalinApp()
     }
 }
