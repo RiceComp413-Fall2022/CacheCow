@@ -1,10 +1,10 @@
+import cache.distributed.DistributedCache
 import exception.CrossServerException
 import exception.KeyNotFoundException
 import io.javalin.Javalin
 import io.javalin.testtools.JavalinTest
 import io.mockk.every
 import io.mockk.mockkClass
-import node.Node
 import org.assertj.core.api.Assertions.assertThat
 import org.eclipse.jetty.http.HttpStatus
 import org.junit.jupiter.api.BeforeEach
@@ -14,7 +14,7 @@ import kotlin.test.BeforeTest
 
 class ReceiverTest {
 
-    private lateinit var node: Node
+    private lateinit var distributedCache: DistributedCache
 
     private lateinit var app: Javalin
 
@@ -23,14 +23,14 @@ class ReceiverTest {
     @BeforeTest
     fun beforeAll() {
         val nodeList = mutableListOf("localhost:7070", "localhost:7071")
-        node = Node(0, nodeList, 7070, isAWS = false, scalable = false, newNode = false)
-        app = node.receiver.app
+        distributedCache = DistributedCache(0, nodeList)
+        app = distributedCache.getApp()
     }
 
     @BeforeEach
     internal fun beforeEach() {
         sender = mockkClass(Sender::class)
-        node.distributedCache.mockSender(sender)
+        distributedCache.mockSender(sender)
     }
 
     @Test

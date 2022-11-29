@@ -5,8 +5,6 @@ import NodeId
 
 interface IScalableDistributedCache: IDistributedCache {
 
-    fun start()
-
     fun scaleInProgress(): Boolean
 
     fun handleLaunchRequest(senderId: NodeId): Boolean

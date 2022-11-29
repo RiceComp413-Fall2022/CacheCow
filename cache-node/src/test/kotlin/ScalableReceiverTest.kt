@@ -1,33 +1,32 @@
 import io.javalin.Javalin
 import io.javalin.testtools.JavalinTest
 import io.mockk.mockkClass
-import node.Node
 import org.assertj.core.api.Assertions.assertThat
 import org.eclipse.jetty.http.HttpStatus
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import sender.Sender
+import sender.ScalableSender
 import kotlin.test.BeforeTest
 
 class ScalableReceiverTest {
 
-    private lateinit var node: Node
+    private lateinit var distributedCache: ScalableDistributedCache
 
     private lateinit var app: Javalin
 
-    private lateinit var sender: Sender
+    private lateinit var sender: ScalableSender
 
     @BeforeTest
     fun beforeAll() {
         val nodeList = mutableListOf("localhost:7070", "localhost:7071")
-        node = Node(0, nodeList, 7070, isAWS = false, scalable = true, newNode = false)
-        app = node.receiver.app
+        distributedCache = ScalableDistributedCache(0, nodeList, isAWS = false, isNewNode = false)
+        app = distributedCache.getApp()
     }
 
     @BeforeEach
     internal fun beforeEach() {
-        sender = mockkClass(Sender::class)
-        node.distributedCache.mockSender(sender)
+        sender = mockkClass(ScalableSender::class)
+        distributedCache.mockSender(sender)
     }
 
     @Test

@@ -1,17 +1,18 @@
 package receiver
 
 import cache.distributed.IDistributedCache
+import cache.distributed.ITestableJavalinApp
 
 /**
  * An interface specifying the behavior of a receiver, which receives request from other
  * nodes in the system.
  */
-interface IReceiver {
+interface IReceiver: ITestableJavalinApp {
 
     /**
      * Start the receiver
      */
-    fun start()
+    fun start(port: Int)
 
     /**
      * Get the receiver usage info

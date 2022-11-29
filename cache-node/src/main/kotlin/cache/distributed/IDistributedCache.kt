@@ -13,6 +13,8 @@ import sender.SenderUsageInfo
  */
 interface IDistributedCache {
 
+    fun start(port: Int)
+
     /**
      * Fetch a value from the distributed cache.
      *
@@ -44,8 +46,6 @@ interface IDistributedCache {
         return MemoryUsageInfo(allocatedMemory, maxMemory, usage)
     }
 
-    fun mockSender(mock: Sender)
-
     /**
      * Client response giving memory usage of the JVM.
      */
@@ -58,6 +58,6 @@ interface IDistributedCache {
         val nodeId: Int,
         val memUsage: MemoryUsageInfo,
         val cacheInfo: CacheInfo,
-        var receiverUsageInfo: ReceiverUsageInfo?,
+        var receiverUsageInfo: ReceiverUsageInfo,
         val senderUsageInfo: SenderUsageInfo)
 }

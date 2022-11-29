@@ -15,7 +15,6 @@ import org.eclipse.jetty.http.HttpStatus
  * A concrete receiver that accepts requests over HTTP.
  */
 open class Receiver(
-    private val port: Int,
     count: Int,
     private val distributedCache: IDistributedCache
 ) : IReceiver {
@@ -135,7 +134,7 @@ open class Receiver(
     /**
      * Start the HTTP server.
      */
-    override fun start() {
+    override fun start(port: Int) {
         app.start(port)
     }
 

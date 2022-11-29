@@ -1,13 +1,19 @@
 import cache.distributed.IDistributedCache
 import cache.distributed.IScalableDistributedCache
+import cache.distributed.ITestableDistributedCache
 import cache.distributed.hasher.ConsistentKeyDistributor
 import cache.distributed.hasher.NodeHasher
 import cache.distributed.launcher.AWSNodeLauncher
+import cache.distributed.hasher.IKeyDistributor
 import cache.distributed.launcher.LocalNodeLauncher
+import cache.local.ILocalScalableCache
 import cache.local.LocalScalableCache
 import exception.KeyNotFoundException
+import io.javalin.Javalin
+import receiver.IScalableReceiver
+import receiver.ScalableReceiver
+import sender.IScalableSender
 import sender.ScalableSender
-import sender.Sender
 import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
@@ -17,7 +23,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock
  * A concrete distributed cache that assigns keys to nodes using a NodeHasher.
  */
 class ScalableDistributedCache(private val nodeId: NodeId, private var nodeList: MutableList<String>, isAWS: Boolean, private var isNewNode: Boolean):
-    IScalableDistributedCache {
+    IScalableDistributedCache, ITestableDistributedCache<IScalableSender> {
 
     /**
      * Updated immediately once copying starts to support re-routing
@@ -42,17 +48,22 @@ class ScalableDistributedCache(private val nodeId: NodeId, private var nodeList:
     /**
      * Local cache implementation
      */
-    private val cache = LocalScalableCache(nodeHasher, this)
+    private val cache: ILocalScalableCache = LocalScalableCache(nodeHasher, this)
+
+    /**
+     * Scalable receiver implementation
+     */
+    private val receiver: IScalableReceiver = ScalableReceiver(nodeId, prevNodeCount, this)
 
     /**
      * Module used to send all out-going messages
      */
-    private val sender = ScalableSender(nodeId, nodeList)
+    private var sender: IScalableSender = ScalableSender(nodeId, nodeList)
 
     /**
      * Module used to determine how keys should be distributed across machines
      */
-    private val keyDistributor = ConsistentKeyDistributor(nodeCount)
+    private val keyDistributor: IKeyDistributor = ConsistentKeyDistributor(nodeCount)
 
     /**
      * Flag indicating whether scaling process is active, atomic to prevent multiple threads
@@ -101,6 +112,23 @@ class ScalableDistributedCache(private val nodeId: NodeId, private var nodeList:
      * Number of nodes that have completed copying, atomic to ensure that the count is correct
      */
     private var redistributeLock = ReentrantReadWriteLock()
+
+    override fun start(port: Int) {
+        print("SCALABLE CACHE: Started with is new node $isNewNode\n")
+        receiver.start(port)
+        if (isNewNode) {
+            Thread {
+                sender.broadcastScalableMessageAsync(
+                    ScalableMessage(
+                        nodeId,
+                        nodeList[nodeId],
+                        ScalableMessageType.READY
+                    )
+                )
+            }.start()
+        }
+    }
+
 
     override fun fetch(kvPair: KeyVersionPair, senderId: NodeId?): ByteArray {
 
@@ -165,31 +193,12 @@ class ScalableDistributedCache(private val nodeId: NodeId, private var nodeList:
         }
     }
 
-    override fun mockSender(mock: Sender) {
-        TODO("Not yet implemented")
-    }
-
-    override fun start() {
-        print("SCALABLE CACHE: Started with is new node $isNewNode\n")
-        if (isNewNode) {
-            Thread {
-                sender.broadcastScalableMessageAsync(
-                    ScalableMessage(
-                        nodeId,
-                        nodeList[nodeId],
-                        ScalableMessageType.READY
-                    )
-                )
-            }.start()
-        }
-    }
-
     override fun getSystemInfo(): IDistributedCache.SystemInfo {
         return IDistributedCache.SystemInfo(
             nodeId,
             getMemoryUsage(),
             cache.getCacheInfo(),
-            null,
+            receiver.getReceiverUsageInfo(),
             sender.getSenderUsageInfo()
         )
     }
@@ -314,5 +323,13 @@ class ScalableDistributedCache(private val nodeId: NodeId, private var nodeList:
         )
         cache.cleanupCopy()
         copyInProgress = false
+    }
+
+    override fun mockSender(mockSender: IScalableSender) {
+        sender = mockSender
+    }
+
+    override fun getApp(): Javalin {
+        return receiver.getApp()
     }
 }

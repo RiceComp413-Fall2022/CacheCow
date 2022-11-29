@@ -1,4 +1,5 @@
-import node.Node
+import cache.distributed.DistributedCache
+import cache.distributed.IDistributedCache
 import java.io.File
 
 const val nodeListPath = "nodes.txt"
@@ -32,7 +33,13 @@ fun main(args: Array<String>) {
         }
     }
 
-    val node = Node(nodeId, File(nodeListPath).bufferedReader().readLines().toMutableList(), port, isAWS, scalable, isNewNode)
+    val nodeList = File(nodeListPath).bufferedReader().readLines().toMutableList()
 
-    node.start()
+    val distributedCache: IDistributedCache = if (scalable) {
+        ScalableDistributedCache(nodeId, nodeList, isAWS, isNewNode)
+    } else {
+        DistributedCache(nodeId, nodeList)
+    }
+
+    distributedCache.start(port)
 }

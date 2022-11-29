@@ -89,9 +89,9 @@ class LocalScalableCache(private var nodeHasher: INodeHasher, private val distri
         insert(node)
 
         // TODO: Remove, temporary way to launch new node
-        if (cache.size >= maxCapacity) {
-            distributedCache.initiateLaunch()
-        }
+//        if (cache.size >= maxCapacity) {
+//            distributedCache.initiateLaunch()
+//        }
 
         return true
     }

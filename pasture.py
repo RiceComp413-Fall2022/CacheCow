@@ -183,7 +183,7 @@ Placeholder
 def launch_cluster(num_nodes, scaleable):
 
     if num_nodes > MAX_NODES:
-        sys.stderr.write(f"Attempted to create {num_nodes} nodes, max is {MAX_NODES}")
+        sys.stderr.write(f"Attempted to create {num_nodes} nodes, max is {MAX_NODES}\n")
         return
 
     ec2 = boto3.resource('ec2')
@@ -325,7 +325,7 @@ def scale_cluster(num_nodes):
             instance_count += 1
 
     if instance_count + num_nodes > MAX_NODES:
-        sys.stderr.write(f"Attempted to scale cluster to {instance_count + num_nodes} nodes, max is {MAX_NODES}")
+        sys.stderr.write(f"Attempted to scale cluster to {instance_count + num_nodes} nodes, max is {MAX_NODES}\n")
         return
 
     print(f"Existing instance count is {instance_count}")
@@ -374,4 +374,5 @@ if __name__ == "__main__":
     elif (mode == "delete"):
         teardown_cluster()
     else:
+        # TODO: Add better help message
         print(f"Launch mode {mode} not recognized, only 'create' and 'add' supported")

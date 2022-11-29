@@ -7,8 +7,7 @@ import ScalableMessageType
 import cache.distributed.IScalableDistributedCache
 import org.eclipse.jetty.http.HttpStatus
 
-class ScalableReceiver(port: Int, nodeId: NodeId, count: Int, private val distributedCache: IScalableDistributedCache): Receiver(
-    port,
+class ScalableReceiver(nodeId: NodeId, count: Int, private val distributedCache: IScalableDistributedCache): Receiver(
     count,
     distributedCache
 ), IScalableReceiver {
@@ -104,10 +103,10 @@ class ScalableReceiver(port: Int, nodeId: NodeId, count: Int, private val distri
             }
             distributedCache.bulkLocalStore(bulkCopy.values)
         }
-    }
 
-    override fun start() {
-        super.start()
-        distributedCache.start()
+        app.get("v1/launch-node") { ctx ->
+            print("SCALABLE RECEIVER: Received request to launch new node\n")
+            distributedCache.initiateLaunch()
+        }
     }
 }

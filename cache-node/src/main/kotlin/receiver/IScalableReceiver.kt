@@ -1,5 +1,5 @@
 package receiver
 
-interface IScalableReceiver {
+interface IScalableReceiver: IReceiver {
     // TODO: Make all endpoints their own functions
 }

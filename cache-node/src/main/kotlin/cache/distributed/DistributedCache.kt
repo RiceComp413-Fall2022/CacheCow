@@ -4,14 +4,20 @@ import KeyVersionPair
 import NodeId
 import cache.distributed.hasher.INodeHasher
 import cache.distributed.hasher.NodeHasher
+import cache.local.ILocalCache
 import cache.local.LocalCache
 import exception.KeyNotFoundException
+import io.javalin.Javalin
+import receiver.IReceiver
+import receiver.Receiver
+import sender.ISender
 import sender.Sender
 
 /**
  * A concrete distributed cache that assigns keys to nodes using a NodeHasher.
  */
-class DistributedCache(private val nodeId: NodeId, nodeList: List<String>): IDistributedCache {
+class DistributedCache(private val nodeId: NodeId, nodeList: List<String>): IDistributedCache,
+    ITestableDistributedCache<ISender> {
 
     /**
      * The INodeHasher used to map keys to nodes
@@ -21,12 +27,21 @@ class DistributedCache(private val nodeId: NodeId, nodeList: List<String>): IDis
     /**
      * Local cache implementation
      */
-    private var cache = LocalCache()
+    private val cache: ILocalCache = LocalCache()
+
+    /**
+     * Receiver implementation
+     */
+    private val receiver: IReceiver = Receiver(nodeId, this)
 
     /**
      * Module used to send all out-going messages (public for testing)
      */
-    var sender = Sender(nodeId, nodeList)
+    private var sender: ISender = Sender(nodeId, nodeList)
+
+    override fun start(port: Int) {
+        receiver.start(port)
+    }
 
     override fun fetch(kvPair: KeyVersionPair, senderId: NodeId?): ByteArray {
         val primaryNodeId = nodeHasher.primaryHashNode(kvPair)
@@ -68,12 +83,15 @@ class DistributedCache(private val nodeId: NodeId, nodeList: List<String>): IDis
             nodeId,
             getMemoryUsage(),
             cache.getCacheInfo(),
-            null,
+            receiver.getReceiverUsageInfo(),
             sender.getSenderUsageInfo()
         )
     }
+    override fun mockSender(mockSender: ISender) {
+        sender = mockSender
+    }
 
-    override fun mockSender(mock: Sender) {
-        sender = mock
+    override fun getApp(): Javalin {
+        return receiver.getApp()
     }
 }
