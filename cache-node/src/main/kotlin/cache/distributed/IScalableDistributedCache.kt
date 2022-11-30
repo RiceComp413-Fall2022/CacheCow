@@ -2,6 +2,7 @@ package cache.distributed
 
 import KeyValuePair
 import NodeId
+import cache.distributed.launcher.INodeLauncher
 
 interface IScalableDistributedCache: IDistributedCache {
 
@@ -18,4 +19,6 @@ interface IScalableDistributedCache: IDistributedCache {
     fun markCopyComplete(senderId: NodeId): Boolean
 
     fun bulkLocalStore(kvPairs: MutableList<KeyValuePair>)
+
+    fun mockNodeLauncher(mockLauncher: INodeLauncher)
 }

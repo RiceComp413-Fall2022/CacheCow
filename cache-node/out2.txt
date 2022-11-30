@@ -4,220 +4,235 @@
 > Task :classes UP-TO-DATE
 
 > Task :run
-Initializing node 2 on port 7072
-Building points: 0, 0, 821347078
-Building points: 0, 1, 1893835456
-Building points: 0, 2, -562028481
-Building points: 0, 3, 1894960128
-Building points: 0, 4, -1737284737
-Building points: 0, 5, -358911439
-Building points: 0, 6, 1886140699
-Building points: 0, 7, 1240364601
-Building points: 0, 8, 930464041
-Building points: 0, 9, -36412484
-Building points: 0, 10, -1435099420
-Building points: 0, 11, 270828108
-Building points: 0, 12, -1013619792
-Building points: 0, 13, 756792989
-Building points: 0, 14, 939020439
-Building points: 0, 15, 1239501196
-Building points: 0, 16, 1013504146
-Building points: 0, 17, 382121899
-Building points: 0, 18, 1825849097
-Building points: 0, 19, -34183783
-Building points: 0, 20, -116393705
-Building points: 0, 21, 537378757
-Building points: 0, 22, 1323042918
-Building points: 0, 23, -1534506072
-Building points: 0, 24, -1550206802
-Building points: 1, 0, -1783153782
-Building points: 1, 1, 1107827355
-Building points: 1, 2, 1690789502
-Building points: 1, 3, 522886066
-Building points: 1, 4, 179436327
-Building points: 1, 5, 2022161420
-Building points: 1, 6, -1536071818
-Building points: 1, 7, 1688139597
-Building points: 1, 8, 1401036680
-Building points: 1, 9, 915726316
-Building points: 1, 10, -1358907795
-Building points: 1, 11, -568790677
-Building points: 1, 12, -1780750672
-Building points: 1, 13, 1304926693
-Building points: 1, 14, -1004431952
-Building points: 1, 15, 77508191
-Building points: 1, 16, -1617286620
-Building points: 1, 17, -1476450926
-Building points: 1, 18, -1341065385
-Building points: 1, 19, -632319768
-Building points: 1, 20, -299988397
-Building points: 1, 21, 2146525591
-Building points: 1, 22, -408690416
-Building points: 1, 23, -611170879
-Building points: 1, 24, 1475423460
-Building points: 2, 0, 65183749
-Building points: 2, 1, -1968684030
-Building points: 2, 2, 1897018967
-Building points: 2, 3, -1111704628
-Building points: 2, 4, 1753975625
-Building points: 2, 5, -130274755
-Building points: 2, 6, 297965620
-Building points: 2, 7, -1898002177
-Building points: 2, 8, -1594831511
-Building points: 2, 9, -1975229367
-Building points: 2, 10, 545274216
-Building points: 2, 11, -126434293
-Building points: 2, 12, -1384546965
-Building points: 2, 13, 2030017694
-Building points: 2, 14, -328008029
-Building points: 2, 15, -439159130
-Building points: 2, 16, 777194168
-Building points: 2, 17, 874411894
-Building points: 2, 18, 1845476292
-Building points: 2, 19, -354067377
-Building points: 2, 20, 1884847038
-Building points: 2, 21, 284807710
-Building points: 2, 22, 368341485
-Building points: 2, 23, 697454706
-Building points: 2, 24, 1312165853
-There are 75 sorted nodes
-Hash value -1975229367 and node id 2
-Hash value -1968684030 and node id 2
-Hash value -1898002177 and node id 2
-Hash value -1783153782 and node id 1
-Hash value -1780750672 and node id 1
-Hash value -1737284737 and node id 0
-Hash value -1617286620 and node id 1
-Hash value -1594831511 and node id 2
-Hash value -1550206802 and node id 0
-Hash value -1536071818 and node id 1
-Hash value -1534506072 and node id 0
-Hash value -1476450926 and node id 1
-Hash value -1435099420 and node id 0
-Hash value -1384546965 and node id 2
-Hash value -1358907795 and node id 1
-Hash value -1341065385 and node id 1
-Hash value -1111704628 and node id 2
-Hash value -1013619792 and node id 0
-Hash value -1004431952 and node id 1
-Hash value -632319768 and node id 1
-Hash value -611170879 and node id 1
-Hash value -568790677 and node id 1
-Hash value -562028481 and node id 0
-Hash value -439159130 and node id 2
-Hash value -408690416 and node id 1
-Hash value -358911439 and node id 0
-Hash value -354067377 and node id 2
-Hash value -328008029 and node id 2
-Hash value -299988397 and node id 1
-Hash value -130274755 and node id 2
-Hash value -126434293 and node id 2
-Hash value -116393705 and node id 0
-Hash value -36412484 and node id 0
-Hash value -34183783 and node id 0
-Hash value 65183749 and node id 2
-Hash value 77508191 and node id 1
-Hash value 179436327 and node id 1
-Hash value 270828108 and node id 0
-Hash value 284807710 and node id 2
-Hash value 297965620 and node id 2
-Hash value 368341485 and node id 2
-Hash value 382121899 and node id 0
-Hash value 522886066 and node id 1
-Hash value 537378757 and node id 0
-Hash value 545274216 and node id 2
-Hash value 697454706 and node id 2
-Hash value 756792989 and node id 0
-Hash value 777194168 and node id 2
-Hash value 821347078 and node id 0
-Hash value 874411894 and node id 2
-Hash value 915726316 and node id 1
-Hash value 930464041 and node id 0
-Hash value 939020439 and node id 0
-Hash value 1013504146 and node id 0
-Hash value 1107827355 and node id 1
-Hash value 1239501196 and node id 0
-Hash value 1240364601 and node id 0
-Hash value 1304926693 and node id 1
-Hash value 1312165853 and node id 2
-Hash value 1323042918 and node id 0
-Hash value 1401036680 and node id 1
-Hash value 1475423460 and node id 1
-Hash value 1688139597 and node id 1
-Hash value 1690789502 and node id 1
-Hash value 1753975625 and node id 2
-Hash value 1825849097 and node id 0
-Hash value 1845476292 and node id 2
-Hash value 1884847038 and node id 2
-Hash value 1886140699 and node id 0
-Hash value 1893835456 and node id 0
-Hash value 1894960128 and node id 0
-Hash value 1897018967 and node id 2
-Hash value 2022161420 and node id 1
-Hash value 2030017694 and node id 2
-Hash value 2146525591 and node id 1
+CACHE COW: node list is [localhost:7070, localhost:7071, localhost:7072]
 RECEIVER: Initializing Javalin
 SCALABLE CACHE: Started with is new node true
 SCALABLE RECEIVER: Received bulk copy request
 SCALABLE RECEIVER: Received bulk copy request
+SCALABLE RECEIVER: Received pair v, [49, 50, 51, 52]
 SCALABLE RECEIVER: Received pair e, [49, 50, 51, 52]
-SCALABLE RECEIVER: Received pair i, [49, 50, 51, 52]
+SCALABLE RECEIVER: Received pair o, [49, 50, 51, 52]
+SCALABLE RECEIVER: Received pair w, [49, 50, 51, 52]
+SCALABLE RECEIVER: Received pair cc, [49, 50, 51, 52]
 SCALABLE RECEIVER: Received pair g, [49, 50, 51, 52]
-SCALABLE RECEIVER: Received pair d, [49, 50, 51, 52]
+SCALABLE CACHE: Completing bulk local store with 5 pairs
+LOCAL CACHE: Attempting to store (v, [B@1442ae10)
+SCALABLE RECEIVER: Received pair s, [49, 50, 51, 52]
+SCALABLE RECEIVER: Received pair q, [49, 50, 51, 52]
+Cache size is 0
+SCALABLE RECEIVER: Received pair i, [49, 50, 51, 52]
 SCALABLE RECEIVER: Received pair c, [49, 50, 51, 52]
-SCALABLE CACHE: Completing bulk local store with 3 pairs
-SCALABLE CACHE: Completing bulk local store with 2 pairs
-LOCAL CACHE: Attempting to store (i, [B@635ff598)
-LOCAL CACHE: Attempting to store (e, [B@2cd242df)
+SCALABLE CACHE: Completing bulk local store with 5 pairs
+LOCAL CACHE: Attempting to store (w, [B@4ccc9dc2)
 Cache size is 0
-Cache size is 0
-LOCAL CACHE: Inserting key KeyVersionPair(key=e, version=1)
-LOCAL CACHE: Inserting key KeyVersionPair(key=i, version=1)
+LOCAL CACHE: Inserting key KeyVersionPair(key=w, version=1)
+LOCAL CACHE: Inserting key KeyVersionPair(key=v, version=1)
 LOCAL CACHE: Finished insert
-Cache size is 2
-LOCAL CACHE: Finished insert
-Cache size is 2
-Node: KeyVersionPair(key=i, version=1) KeyVersionPair(key=i, version=1) [B@635ff598
-Node: KeyVersionPair(key=e, version=1) KeyVersionPair(key=e, version=1) [B@2cd242df
-Node: KeyVersionPair(key=i, version=1) KeyVersionPair(key=i, version=1) [B@635ff598
-LOCAL CACHE: Attempting to store (g, [B@1bf7842)
-Cache size is 2
-Node: KeyVersionPair(key=e, version=1) KeyVersionPair(key=e, version=1) [B@2cd242df
-Node: KeyVersionPair(key=i, version=1) KeyVersionPair(key=i, version=1) [B@635ff598
-LOCAL CACHE: Attempting to store (c, [B@7ef2039c)
-Cache size is 2
-Node: KeyVersionPair(key=e, version=1) KeyVersionPair(key=e, version=1) [B@2cd242df
-Node: KeyVersionPair(key=i, version=1) KeyVersionPair(key=i, version=1) [B@635ff598
-LOCAL CACHE: Inserting key KeyVersionPair(key=g, version=1)
+Cache size is 1
+Node: KeyVersionPair(key=w, version=1) KeyVersionPair(key=w, version=1) [B@4ccc9dc2
+LOCAL CACHE: Attempting to store (s, [B@1015d69c)
+Cache size is 1
+Node: KeyVersionPair(key=w, version=1) KeyVersionPair(key=w, version=1) [B@4ccc9dc2
+LOCAL CACHE: Inserting key KeyVersionPair(key=s, version=1)
 LOCAL CACHE: Finished insert
 Cache size is 3
-Node: KeyVersionPair(key=e, version=1) KeyVersionPair(key=e, version=1) [B@2cd242df
-Node: KeyVersionPair(key=i, version=1) KeyVersionPair(key=i, version=1) [B@635ff598
-LOCAL CACHE: Inserting key KeyVersionPair(key=c, version=1)
+Node: KeyVersionPair(key=w, version=1) KeyVersionPair(key=w, version=1) [B@4ccc9dc2
+Node: KeyVersionPair(key=v, version=1) KeyVersionPair(key=v, version=1) [B@1442ae10
+Node: KeyVersionPair(key=s, version=1) KeyVersionPair(key=s, version=1) [B@1015d69c
+LOCAL CACHE: Attempting to store (q, [B@5a18b961)
+Cache size is 3
+Node: KeyVersionPair(key=w, version=1) KeyVersionPair(key=w, version=1) [B@4ccc9dc2
+Node: KeyVersionPair(key=v, version=1) KeyVersionPair(key=v, version=1) [B@1442ae10
+Node: KeyVersionPair(key=s, version=1) KeyVersionPair(key=s, version=1) [B@1015d69c
+LOCAL CACHE: Inserting key KeyVersionPair(key=q, version=1)
 LOCAL CACHE: Finished insert
 Cache size is 4
-Node: KeyVersionPair(key=i, version=1) KeyVersionPair(key=i, version=1) [B@635ff598
-Node: KeyVersionPair(key=g, version=1) KeyVersionPair(key=g, version=1) [B@1bf7842
-Node: KeyVersionPair(key=e, version=1) KeyVersionPair(key=e, version=1) [B@2cd242df
-Node: KeyVersionPair(key=c, version=1) KeyVersionPair(key=c, version=1) [B@7ef2039c
-Node: KeyVersionPair(key=g, version=1) KeyVersionPair(key=g, version=1) [B@1bf7842
-Node: KeyVersionPair(key=e, version=1) KeyVersionPair(key=e, version=1) [B@2cd242df
-Node: KeyVersionPair(key=c, version=1) KeyVersionPair(key=c, version=1) [B@7ef2039c
-LOCAL CACHE: Attempting to store (d, [B@668e0d20)
+Node: KeyVersionPair(key=q, version=1) KeyVersionPair(key=q, version=1) [B@5a18b961
+Node: KeyVersionPair(key=w, version=1) KeyVersionPair(key=w, version=1) [B@4ccc9dc2
+Node: KeyVersionPair(key=v, version=1) KeyVersionPair(key=v, version=1) [B@1442ae10
+Node: KeyVersionPair(key=s, version=1) KeyVersionPair(key=s, version=1) [B@1015d69c
+LOCAL CACHE: Attempting to store (i, [B@a7cb5ac)
 Cache size is 4
-Node: KeyVersionPair(key=i, version=1) KeyVersionPair(key=i, version=1) [B@635ff598
-Node: KeyVersionPair(key=g, version=1) KeyVersionPair(key=g, version=1) [B@1bf7842
-Node: KeyVersionPair(key=e, version=1) KeyVersionPair(key=e, version=1) [B@2cd242df
-Node: KeyVersionPair(key=c, version=1) KeyVersionPair(key=c, version=1) [B@7ef2039c
-LOCAL CACHE: Inserting key KeyVersionPair(key=d, version=1)
+Node: KeyVersionPair(key=q, version=1) KeyVersionPair(key=q, version=1) [B@5a18b961
+Node: KeyVersionPair(key=w, version=1) KeyVersionPair(key=w, version=1) [B@4ccc9dc2
+Node: KeyVersionPair(key=v, version=1) KeyVersionPair(key=v, version=1) [B@1442ae10
+Node: KeyVersionPair(key=s, version=1) KeyVersionPair(key=s, version=1) [B@1015d69c
+LOCAL CACHE: Inserting key KeyVersionPair(key=i, version=1)
 LOCAL CACHE: Finished insert
 Cache size is 5
-Node: KeyVersionPair(key=i, version=1) KeyVersionPair(key=i, version=1) [B@635ff598
-Node: KeyVersionPair(key=g, version=1) KeyVersionPair(key=g, version=1) [B@1bf7842
-Node: KeyVersionPair(key=e, version=1) KeyVersionPair(key=e, version=1) [B@2cd242df
-Node: KeyVersionPair(key=d, version=1) KeyVersionPair(key=d, version=1) [B@668e0d20
-Node: KeyVersionPair(key=c, version=1) KeyVersionPair(key=c, version=1) [B@7ef2039c
-SCALABLE CACHE: Received request to initiate node launch
+Node: KeyVersionPair(key=q, version=1) KeyVersionPair(key=q, version=1) [B@5a18b961
+Node: KeyVersionPair(key=i, version=1) KeyVersionPair(key=i, version=1) [B@a7cb5ac
+Node: KeyVersionPair(key=w, version=1) KeyVersionPair(key=w, version=1) [B@4ccc9dc2
+Node: KeyVersionPair(key=v, version=1) KeyVersionPair(key=v, version=1) [B@1442ae10
+Node: KeyVersionPair(key=s, version=1) KeyVersionPair(key=s, version=1) [B@1015d69c
+LOCAL CACHE: Attempting to store (c, [B@22760bac)
+Cache size is 5
+Node: KeyVersionPair(key=q, version=1) KeyVersionPair(key=q, version=1) [B@5a18b961
+Node: KeyVersionPair(key=i, version=1) KeyVersionPair(key=i, version=1) [B@a7cb5ac
+Node: KeyVersionPair(key=w, version=1) KeyVersionPair(key=w, version=1) [B@4ccc9dc2
+Node: KeyVersionPair(key=v, version=1) KeyVersionPair(key=v, version=1) [B@1442ae10
+Node: KeyVersionPair(key=s, version=1) KeyVersionPair(key=s, version=1) [B@1015d69c
+LOCAL CACHE: Inserting key KeyVersionPair(key=c, version=1)
+LOCAL CACHE: Finished insert
+Cache size is 6
+Node: KeyVersionPair(key=q, version=1) KeyVersionPair(key=q, version=1) [B@5a18b961
+Node: KeyVersionPair(key=i, version=1) KeyVersionPair(key=i, version=1) [B@a7cb5ac
+Node: KeyVersionPair(key=w, version=1) KeyVersionPair(key=w, version=1) [B@4ccc9dc2
+Node: KeyVersionPair(key=v, version=1) KeyVersionPair(key=v, version=1) [B@1442ae10
+Node: KeyVersionPair(key=s, version=1) KeyVersionPair(key=s, version=1) [B@1015d69c
+Node: KeyVersionPair(key=c, version=1) KeyVersionPair(key=c, version=1) [B@22760bac
+LOCAL CACHE: Finished insert
+Cache size is 6
+Node: KeyVersionPair(key=q, version=1) KeyVersionPair(key=q, version=1) [B@5a18b961
+Node: KeyVersionPair(key=i, version=1) KeyVersionPair(key=i, version=1) [B@a7cb5ac
+Node: KeyVersionPair(key=w, version=1) KeyVersionPair(key=w, version=1) [B@4ccc9dc2
+Node: KeyVersionPair(key=v, version=1) KeyVersionPair(key=v, version=1) [B@1442ae10
+Node: KeyVersionPair(key=s, version=1) KeyVersionPair(key=s, version=1) [B@1015d69c
+Node: KeyVersionPair(key=c, version=1) KeyVersionPair(key=c, version=1) [B@22760bac
+LOCAL CACHE: Attempting to store (e, [B@575efcbc)
+Cache size is 6
+Node: KeyVersionPair(key=q, version=1) KeyVersionPair(key=q, version=1) [B@5a18b961
+Node: KeyVersionPair(key=i, version=1) KeyVersionPair(key=i, version=1) [B@a7cb5ac
+Node: KeyVersionPair(key=w, version=1) KeyVersionPair(key=w, version=1) [B@4ccc9dc2
+Node: KeyVersionPair(key=v, version=1) KeyVersionPair(key=v, version=1) [B@1442ae10
+Node: KeyVersionPair(key=s, version=1) KeyVersionPair(key=s, version=1) [B@1015d69c
+Node: KeyVersionPair(key=c, version=1) KeyVersionPair(key=c, version=1) [B@22760bac
+LOCAL CACHE: Inserting key KeyVersionPair(key=e, version=1)
+LOCAL CACHE: Finished insert
+Cache size is 7
+Node: KeyVersionPair(key=q, version=1) KeyVersionPair(key=q, version=1) [B@5a18b961
+Node: KeyVersionPair(key=i, version=1) KeyVersionPair(key=i, version=1) [B@a7cb5ac
+Node: KeyVersionPair(key=w, version=1) KeyVersionPair(key=w, version=1) [B@4ccc9dc2
+Node: KeyVersionPair(key=v, version=1) KeyVersionPair(key=v, version=1) [B@1442ae10
+Node: KeyVersionPair(key=e, version=1) KeyVersionPair(key=e, version=1) [B@575efcbc
+Node: KeyVersionPair(key=s, version=1) KeyVersionPair(key=s, version=1) [B@1015d69c
+Node: KeyVersionPair(key=c, version=1) KeyVersionPair(key=c, version=1) [B@22760bac
+LOCAL CACHE: Attempting to store (o, [B@71dcaf7d)
+Cache size is 7
+Node: KeyVersionPair(key=q, version=1) KeyVersionPair(key=q, version=1) [B@5a18b961
+Node: KeyVersionPair(key=i, version=1) KeyVersionPair(key=i, version=1) [B@a7cb5ac
+Node: KeyVersionPair(key=w, version=1) KeyVersionPair(key=w, version=1) [B@4ccc9dc2
+Node: KeyVersionPair(key=v, version=1) KeyVersionPair(key=v, version=1) [B@1442ae10
+Node: KeyVersionPair(key=e, version=1) KeyVersionPair(key=e, version=1) [B@575efcbc
+Node: KeyVersionPair(key=s, version=1) KeyVersionPair(key=s, version=1) [B@1015d69c
+Node: KeyVersionPair(key=c, version=1) KeyVersionPair(key=c, version=1) [B@22760bac
+LOCAL CACHE: Inserting key KeyVersionPair(key=o, version=1)
+LOCAL CACHE: Finished insert
+Cache size is 8
+Node: KeyVersionPair(key=q, version=1) KeyVersionPair(key=q, version=1) [B@5a18b961
+Node: KeyVersionPair(key=o, version=1) KeyVersionPair(key=o, version=1) [B@71dcaf7d
+Node: KeyVersionPair(key=i, version=1) KeyVersionPair(key=i, version=1) [B@a7cb5ac
+Node: KeyVersionPair(key=w, version=1) KeyVersionPair(key=w, version=1) [B@4ccc9dc2
+Node: KeyVersionPair(key=v, version=1) KeyVersionPair(key=v, version=1) [B@1442ae10
+Node: KeyVersionPair(key=e, version=1) KeyVersionPair(key=e, version=1) [B@575efcbc
+Node: KeyVersionPair(key=s, version=1) KeyVersionPair(key=s, version=1) [B@1015d69c
+Node: KeyVersionPair(key=c, version=1) KeyVersionPair(key=c, version=1) [B@22760bac
+LOCAL CACHE: Attempting to store (cc, [B@52905a1a)
+Cache size is 8
+Node: KeyVersionPair(key=q, version=1) KeyVersionPair(key=q, version=1) [B@5a18b961
+Node: KeyVersionPair(key=o, version=1) KeyVersionPair(key=o, version=1) [B@71dcaf7d
+Node: KeyVersionPair(key=i, version=1) KeyVersionPair(key=i, version=1) [B@a7cb5ac
+Node: KeyVersionPair(key=w, version=1) KeyVersionPair(key=w, version=1) [B@4ccc9dc2
+Node: KeyVersionPair(key=v, version=1) KeyVersionPair(key=v, version=1) [B@1442ae10
+Node: KeyVersionPair(key=e, version=1) KeyVersionPair(key=e, version=1) [B@575efcbc
+Node: KeyVersionPair(key=s, version=1) KeyVersionPair(key=s, version=1) [B@1015d69c
+Node: KeyVersionPair(key=c, version=1) KeyVersionPair(key=c, version=1) [B@22760bac
+LOCAL CACHE: Inserting key KeyVersionPair(key=cc, version=1)
+LOCAL CACHE: Finished insert
+Cache size is 9
+Node: KeyVersionPair(key=q, version=1) KeyVersionPair(key=q, version=1) [B@5a18b961
+Node: KeyVersionPair(key=cc, version=1) KeyVersionPair(key=cc, version=1) [B@52905a1a
+Node: KeyVersionPair(key=o, version=1) KeyVersionPair(key=o, version=1) [B@71dcaf7d
+Node: KeyVersionPair(key=i, version=1) KeyVersionPair(key=i, version=1) [B@a7cb5ac
+Node: KeyVersionPair(key=w, version=1) KeyVersionPair(key=w, version=1) [B@4ccc9dc2
+Node: KeyVersionPair(key=v, version=1) KeyVersionPair(key=v, version=1) [B@1442ae10
+Node: KeyVersionPair(key=e, version=1) KeyVersionPair(key=e, version=1) [B@575efcbc
+Node: KeyVersionPair(key=s, version=1) KeyVersionPair(key=s, version=1) [B@1015d69c
+Node: KeyVersionPair(key=c, version=1) KeyVersionPair(key=c, version=1) [B@22760bac
+LOCAL CACHE: Attempting to store (g, [B@53a34c76)
+Cache size is 9
+Node: KeyVersionPair(key=q, version=1) KeyVersionPair(key=q, version=1) [B@5a18b961
+Node: KeyVersionPair(key=cc, version=1) KeyVersionPair(key=cc, version=1) [B@52905a1a
+Node: KeyVersionPair(key=o, version=1) KeyVersionPair(key=o, version=1) [B@71dcaf7d
+Node: KeyVersionPair(key=i, version=1) KeyVersionPair(key=i, version=1) [B@a7cb5ac
+Node: KeyVersionPair(key=w, version=1) KeyVersionPair(key=w, version=1) [B@4ccc9dc2
+Node: KeyVersionPair(key=v, version=1) KeyVersionPair(key=v, version=1) [B@1442ae10
+Node: KeyVersionPair(key=e, version=1) KeyVersionPair(key=e, version=1) [B@575efcbc
+Node: KeyVersionPair(key=s, version=1) KeyVersionPair(key=s, version=1) [B@1015d69c
+Node: KeyVersionPair(key=c, version=1) KeyVersionPair(key=c, version=1) [B@22760bac
+LOCAL CACHE: Inserting key KeyVersionPair(key=g, version=1)
+LOCAL CACHE: Finished insert
+Cache size is 10
+Node: KeyVersionPair(key=q, version=1) KeyVersionPair(key=q, version=1) [B@5a18b961
+Node: KeyVersionPair(key=cc, version=1) KeyVersionPair(key=cc, version=1) [B@52905a1a
+Node: KeyVersionPair(key=o, version=1) KeyVersionPair(key=o, version=1) [B@71dcaf7d
+Node: KeyVersionPair(key=i, version=1) KeyVersionPair(key=i, version=1) [B@a7cb5ac
+Node: KeyVersionPair(key=w, version=1) KeyVersionPair(key=w, version=1) [B@4ccc9dc2
+Node: KeyVersionPair(key=g, version=1) KeyVersionPair(key=g, version=1) [B@53a34c76
+Node: KeyVersionPair(key=v, version=1) KeyVersionPair(key=v, version=1) [B@1442ae10
+Node: KeyVersionPair(key=e, version=1) KeyVersionPair(key=e, version=1) [B@575efcbc
+Node: KeyVersionPair(key=s, version=1) KeyVersionPair(key=s, version=1) [B@1015d69c
+Node: KeyVersionPair(key=c, version=1) KeyVersionPair(key=c, version=1) [B@22760bac
+SCALABLE RECEIVER: Received bulk copy request
+SCALABLE RECEIVER: Received pair d, [49, 50, 51, 52]
+SCALABLE CACHE: Completing bulk local store with 1 pairs
+LOCAL CACHE: Attempting to store (d, [B@2fc3aa4f)
+Cache size is 10
+Node: KeyVersionPair(key=q, version=1) KeyVersionPair(key=q, version=1) [B@5a18b961
+Node: KeyVersionPair(key=cc, version=1) KeyVersionPair(key=cc, version=1) [B@52905a1a
+Node: KeyVersionPair(key=o, version=1) KeyVersionPair(key=o, version=1) [B@71dcaf7d
+Node: KeyVersionPair(key=i, version=1) KeyVersionPair(key=i, version=1) [B@a7cb5ac
+Node: KeyVersionPair(key=w, version=1) KeyVersionPair(key=w, version=1) [B@4ccc9dc2
+Node: KeyVersionPair(key=g, version=1) KeyVersionPair(key=g, version=1) [B@53a34c76
+Node: KeyVersionPair(key=v, version=1) KeyVersionPair(key=v, version=1) [B@1442ae10
+Node: KeyVersionPair(key=e, version=1) KeyVersionPair(key=e, version=1) [B@575efcbc
+Node: KeyVersionPair(key=s, version=1) KeyVersionPair(key=s, version=1) [B@1015d69c
+Node: KeyVersionPair(key=c, version=1) KeyVersionPair(key=c, version=1) [B@22760bac
+LOCAL CACHE: Inserting key KeyVersionPair(key=d, version=1)
+LOCAL CACHE: Finished insert
+Cache size is 11
+Node: KeyVersionPair(key=q, version=1) KeyVersionPair(key=q, version=1) [B@5a18b961
+Node: KeyVersionPair(key=cc, version=1) KeyVersionPair(key=cc, version=1) [B@52905a1a
+Node: KeyVersionPair(key=o, version=1) KeyVersionPair(key=o, version=1) [B@71dcaf7d
+Node: KeyVersionPair(key=i, version=1) KeyVersionPair(key=i, version=1) [B@a7cb5ac
+Node: KeyVersionPair(key=w, version=1) KeyVersionPair(key=w, version=1) [B@4ccc9dc2
+Node: KeyVersionPair(key=g, version=1) KeyVersionPair(key=g, version=1) [B@53a34c76
+Node: KeyVersionPair(key=v, version=1) KeyVersionPair(key=v, version=1) [B@1442ae10
+Node: KeyVersionPair(key=e, version=1) KeyVersionPair(key=e, version=1) [B@575efcbc
+Node: KeyVersionPair(key=d, version=1) KeyVersionPair(key=d, version=1) [B@2fc3aa4f
+Node: KeyVersionPair(key=s, version=1) KeyVersionPair(key=s, version=1) [B@1015d69c
+Node: KeyVersionPair(key=c, version=1) KeyVersionPair(key=c, version=1) [B@22760bac
+SCALABLE RECEIVER: Received bulk copy request
+SCALABLE RECEIVER: Received pair bb, [49, 50, 51, 52]
+SCALABLE CACHE: Completing bulk local store with 1 pairs
+LOCAL CACHE: Attempting to store (bb, [B@398a2df2)
+Cache size is 11
+Node: KeyVersionPair(key=q, version=1) KeyVersionPair(key=q, version=1) [B@5a18b961
+Node: KeyVersionPair(key=cc, version=1) KeyVersionPair(key=cc, version=1) [B@52905a1a
+Node: KeyVersionPair(key=o, version=1) KeyVersionPair(key=o, version=1) [B@71dcaf7d
+Node: KeyVersionPair(key=i, version=1) KeyVersionPair(key=i, version=1) [B@a7cb5ac
+Node: KeyVersionPair(key=w, version=1) KeyVersionPair(key=w, version=1) [B@4ccc9dc2
+Node: KeyVersionPair(key=g, version=1) KeyVersionPair(key=g, version=1) [B@53a34c76
+Node: KeyVersionPair(key=v, version=1) KeyVersionPair(key=v, version=1) [B@1442ae10
+Node: KeyVersionPair(key=e, version=1) KeyVersionPair(key=e, version=1) [B@575efcbc
+Node: KeyVersionPair(key=d, version=1) KeyVersionPair(key=d, version=1) [B@2fc3aa4f
+Node: KeyVersionPair(key=s, version=1) KeyVersionPair(key=s, version=1) [B@1015d69c
+Node: KeyVersionPair(key=c, version=1) KeyVersionPair(key=c, version=1) [B@22760bac
+LOCAL CACHE: Inserting key KeyVersionPair(key=bb, version=1)
+LOCAL CACHE: Finished insert
+Cache size is 12
+Node: KeyVersionPair(key=cc, version=1) KeyVersionPair(key=cc, version=1) [B@52905a1a
+Node: KeyVersionPair(key=bb, version=1) KeyVersionPair(key=bb, version=1) [B@398a2df2
+Node: KeyVersionPair(key=w, version=1) KeyVersionPair(key=w, version=1) [B@4ccc9dc2
+Node: KeyVersionPair(key=v, version=1) KeyVersionPair(key=v, version=1) [B@1442ae10
+Node: KeyVersionPair(key=s, version=1) KeyVersionPair(key=s, version=1) [B@1015d69c
+Node: KeyVersionPair(key=q, version=1) KeyVersionPair(key=q, version=1) [B@5a18b961
+Node: KeyVersionPair(key=o, version=1) KeyVersionPair(key=o, version=1) [B@71dcaf7d
+Node: KeyVersionPair(key=i, version=1) KeyVersionPair(key=i, version=1) [B@a7cb5ac
+Node: KeyVersionPair(key=g, version=1) KeyVersionPair(key=g, version=1) [B@53a34c76
+Node: KeyVersionPair(key=e, version=1) KeyVersionPair(key=e, version=1) [B@575efcbc
+Node: KeyVersionPair(key=d, version=1) KeyVersionPair(key=d, version=1) [B@2fc3aa4f
+Node: KeyVersionPair(key=c, version=1) KeyVersionPair(key=c, version=1) [B@22760bac
 
 *********INFORM REQUEST*********
 

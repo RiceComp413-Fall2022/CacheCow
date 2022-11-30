@@ -5,6 +5,7 @@ import cache.distributed.hasher.ConsistentKeyDistributor
 import cache.distributed.hasher.NodeHasher
 import cache.distributed.launcher.AWSNodeLauncher
 import cache.distributed.hasher.IKeyDistributor
+import cache.distributed.launcher.INodeLauncher
 import cache.distributed.launcher.LocalNodeLauncher
 import cache.local.ILocalScalableCache
 import cache.local.LocalScalableCache
@@ -17,6 +18,7 @@ import sender.ScalableSender
 import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.locks.ReentrantLock
 import java.util.concurrent.locks.ReentrantReadWriteLock
 
 /**
@@ -43,7 +45,7 @@ class ScalableDistributedCache(private val nodeId: NodeId, private var nodeList:
     /**
      * Supports launching a new node
      */
-    private val nodeLauncher = if (isAWS) AWSNodeLauncher() else LocalNodeLauncher()
+    private var nodeLauncher = if (isAWS) AWSNodeLauncher() else LocalNodeLauncher()
 
     /**
      * Local cache implementation
@@ -66,15 +68,14 @@ class ScalableDistributedCache(private val nodeId: NodeId, private var nodeList:
     private val keyDistributor: IKeyDistributor = ConsistentKeyDistributor(nodeCount)
 
     /**
-     * Flag indicating whether scaling process is active, atomic to prevent multiple threads
-     * from initiating scaling process simultaneously
+     * Flag indicating whether scaling process is active
      */
-    private var scaleInProgress = AtomicBoolean(isNewNode)
+    private var scaleInProgress = isNewNode
 
     /**
      * Flag indicating whether the current node intends to launch
      */
-    private var desireToLaunch = AtomicBoolean(false)
+    private var desireToLaunch = false
 
     /**
      * Timer used to ensure that nodes achieve launching consensus
@@ -87,6 +88,11 @@ class ScalableDistributedCache(private val nodeId: NodeId, private var nodeList:
     private var minLaunchingNode = nodeCount
 
     /**
+     * Ensure that different threads always agree on values of launch flags
+     */
+    private var launchNodeLock = ReentrantLock()
+
+    /**
      * Flag indicating whether this node is currently copying its data, not atomic as we
      * assume other nodes do not send duplicate requests
      */
@@ -95,7 +101,7 @@ class ScalableDistributedCache(private val nodeId: NodeId, private var nodeList:
     /**
      * Number of key-value pairs copied in a single bulk-copy request
      */
-    private val copyBatchSize = 10
+    private val copyBatchSize = 5
 
     /**
      * Used by a newly booted node to track which other nodes have completed copying, not atomic
@@ -109,7 +115,7 @@ class ScalableDistributedCache(private val nodeId: NodeId, private var nodeList:
     private var copyCompleteCount = AtomicInteger(0)
 
     /**
-     * Number of nodes that have completed copying, atomic to ensure that the count is correct
+     * Prevent store requests from storing to old node id during redistribution
      */
     private var redistributeLock = ReentrantReadWriteLock()
 
@@ -204,55 +210,72 @@ class ScalableDistributedCache(private val nodeId: NodeId, private var nodeList:
     }
 
     override fun handleLaunchRequest(senderId: NodeId): Boolean {
-        scaleInProgress.set(true)
+        launchNodeLock.lock()
+        scaleInProgress = true
         if (senderId < minLaunchingNode) {
             minLaunchingNode = senderId
-            if (desireToLaunch.compareAndSet(true, false)) {
+            if (desireToLaunch) {
+                desireToLaunch = false
                 launchTimer.cancel()
             }
+            launchNodeLock.unlock()
             return true
         }
+        launchNodeLock.unlock()
         return false
     }
 
     override fun scaleInProgress(): Boolean {
-        return scaleInProgress.get()
+        return scaleInProgress
     }
 
     override fun handleScaleCompleteRequest() {
-        scaleInProgress.set(false)
+        launchNodeLock.lock()
+        scaleInProgress = false
         minLaunchingNode = nodeCount
+        launchNodeLock.unlock()
     }
 
     override fun initiateLaunch() {
         print("SCALABLE CACHE: Received request to initiate node launch\n")
-        if (minLaunchingNode == nodeCount) {
-            // Make sure only one thread can will start broadcast
-            if (scaleInProgress.compareAndSet(false, true)) {
-                desireToLaunch.set(true)
-                print("SCALABLE CACHE: Node list is $nodeList\n")
-
-                // Broadcast launch intentions to all other nodes (should be async)
-                Thread {
-                    sender.broadcastScalableMessageAsync(
-                        ScalableMessage(
-                            nodeId,
-                            "",
-                            ScalableMessageType.LAUNCH_NODE
-                        )
-                    )
-                }.start()
-                print("SCALABLE CACHE: Created and running broadcast thread\n")
-
-                // If this node has minimum node id, launch new node
-                launchTimer.schedule(object : TimerTask() {
-                    override fun run() {
-                        print("SCALABLE SENDER: Launching new node\n")
-                        nodeLauncher.launchNode(nodeCount)
-                    }
-                }, 2 * 1000)
-            }
+        launchNodeLock.lock()
+        if (minLaunchingNode != nodeCount) {
+            launchNodeLock.unlock()
+            return
         }
+        minLaunchingNode = nodeId
+
+        // Make sure only one thread can will start broadcast
+        if (scaleInProgress) {
+            launchNodeLock.unlock()
+            return
+        }
+
+        // Make sure only one thread can will start broadcast
+        scaleInProgress = true
+        desireToLaunch = true
+        launchNodeLock.unlock()
+
+        print("SCALABLE CACHE: Node list is $nodeList\n")
+        // Broadcast launch intentions to all other nodes (should be async)
+        Thread {
+            sender.broadcastScalableMessageAsync(
+                ScalableMessage(
+                    nodeId,
+                    "",
+                    ScalableMessageType.LAUNCH_NODE
+                )
+            )
+        }.start()
+        print("SCALABLE CACHE: Created and running broadcast thread\n")
+
+        // If this node has minimum node id, launch new node
+        launchTimer.schedule(object : TimerTask() {
+            override fun run() {
+                print("SCALABLE SENDER: Launching new node\n")
+                nodeLauncher.launchNode(nodeCount)
+            }
+        }, 2 * 1000)
     }
 
     override fun markCopyComplete(senderId: NodeId): Boolean {
@@ -271,7 +294,7 @@ class ScalableDistributedCache(private val nodeId: NodeId, private var nodeList:
                         )
                     )
                 }.start()
-                scaleInProgress.set(false)
+                scaleInProgress = false
                 return true
             }
         }
@@ -331,5 +354,9 @@ class ScalableDistributedCache(private val nodeId: NodeId, private var nodeList:
 
     override fun getJavalinApp(): Javalin {
         return receiver.getJavalinApp()
+    }
+
+    override fun mockNodeLauncher(mockLauncher: INodeLauncher) {
+        nodeLauncher = mockLauncher
     }
 }

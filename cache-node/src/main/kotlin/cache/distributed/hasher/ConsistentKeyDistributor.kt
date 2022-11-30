@@ -19,11 +19,11 @@ class ConsistentKeyDistributor(
         for (i in 0 until nodeCount) {
             for (j in 0 until pointsPerNode) {
                 val hashValue = nodeHasher.extendedNodeHashValue(i, j)
-                print("Building points: $i, $j, $hashValue\n")
+//                print("Building points: $i, $j, $hashValue\n")
                 sortedNodes[hashValue] = i
             }
         }
-        printSortedNodes()
+//        printSortedNodes()
     }
 
     override fun getPrimaryNode(kvPair: KeyVersionPair): NodeId {
@@ -53,7 +53,6 @@ class ConsistentKeyDistributor(
 
     override fun addNode(): MutableList<Pair<Int, Int>> {
         print("CONSISTENT DISTRIBUTOR: Beginning copying process\n")
-        printSortedNodes()
 
         // Add hash values of new node to the circle
         var hashValue: Int

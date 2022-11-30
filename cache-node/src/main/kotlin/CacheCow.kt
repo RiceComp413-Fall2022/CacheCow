@@ -35,6 +35,8 @@ fun main(args: Array<String>) {
 
     val nodeList = File(nodeListPath).bufferedReader().readLines().toMutableList()
 
+    print("CACHE COW: node list is $nodeList\n")
+
     val distributedCache: IDistributedCache = if (scalable) {
         ScalableDistributedCache(nodeId, nodeList, isAWS, isNewNode)
     } else {

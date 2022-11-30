@@ -22,23 +22,19 @@ class ScalableReceiver(nodeId: NodeId, count: Int, private val distributedCache:
             print("SCALABLE RECEIVER: Deserialized message from node ${message.nodeId} with type ${message.type}\n")
 
             if (!distributedCache.scaleInProgress() && message.type != ScalableMessageType.LAUNCH_NODE) {
-                print("FAIL 1\n")
                 throw simpleValidationException("Scaling not currently in progress")
             }
 
             if (message.nodeId < 0 || message.nodeId > nodeCount) {
-                print("FAIL 2\n")
                 throw simpleValidationException("Invalid node id")
             }
 
             if (message.type == ScalableMessageType.COPY_COMPLETE || message.type == ScalableMessageType.LAUNCH_NODE) {
                 if (message.nodeId == nodeCount) {
-                    print("FAIL 3\n")
                     throw simpleValidationException("New node cannot send this message type")
                 }
             } else {
                 if (message.nodeId != nodeCount) {
-                    print("FAIL 4\n")
                     throw simpleValidationException("Only new node can send this message type")
                 }
             }
@@ -104,9 +100,10 @@ class ScalableReceiver(nodeId: NodeId, count: Int, private val distributedCache:
             distributedCache.bulkLocalStore(bulkCopy.values)
         }
 
-        app.get("v1/launch-node") { ctx ->
+        app.post("/v1/launch-node") { ctx ->
             print("SCALABLE RECEIVER: Received request to launch new node\n")
             distributedCache.initiateLaunch()
+            ctx.status(HttpStatus.OK_200)
         }
     }
 }
