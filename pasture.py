@@ -3,7 +3,7 @@ import io
 import time
 
 import requests # pip install requests
-import boto3 # pip install boto3[crt]
+import boto3 # pip install "boto3[crt]"
 from fabric import Connection # pip install fabric
 from invoke import Responder
 
@@ -354,9 +354,19 @@ def scale_cluster(num_nodes):
 
 
 def teardown_cluster():
-    # TODO: automatic teardown
-    pass
-
+    elb = boto3.client('elbv2')
+    balancer_arn = elb.describe_load_balancers(Names=['cachecow-balancer'])['LoadBalancers'][0]['LoadBalancerArn']
+    elb.delete_load_balancer(LoadBalancerArn=balancer_arn)
+    target_group_arn = elb.describe_target_groups(Names=['cachecow-nodes'])['TargetGroups'][0]['TargetGroupArn']
+    elb.delete_target_group(TargetGroupArn=target_group_arn)
+    ec2 = boto3.resource('ec2')
+    instances = list(ec2.instances.filter(Filters=[{'Name': 'tag:Name', 'Values': ['CacheCow Node']}]))
+    for instance in instances:
+        instance.terminate()
+    for instance in instances:
+        instance.wait_until_terminated()
+    security_group = list(ec2.security_groups.filter(Filters=[{'Name': 'group-name', 'Values': ['cachecow-security']}]))[0]
+    security_group.delete()
 
 # Program entry point
 if __name__ == "__main__":
