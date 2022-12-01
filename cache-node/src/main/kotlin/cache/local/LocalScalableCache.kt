@@ -3,180 +3,145 @@ package cache.local
 import KeyValuePair
 import KeyVersionPair
 import cache.distributed.IDistributedCache
-import cache.distributed.IScalableDistributedCache
 import cache.distributed.hasher.INodeHasher
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 
 /**
  * A concrete local cache that stores data in a ConcurrentHashMap.
  */
-class LocalScalableCache(private var nodeHasher: INodeHasher, private val distributedCache: IScalableDistributedCache, private var maxCapacity: Int = 5): ILocalScalableCache {
+class LocalScalableCache(private var nodeHasher: INodeHasher, maxCapacity: Int = 100) : ILocalScalableCache {
 
     /* A process-safe concurrent hash map that is used to store LRU payload-containing node refferences */
     private val cache: ConcurrentHashMap<KeyVersionPair, LRUNode> = ConcurrentHashMap<KeyVersionPair, LRUNode>(maxCapacity)
 
-    /* The head of the LRUQueue - the most recent node */
-    private var head: LRUNode = LRUNode()
-
-    /* The tail of the LRUQueue - the least recent node */
-    private var tail: LRUNode = LRUNode()
+    /* The LRU queue */
+    var lruCache: ConcurrentLinkedQueue<LRUNode>
 
     /* Store the total size of key and value bytes. Note that HashMap's auxiliary objects are not counted */
     private var kvByteSize = 0
 
     /* The JVM runtime */
-    private var JVMRuntime: Runtime
+    private var JVMRuntime: Runtime = Runtime.getRuntime()
 
-    /* The current amount of memory (bytes) the JVM is using */
-    private var usedMemory: Long
+    /* The current amount of memory (bytes) the cache is storing */
+    private var usedMemory: Long = 0
 
     /* The maximum memory capacity (bytes) allotted to the JVM */
-    private var maxMemory: Long
+    private var maxMemory: Long = JVMRuntime.maxMemory()
 
     /* The utilization threshold for the JVM */
     private var memoryUtilizationLimit: Float = 0.8F
 
+    /* Sorted hash values of all keys in the cache */
     private var sortedLocalKeys: SortedMap<Int, KeyVersionPair> = Collections.synchronizedSortedMap(
         TreeMap()
     )
 
+    /* List of hash values to copy */
     private var copyHashes = mutableListOf<Int>()
 
+    /* Key value pair copy streaming index */
     private var copyIndex = 0
 
     init {
-        head.next = tail
-        JVMRuntime = Runtime.getRuntime()
-        val memoryUsageInfo = fetchJVMUsage()
-        usedMemory = memoryUsageInfo.allocated
-        maxMemory = (memoryUsageInfo.max * memoryUtilizationLimit).toLong()
+        lruCache = ConcurrentLinkedQueue<LRUNode>()
 
-//        Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate({
-//            monitorMemoryUsage()
-//        }, 1, 5, TimeUnit.SECONDS)
-
+        Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate({
+            monitorMemoryUsage()
+        }, 0, 2, TimeUnit.SECONDS)
     }
 
     override fun fetch(kvPair: KeyVersionPair): ByteArray? {
-        print("LOCAL CACHE: Attempting to fetch ${kvPair.key}\n")
-        printCacheContents()
-        if (cache.containsKey(kvPair)) {
-            print("LOCAL CACHE: Found value ${cache[kvPair]}\n")
-            val node : LRUNode? = cache[kvPair]
+        print("CACHE: Attempting to fetch ${kvPair.key}\n")
+        val nullableNode: LRUNode? = cache[kvPair]
+        if (nullableNode != null) {
+            print("CACHE: Found value ${cache[kvPair]}\n")
+            val node: LRUNode = nullableNode
             remove(node)
             insert(node)
-            return node?.value
+            return node.value
         }
-        print("LOCAL CACHE: Key not found\n")
+        print("CACHE: Key not found\n")
         return null
     }
 
     override fun store(kvPair: KeyVersionPair, value: ByteArray): Boolean {
-        print("LOCAL CACHE: Attempting to store (${kvPair.key}, $value)\n")
-        printCacheContents()
+        print("CACHE: Attempting to store (${kvPair.key}, $value)\n")
+
+        if (isFull()) {
+            print("CACHE: Cache full, unable to store (${kvPair.key}, $value)\n")
+            return false
+        }
+
         val hashValue = nodeHasher.primaryHashValue(kvPair)
         val prevVal = cache[kvPair]?.value
-        val prevKvByteSize = if (prevVal == null) 0 else (prevVal.size + kvPair.key.length + 4)
+        val prevKvByteSize = if(prevVal == null) 0 else (prevVal.size + kvPair.key.length + 4)
         kvByteSize += (value.size + kvPair.key.length + 4) - prevKvByteSize
 
-        val node = LRUNode(kvPair, value)
-        if (cache.containsKey(kvPair)) {
-            remove(cache[kvPair])
-        } else {
-            sortedLocalKeys[hashValue] = kvPair
+        val nullableOldNode: LRUNode? = cache[kvPair]
+        if (nullableOldNode != null) {
+            val oldNode: LRUNode = nullableOldNode
+            remove(oldNode)
         }
-        insert(node)
+
+        val newNode = LRUNode(kvPair, value)
+        cache[kvPair] = newNode
+        insert(newNode)
+        sortedLocalKeys[hashValue] = kvPair
+
+        usedMemory += newNode.size
 
         return true
     }
 
-    private fun insert(node : LRUNode?) {
-        if (node != null) {
-            print("LOCAL CACHE: Inserting key ${node.kvPair}\n")
-
-            node.next = head.next;
-            node.prev = head;
-
-            head.next?.prev = node;
-            head.next = node;
-
-            cache[node.kvPair] = node
-
-            print("LOCAL CACHE: Finished insert\n")
-            printCacheContents()
-        }
+    private fun insert(node: LRUNode) {
+        lruCache.add(node)
+        cache[node.kvPair] = node
     }
 
-    private fun remove(nullableNode : LRUNode?) {
-        if (nullableNode != null) {
-            val node : LRUNode =  nullableNode
-
-            node.prev?.next = node.next;
-            node.next?.prev = node.prev;
-            cache.remove(node.kvPair)
-
-        }
-    }
-
-    private fun removeLRU() : Int {
-        if (cache.size == 0) {
-            /* consider raising an exception */
-            return 0
-        }
-
-        val nullableNode : LRUNode? = tail.prev
-        if (nullableNode != null) {
-            val node : LRUNode = nullableNode
-            node.prev?.next = node.next;
-            node.next?.prev = node.prev;
-            cache.remove(node.kvPair)
-
-            // Remove from local key tree
-            val hashValue = nodeHasher.primaryHashValue(node.kvPair)
-            sortedLocalKeys.remove(hashValue)
-
-            return node.value.size + node.kvPair.key.length + 4
-        }
-        return 0
-    }
-
-    override fun isFull(): Boolean {
-        return isCacheFull() || isJVMFull()
-    }
-
-    override fun isCacheFull(): Boolean {
-        return cache.size >= maxCapacity
-    }
-
-    override fun isJVMFull(): Boolean {
-        return usedMemory.toInt() > (maxMemory.toInt() * memoryUtilizationLimit).toInt()
+    private fun remove(node: LRUNode) {
+        lruCache.remove(node)
+        cache.remove(node.kvPair)
     }
 
     override fun fetchJVMUsage(): IDistributedCache.MemoryUsageInfo {
-        usedMemory = JVMRuntime.totalMemory() - JVMRuntime.freeMemory()
-        maxMemory = JVMRuntime.maxMemory()
-        val usage = usedMemory/(maxMemory * 1.0)
-        return IDistributedCache.MemoryUsageInfo(usedMemory, maxMemory, usage)
+        return IDistributedCache.MemoryUsageInfo(usedMemory, maxMemory, usedMemory/(maxMemory * 1.0))
+    }
+
+    override fun isFull(): Boolean {
+        return usedMemory > (maxMemory * memoryUtilizationLimit).toInt()
     }
 
     override fun monitorMemoryUsage() {
         print("Monitoring Memory Usage\n")
-        if (isCacheFull()) {
-            for (i in 1..(cache.size - (maxCapacity * memoryUtilizationLimit).toInt()) + 1) {
-                removeLRU()
-            }
-        }
 
-        fetchJVMUsage()
-        if (isJVMFull()) {
-            val estimateToRemove = (maxMemory * (memoryUtilizationLimit - 0.2)) - usedMemory
-            var removed = 0
+        if (isFull()) {
+            print("Cache is full\n")
+            val estimateToRemove = usedMemory - (maxMemory * (memoryUtilizationLimit - 0.2))
+            print("used $usedMemory maximum ${(maxMemory * memoryUtilizationLimit).toInt()} amount to remove $estimateToRemove\n")
+            var removed: Long = 0
 
             while (removed < estimateToRemove) {
                 removed += removeLRU()
+                print("removed $removed\n")
             }
         }
+    }
+
+    private fun removeLRU(): Long {
+        val node = lruCache.poll()
+        cache.remove(node.kvPair)
+        usedMemory -= node.size
+
+        // Remove from local key tree
+        val hashValue = nodeHasher.primaryHashValue(node.kvPair)
+        sortedLocalKeys.remove(hashValue)
+
+        return node.size
     }
 
     /**
@@ -240,18 +205,13 @@ class LocalScalableCache(private var nodeHasher: INodeHasher, private val distri
         for (hashValue in copyHashes) {
             val kvPair = sortedLocalKeys[hashValue]
             val node = cache[kvPair]
-            remove(node)
+            if (node != null) {
+                remove(node)
+            }
             sortedLocalKeys.remove(hashValue)
         }
         copyHashes = mutableListOf()
         copyIndex = 0
-    }
-
-    private fun printCacheContents() {
-        print("Cache size is ${cache.size}\n")
-        for (node in cache) {
-            print("Node: ${node.key} ${node.value.kvPair} ${node.value.value}\n")
-        }
     }
 
     private fun printSortedLocalKeys() {
@@ -261,14 +221,20 @@ class LocalScalableCache(private var nodeHasher: INodeHasher, private val distri
         }
     }
 
+//    private fun printCacheContents() {
+//        print("Cache size is ${cache.size}\n")
+//        for (node in cache) {
+//            print("Node: ${node.key} ${node.value.kvPair} ${node.value.value}\n")
+//        }
+//    }
 
-    class LRUNode(val kvPair: KeyVersionPair = KeyVersionPair("", -1), val value: ByteArray = "".toByteArray()) {
+    /**
+     * @param kvPair The key of the node - key of the key-value pair
+     * @param value The payload of the node - value of the key-value pair
+     */
+    class LRUNode(val kvPair: KeyVersionPair=KeyVersionPair("", -1), val value: ByteArray=ByteArray(0)) {
 
-        /* The next oldest node */
-        var next : LRUNode? = null
-
-        /* The next youngest node */
-        var prev : LRUNode? = null
-
+        /* The size of the payload */
+        var size : Long = (value.size + kvPair.key.length + 4).toLong()
     }
 }

@@ -14,8 +14,4 @@ interface ILocalEvictingCache : ILocalCache {
 
     fun monitorMemoryUsage()
 
-    fun isCacheFull(): Boolean
-
-    fun isJVMFull(): Boolean
-
 }

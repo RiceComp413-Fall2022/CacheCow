@@ -2,9 +2,9 @@ import cache.distributed.IDistributedCache
 import cache.distributed.IScalableDistributedCache
 import cache.distributed.ITestableDistributedCache
 import cache.distributed.hasher.ConsistentKeyDistributor
+import cache.distributed.hasher.IKeyDistributor
 import cache.distributed.hasher.NodeHasher
 import cache.distributed.launcher.AWSNodeLauncher
-import cache.distributed.hasher.IKeyDistributor
 import cache.distributed.launcher.INodeLauncher
 import cache.distributed.launcher.LocalNodeLauncher
 import cache.local.ILocalScalableCache
@@ -16,7 +16,6 @@ import receiver.ScalableReceiver
 import sender.IScalableSender
 import sender.ScalableSender
 import java.util.*
-import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.locks.ReentrantLock
 import java.util.concurrent.locks.ReentrantReadWriteLock
@@ -50,7 +49,7 @@ class ScalableDistributedCache(private val nodeId: NodeId, private var nodeList:
     /**
      * Local cache implementation
      */
-    private val cache: ILocalScalableCache = LocalScalableCache(nodeHasher, this)
+    private val cache: ILocalScalableCache = LocalScalableCache(nodeHasher)
 
     /**
      * Scalable receiver implementation
