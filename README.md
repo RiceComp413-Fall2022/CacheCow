@@ -1,13 +1,103 @@
 # CacheCow
 
-# Drive Folder For Design Decisions
-https://drive.google.com/drive/u/0/folders/14yXw_k74cJNPWMZYnpjWMDIvtp1FH8T9
+![CacheCow](https://github.com/RiceComp413-Fall2022/CacheCow/actions/workflows/ci.yml/badge.svg)
 
-Design Doc: https://docs.google.com/document/d/1lT3F6lsjmoETbyx3xtu-MgMmEzld4PASVc9IrKrWGbw/ 
+Helpful Links: [Google Drive](https://drive.google.com/drive/u/0/folders/14yXw_k74cJNPWMZYnpjWMDIvtp1FH8T90), [Design Document](https://docs.google.com/document/d/1lT3F6lsjmoETbyx3xtu-MgMmEzld4PASVc9IrKrWGbw/)
 
-## Ngrok Setup
-1. Download [ngrok](https://ngrok.com/download)
-2. Run CacheCow locally
-3. Open a new terminal and run ```./ngrok http 8080```
-4. Verify it's working by sending a ```GET``` request to ```https://<ngrok-forwarding-url>/hello_world```
+# File Structure
 
+Todo
+
+# Set Up
+
+1. Create a new directory
+
+```sh
+mkdir CacheCow
+```
+
+2. Clone the repository into the new directory
+
+```sh
+git clone git@github.com:RiceComp413-Fall2022/CacheCow.git CacheCow
+```
+
+## Running Locally
+
+1. Download [Node JS](https://nodejs.org/en/download/) if not already installed
+
+2. Set up the monitoring node
+
+```sh
+# Navigate to monitoring node directory
+cd monitoring-node
+
+# Install packages
+npm install
+```
+
+3. Launch a local cache cluster
+
+```sh
+# Navigate to cache node directory
+cd cache-node
+
+# Run 3 node cluster locally
+./gradlew run --args 'local 0 7070'
+./gradlew run --args 'local 1 7071'
+./gradlew run --args 'local 2 7072'
+```
+
+4. Check that the nodes are running
+
+```sh
+# Ping a cache node
+curl -X GET "localhost:7070/v1/hello-world"
+```
+
+5. Monitor the cache
+
+- Open localhost:3000 in any browser
+
+## Running on AWS
+
+1. Download [Python 3](https://www.python.org/downloads/) if not already installed
+
+2. Download the [AWS Command Line](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
+
+3. Set up AWS security group
+
+- Navigate to `EC2 Dashboard` on AWS Management Console
+- Create a new security group
+- Download the keys and save the file `rootkey.csv` to the root CacheCow directory
+
+4. Configure the AWS CLI
+
+```sh
+aws configure
+
+# Respond to the prompts using your credentials in rootkey.csv
+AWS Access Key ID []: <your-access-key>
+AWS Secret Access Key []: <your-secret-key>
+Default Region Name []: us-east-1
+Default Output Format []: <enter>
+```
+
+5. Install Python packages
+
+```sh
+pip3 install requests boto3 fabric
+
+# Note: if boto3 install fails try this
+pip3 install --upgrade pip
+```
+
+6. Launch a cluster on AWS
+
+```sh
+python3 pasture.py create 2
+```
+
+# Sending Requests
+
+Todo

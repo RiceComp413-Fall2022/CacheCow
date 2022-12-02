@@ -4,6 +4,10 @@ import KeyVersionPair
 import NodeId
 import java.util.*
 
+/**
+ * Concrete implementation of key distributor that uses consistent hashing to support
+ * node scaling.
+ */
 class ConsistentKeyDistributor(
     private var nodeCount: Int,
     private val pointsPerNode: Int = 25
