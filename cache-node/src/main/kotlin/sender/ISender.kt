@@ -11,7 +11,7 @@ import java.util.concurrent.atomic.AtomicInteger
 interface ISender {
 
     /**
-     * Fetch a value from a remote node.
+     * Fetches a value from a remote node.
      *
      * @param kvPair The key-version pair to look up
      * @param destNodeId The node from which to retrieve the value
@@ -20,7 +20,7 @@ interface ISender {
     fun fetchFromNode(kvPair: KeyVersionPair, destNodeId: NodeId): ByteArray
 
     /**
-     * Store a value to a remote node.
+     * Stores a value to a remote node.
      *
      * @param kvPair The key-version pair to store
      * @param value The value to store
@@ -49,11 +49,10 @@ interface ISender {
      * @return SenderUsageInfo data type of the info
      */
     fun getSenderUsageInfo(): SenderUsageInfo
-
 }
 
 /**
- * Information about what the sender has done so far
+ * Information about what the sender has done so far.
  */
 data class SenderUsageInfo(val storeAttempts: AtomicInteger, val storeSuccesses: AtomicInteger,
                            val fetchAttempts: AtomicInteger, val fetchSuccesses: AtomicInteger,

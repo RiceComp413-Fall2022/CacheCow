@@ -13,7 +13,7 @@ import java.util.concurrent.ConcurrentHashMap
  * Note: the usefulness of this lower-bound is dependent on the ConcurrentHashMap being
  * efficient. For the sake of this project, we assume it is efficient.
  */
-class OptimalNonEvictionCache : ILocalCache {
+class OptimalNonEvictingCache : ILocalCache {
 
     /**
      * Concurrent hash storage.
@@ -32,7 +32,7 @@ class OptimalNonEvictionCache : ILocalCache {
         return cache.remove(kvPair)
     }
 
-    override fun clearAll() {
+    override fun clearAll(isClientRequest: Boolean) {
         cache.clear()
     }
 

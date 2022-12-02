@@ -1,11 +1,11 @@
 package cache.local
 
-import cache.distributed.IDistributedCache
+import cache.ICache
 
 /**
  * An interface specifying the behavior of a local data cache.
  */
-interface ILocalCache: IDistributedCache {
+interface ILocalCache: ICache {
 
     /**
      * @return Cache metrics and performance statistics.

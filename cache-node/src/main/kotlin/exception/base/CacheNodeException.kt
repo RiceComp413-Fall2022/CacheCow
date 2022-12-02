@@ -1,5 +1,8 @@
-package exception
+package exception.base
 
+/**
+ * Base class representing all custom CacheCow exceptions.
+ */
 abstract class CacheNodeException(val status: Int, override val message: String): Exception(message) {
 
     /**

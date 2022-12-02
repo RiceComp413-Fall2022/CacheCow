@@ -1,4 +1,5 @@
-import node.Node
+import cache.distributed.DistributedCache
+import cache.distributed.IDistributedCache
 import java.io.File
 
 const val nodeListPath = "nodes.txt"
@@ -11,17 +12,36 @@ const val nodeListPath = "nodes.txt"
 fun main(args: Array<String>) {
     var nodeId = 0
     var port = 7070
-    if (args.size == 2) {
+    var isAWS = false
+    var scalable = false
+    var isNewNode = false
+
+    if (args.size >= 2) {
         try {
-            nodeId = Integer.parseInt(args[0])
-            port = Integer.parseInt(args[1])
+            isAWS = args[0] == "aws"
+            nodeId = Integer.parseInt(args[1])
+            port = Integer.parseInt(args[2])
+            if (args.size >= 4) {
+                scalable = args[3] == "-s"
+                if (args.size >= 5 && scalable) {
+                    isNewNode = args[4] == "-n"
+                }
+            }
         } catch (e: NumberFormatException) {
             System.err.println("Invalid node ID or port.")
             return
         }
     }
 
-    val node = Node(nodeId, File(nodeListPath).bufferedReader().readLines(), port)
+    val nodeList = File(nodeListPath).bufferedReader().readLines().toMutableList()
 
-    node.start()
+    print("CACHE COW: node list is $nodeList\n")
+
+    val distributedCache: IDistributedCache = if (scalable) {
+        ScalableDistributedCache(nodeId, nodeList, isAWS, isNewNode)
+    } else {
+        DistributedCache(nodeId, nodeList)
+    }
+
+    distributedCache.start(port)
 }

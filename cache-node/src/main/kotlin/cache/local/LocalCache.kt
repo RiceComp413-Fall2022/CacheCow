@@ -1,6 +1,7 @@
 package cache.local
 
 import KeyVersionPair
+import exception.CacheFullException
 import exception.KeyNotFoundException
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
@@ -15,26 +16,19 @@ class LocalCache(private var maxCapacity: Int = 100) : ILocalCache {
     /* Store the total size of key and value bytes. Note that HashMap's auxiliary objects are not counted */
     private var kvByteSize = AtomicInteger(0)
 
-    override fun fetch(kvPair: KeyVersionPair): ByteArray {
-        print("CACHE: Attempting to fetch ${kvPair.key}\n")
-        if (cache[kvPair] != null) {
-            print("CACHE: Found value ${cache[kvPair]}\n")
-        } else {
-            print("CACHE: Key not found\n")
-        }
-
-        return cache[kvPair] ?: throw KeyNotFoundException(kvPair.key)
+    override fun fetch(kvPair: KeyVersionPair): ByteArray? {
+        print("LOCAL CACHE: Attempting to fetch ${kvPair.key}\n")
+        return cache[kvPair]
     }
     override fun store(kvPair: KeyVersionPair, value: ByteArray) {
-        print("CACHE: Attempting to store (${kvPair.key}, $value)\n")
+        print("LOCAL CACHE: Attempting to store (${kvPair.key}, $value)\n")
         if (cache.size >= maxCapacity) {
             print("CACHE: Full\n")
-            // TODO: Remove arbitrary element. Difficult without breaking concurrency.
-            return
+            throw CacheFullException()
         }
-        print("CACHE: Success\n")
+        print("LOCAL CACHE: Success\n")
         val prevVal = cache[kvPair]
-        val prevKvByteSize = if(prevVal == null) 0 else (prevVal.size + kvPair.key.length + 4)
+        val prevKvByteSize = if (prevVal == null) 0 else (prevVal.size + kvPair.key.length + 4)
         kvByteSize.set(
             kvByteSize.addAndGet((value.size + kvPair.key.length + 4) - prevKvByteSize))
         cache[kvPair] = value
@@ -44,17 +38,10 @@ class LocalCache(private var maxCapacity: Int = 100) : ILocalCache {
         return cache.remove(kvPair)
     }
 
-    override fun clearAll() {
+    override fun clearAll(isClientRequest: Boolean) {
         cache.clear()
     }
 
-    fun isFull(): Boolean {
-        return this.cache.size >= this.maxCapacity
-    }
-
-    /**
-     * Gets information about the cache at the current moment
-     */
     override fun getCacheInfo(): CacheInfo {
         return CacheInfo(cache.size, kvByteSize.get())
     }

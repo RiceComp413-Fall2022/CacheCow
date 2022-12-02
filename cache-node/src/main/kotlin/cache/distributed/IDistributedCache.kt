@@ -1,38 +1,54 @@
 package cache.distributed
 
-import KeyVersionPair
+import cache.ICache
+import cache.local.CacheInfo
+import receiver.ReceiverUsageInfo
+import receiver.TotalRequestTiming
+import sender.SenderUsageInfo
 
 /**
  * An interface specifying the behavior of a distributed data cache.
  */
-interface IDistributedCache {
+interface IDistributedCache: ICache {
 
     /**
-     * Fetch a value from the distributed cache.
+     * Start the distributed cache on the given port.
      *
-     * @param kvPair The key-version pair to look up
-     * @return The value if found
+     * @param port port number on which to run receiver
      */
-    fun fetch(kvPair: KeyVersionPair): ByteArray?
+    fun start(port: Int)
 
     /**
-     * Store a value to the distributed cache.
-     *
-     * @param kvPair The key-version pair to store
-     * @param value The value to store
+     * Get all information about the usage of this node.
      */
-    fun store(kvPair: KeyVersionPair, value: ByteArray)
+    fun getSystemInfo(): SystemInfo
 
     /**
-     * Removes a specified element from the cache.
-     * @param kvPair The key-version pair to look up
-     * @return the previous value associated with the key-version pair, or null if there
-     * was no mapping for the key-version pair.
+     * Get memory usage information from JVM runtime.
      */
-    fun remove(kvPair: KeyVersionPair) : ByteArray?
+    fun getMemoryUsage(): MemoryUsageInfo {
+        val runtime = Runtime.getRuntime()
+        val allocatedMemory = runtime.totalMemory() - runtime.freeMemory()
+        val maxMemory = runtime.maxMemory()
+        val usage = allocatedMemory/(maxMemory * 1.0)
+        return MemoryUsageInfo(allocatedMemory, maxMemory, usage)
+    }
 
     /**
-     * Clears the entire distributed memory cache.
+     * Client response giving memory usage of the JVM.
      */
-    fun clearAll()
+    data class MemoryUsageInfo(val allocated: Long, val max: Long, val usage: Double)
+
+    /**
+     * Encapsulates information about the usage of this node into one object.
+     */
+    data class SystemInfo(
+        val nodeId: Int,
+        val memUsage: MemoryUsageInfo,
+        val cacheInfo: CacheInfo,
+        var receiverUsageInfo: ReceiverUsageInfo,
+        val senderUsageInfo: SenderUsageInfo,
+        val clientRequestTiming: TotalRequestTiming,
+        val serverRequestTiming: TotalRequestTiming
+    )
 }

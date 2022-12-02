@@ -3,7 +3,7 @@ package cache.local.multitable
 import KeyVersionPair
 import cache.local.CacheInfo
 import cache.local.ILocalCache
-import exception.InvalidInput
+import exception.InvalidInputException
 import java.util.concurrent.locks.ReentrantReadWriteLock
 import kotlin.concurrent.read
 import kotlin.concurrent.write
@@ -91,7 +91,7 @@ class MultiTableCache(private val numTables: Int = 3) : ILocalCache {
                 val tableIndex = (baseIndex + numTables - index) % numTables
                 when (tables[baseIndex].store(kvPair, value)) {
                     Status.INVALID -> {
-                        throw InvalidInput("Table is being cleared.")
+                        throw InvalidInputException("Table is being cleared.")
                     }
 
                     Status.FULL -> {
@@ -101,7 +101,7 @@ class MultiTableCache(private val numTables: Int = 3) : ILocalCache {
                         store(kvPair, value)
                     }
 
-                    Status.MUTATION -> throw InvalidInput(
+                    Status.MUTATION -> throw InvalidInputException(
                         "Key-Version pair already cached with a different value. " +
                                 "Please update the version number.")
 
@@ -128,7 +128,7 @@ class MultiTableCache(private val numTables: Int = 3) : ILocalCache {
 
                 }
 
-                Status.MUTATION -> throw InvalidInput(
+                Status.MUTATION -> throw InvalidInputException(
                     "Key-Version pair already cached with a different value. " +
                             "Please update the version number.")
 
@@ -156,7 +156,7 @@ class MultiTableCache(private val numTables: Int = 3) : ILocalCache {
         TODO("Not yet implemented")
     }
 
-    override fun clearAll() {
+    override fun clearAll(isClientRequest: Boolean) {
         if (!invalidate()) return // Other process already clearing multi table
 
         // Clears all tables.

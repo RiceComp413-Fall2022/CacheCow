@@ -4,7 +4,7 @@ import KeyVersionPair
 import cache.local.CacheInfo
 import cache.local.ILocalCache
 import cache.local.aggregateTableInfo
-import exception.InvalidInput
+import exception.InvalidInputException
 import java.util.concurrent.locks.ReentrantReadWriteLock
 import kotlin.concurrent.read
 import kotlin.concurrent.write
@@ -15,7 +15,7 @@ import kotlin.concurrent.write
  *
  * This class is thread-safe!
  */
-class MultiTableCacheMonitor(private val numTables: Int = 3): ILocalCache {
+class MultiTableCacheMonitor(private val numTables: Int = 3) : ILocalCache {
 
 
     /**
@@ -36,8 +36,6 @@ class MultiTableCacheMonitor(private val numTables: Int = 3): ILocalCache {
      * the most popular table.
      */
     @Volatile private var baseIndex: Int = 0
-
-
 
     init {
         // Validate all internal tables. Then validate the multi-table cache itself.
@@ -80,7 +78,7 @@ class MultiTableCacheMonitor(private val numTables: Int = 3): ILocalCache {
                     //print("Fetch: Promote Table ${promoteIndex} ")
                     when (tables[promoteIndex].store(kvPair, value)) {
                         Status.SUCCESS -> return value
-                        Status.MUTATION -> throw InvalidInput(
+                        Status.MUTATION -> throw InvalidInputException(
                             "Promotion: Key-Version pair already cached with a different value. " +
                                     "Please update the version number.")
                         Status.FULL, Status.INVALID -> continue
@@ -104,7 +102,7 @@ class MultiTableCacheMonitor(private val numTables: Int = 3): ILocalCache {
                 val storeIndex = coldOffset(base, offset)
                 when (tables[storeIndex].store(kvPair, value)) {
                     Status.SUCCESS -> return
-                    Status.MUTATION -> throw InvalidInput(
+                    Status.MUTATION -> throw InvalidInputException(
                         "Store: Key-Version pair already cached with a different value. " +
                                 "Please update the version number.")
                     Status.INVALID -> continue
@@ -118,7 +116,7 @@ class MultiTableCacheMonitor(private val numTables: Int = 3): ILocalCache {
         TODO("Not yet implemented")
     }
 
-    override fun clearAll() {
+    override fun clearAll(isClientRequest: Boolean) {
         multiTableLock.write {
             //print("MultiTableCacheMonitor: ClearAll\n")
             val base = baseIndex

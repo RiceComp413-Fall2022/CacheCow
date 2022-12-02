@@ -2,30 +2,33 @@ package receiver
 
 import KeyVersionPair
 import cache.distributed.IDistributedCache
-import cache.local.ILocalCache
-import exception.CacheNodeException
+import exception.base.CacheNodeException
 import io.javalin.Javalin
 import io.javalin.config.JavalinConfig
 import io.javalin.plugin.bundled.CorsContainer
 import io.javalin.plugin.bundled.CorsPluginConfig
 import io.javalin.validation.ValidationError
 import io.javalin.validation.ValidationException
-import node.Node
 import org.eclipse.jetty.http.HttpStatus
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
-import kotlin.system.*
+import kotlin.system.measureTimeMillis
 
 /**
  * A concrete receiver that accepts requests over HTTP.
  */
-class Receiver(private val port: Int, private val nodeCount: Int, private val node: Node,
-               private val distributedCache: IDistributedCache, private val localCache : ILocalCache) : IReceiver {
+open class Receiver(
+    count: Int,
+    private val distributedCache: IDistributedCache
+) : IReceiver {
+
+
+    protected var nodeCount = count
 
     /**
      * The Javalin server used to route HTTP requests to handlers
      */
-     val app: Javalin = Javalin.create { config: JavalinConfig ->
+    protected val app: Javalin = Javalin.create { config: JavalinConfig ->
         config.plugins.enableCors { cors: CorsContainer ->
             cors.add { it: CorsPluginConfig -> it.anyHost() }
         }
@@ -54,10 +57,10 @@ class Receiver(private val port: Int, private val nodeCount: Int, private val no
         AtomicReference<Double>(0.0), AtomicReference<Double>(0.0))
 
     init {
-
         /** ENDPOINTS **/
+        print("RECEIVER: Initializing Javalin\n")
 
-        /* Handle Testing: Hello Word */
+        /* Check if receiver is up and running */
         app.get("/v1/hello-world") { ctx ->
             ctx.result("Hello, World!").status(HttpStatus.OK_200)
         }
@@ -85,11 +88,8 @@ class Receiver(private val port: Int, private val nodeCount: Int, private val no
                 isClientRequest = senderNum == null
 
                 // Fetch Data
-                val value = if (isClientRequest) {
-                    distributedCache.fetch(KeyVersionPair(key, version))
-                } else {
-                    localCache.fetch(KeyVersionPair(key, version))
-                }
+                val value = distributedCache.fetch(KeyVersionPair(key, version))
+
                 if (value != null) {
                     ctx.result(value).status(HttpStatus.OK_200)
                 } else {
@@ -127,13 +127,10 @@ class Receiver(private val port: Int, private val nodeCount: Int, private val no
                 // Store Data
                 val value = ctx.bodyAsBytes()
                 if (value.isEmpty()) {
-                    throw ValidationException(mapOf("REQUEST_BODY" to listOf(ValidationError("Binary blob cannot be empty"))))
+                    throw simpleValidationException("Binary blob cannot be empty")
                 }
-                if (isClientRequest) {
-                    distributedCache.store(KeyVersionPair(key, version), value)
-                } else {
-                    localCache.store(KeyVersionPair(key, version), value)
-                }
+                distributedCache.store(KeyVersionPair(key, version), value)
+
                 ctx.json(KeyVersionReply(key, version)).status(HttpStatus.CREATED_201)
             }
 
@@ -169,11 +166,7 @@ class Receiver(private val port: Int, private val nodeCount: Int, private val no
                 isClientRequest = senderNum == null
 
                 // Remove Data
-                val value = if (isClientRequest) {
-                    distributedCache.remove(KeyVersionPair(key, version))
-                } else {
-                    localCache.remove(KeyVersionPair(key, version))
-                }
+                val value = distributedCache.remove(KeyVersionPair(key, version))
 
                 if (value != null) {
                     ctx.status(HttpStatus.NO_CONTENT_204)
@@ -210,11 +203,7 @@ class Receiver(private val port: Int, private val nodeCount: Int, private val no
                 isClientRequest = senderNum == null
 
                 // Clear Cache
-                if (isClientRequest) {
-                    distributedCache.clearAll()
-                } else {
-                    localCache.clearAll()
-                }
+                distributedCache.clearAll(isClientRequest)
                 ctx.status(HttpStatus.NO_CONTENT_204)
             }
 
@@ -230,10 +219,8 @@ class Receiver(private val port: Int, private val nodeCount: Int, private val no
         /* Handle Node Information */
         app.get("/v1/node-info") { ctx ->
             print("\n*********NODE INFO REQUEST*********\n")
-            ctx.json(node.getNodeInfo()).status(HttpStatus.OK_200)
+            ctx.json(getSystemInfo()).status(HttpStatus.OK_200)
         }
-
-
 
         /** ERROR HANDLING **/
 
@@ -242,9 +229,10 @@ class Receiver(private val port: Int, private val nodeCount: Int, private val no
             ctx.result(e.message).status(e.status)
         }
 
+        /* Catch and format any errors resulting from request validation */
         app.exception(ValidationException::class.java) { e, ctx ->
             val firstError = e.errors.asIterable().iterator().next()
-            print("RECEIVER: Caught validation exception for field ${firstError.key}\n")
+            print("RECEIVER: Caught validation exception for field ${firstError.key}: ${firstError.value[0].message}\n")
 
             // TODO: Return message in JSON response body, extract more info from exception
             ctx.result(firstError.value[0].message).status(HttpStatus.BAD_REQUEST_400)
@@ -266,15 +254,29 @@ class Receiver(private val port: Int, private val nodeCount: Int, private val no
         }
     }
 
+    protected fun simpleValidationException(message: String): ValidationException {
+        return ValidationException(mapOf("REQUEST_BODY" to listOf(ValidationError(message))))
+    }
+
     /**
      * Start the HTTP server.
      */
-    override fun start() {
+    override fun start(port: Int) {
         app.start(port)
+    }
+
+    override fun getJavalinApp(): Javalin {
+        return app
     }
 
     override fun getReceiverUsageInfo(): ReceiverUsageInfo {
         return receiverUsageInfo
+    }
+
+    override fun getSystemInfo(): IDistributedCache.SystemInfo {
+        val systemInfo = distributedCache.getSystemInfo()
+        systemInfo.receiverUsageInfo = getReceiverUsageInfo()
+        return systemInfo
     }
 
     override fun getClientRequestTiming(): TotalRequestTiming {
