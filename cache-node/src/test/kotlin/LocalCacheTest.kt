@@ -1,10 +1,11 @@
 import cache.local.LocalCache
-import exception.KeyNotFoundException
+import exception.CacheFullException
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.nio.charset.Charset
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 
 class LocalCacheTest {
 
@@ -13,16 +14,16 @@ class LocalCacheTest {
 
     @BeforeEach
     internal fun beforeEach() {
-        this.cache = LocalCache(maxCapacity)
+        cache = LocalCache(maxCapacity)
     }
 
     @Test
     internal fun testHit() {
         val key = KeyVersionPair("key1", 0)
 
-        this.cache.store(key, convertToBytes("value1"))
+        cache.store(key, convertToBytes("value1"))
 
-        assertEquals("value1", convertFromBytes(this.cache.fetch(key)))
+        assertEquals("value1", convertFromBytes(cache.fetch(key)))
     }
 
     @Test
@@ -30,11 +31,9 @@ class LocalCacheTest {
         val key = KeyVersionPair("key1", 0)
         val invalidKey = KeyVersionPair("key2", 0)
 
-        this.cache.store(key, convertToBytes("value1"))
+        cache.store(key, convertToBytes("value1"))
 
-        assertThrows(KeyNotFoundException::class.java) {
-            this.cache.fetch(invalidKey)
-        }
+        assertNull(cache.fetch(invalidKey))
     }
 
     @Test
@@ -43,16 +42,17 @@ class LocalCacheTest {
         val overMaxCapacityKey = KeyVersionPair("key" + (maxCapacity + 1).toString(), 0)
 
         var key: KeyVersionPair?
-        for (i in 1..maxCapacity + 1) {
+        for (i in 1..maxCapacity) {
             key = KeyVersionPair("key$i", 0)
-            this.cache.store(key, convertToBytes("value$i"))
+            cache.store(key, convertToBytes("value$i"))
         }
 
-        assertEquals("value$maxCapacity", convertFromBytes(this.cache.fetch(maxCapacityKey)))
-        assertThrows(KeyNotFoundException::class.java) {
-            this.cache.fetch(overMaxCapacityKey)
+        assertThrows(CacheFullException::class.java) {
+            cache.store(overMaxCapacityKey, convertToBytes("new value"))
         }
-//        assertNull(this.cache.fetch(overMaxCapacityKey))
+
+        assertEquals("value$maxCapacity", convertFromBytes(cache.fetch(maxCapacityKey)))
+        assertNull(cache.fetch(overMaxCapacityKey))
     }
 }
 

@@ -159,7 +159,7 @@ def setup_services(c, id, node_dns_f, scaleable, new_node):
 
         print("ACTION: Configuring AWS")
         c.run("aws configure", pty=True, watchers=aws_watchers)
-        c.run("pip3 install --upgrade pip3")
+        c.run("pip3 install --upgrade pip")
         c.run("pip3 install requests boto3 fabric")
 
     print("ACTION: Starting services")
