@@ -43,7 +43,8 @@ class ScalableDistributedCache(private val nodeId: NodeId, private var nodeList:
     /**
      * Supports launching a new node
      */
-    private var nodeLauncher = if (isAWS) AWSNodeLauncher() else LocalNodeLauncher()
+//    private var nodeLauncher = if (isAWS) AWSNodeLauncher() else LocalNodeLauncher()
+    private var nodeLauncher: INodeLauncher = AWSNodeLauncher()
 
     /**
      * Local cache implementation

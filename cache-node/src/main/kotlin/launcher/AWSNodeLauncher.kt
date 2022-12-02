@@ -8,12 +8,9 @@ class AWSNodeLauncher: INodeLauncher {
         print("AWS Launcher: Performing autoscaling for new node id $nodeId\n")
         val args = arrayOf("/bin/bash", "-c", "python3 pasture.py add 1 -s")
         val pb = ProcessBuilder(*args)
-        val currentDirectory = System.getProperty("user.dir")
-        print("Command: ${pb.command()}\n")
-        print("Current directory: $currentDirectory\n")
 
-        pb.directory(File(currentDirectory))
-        pb.redirectOutput(File("$currentDirectory/pasture_out.txt"))
+        pb.directory(File(".."))
+        pb.redirectOutput(File("../pasture_out.txt"))
         pb.start()
     }
 }
