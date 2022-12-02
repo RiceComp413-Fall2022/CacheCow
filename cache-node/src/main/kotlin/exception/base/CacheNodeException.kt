@@ -1,4 +1,4 @@
-package exception
+package exception.base
 
 abstract class CacheNodeException(val status: Int, override val message: String): Exception(message) {
 

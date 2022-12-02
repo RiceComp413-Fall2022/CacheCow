@@ -2,7 +2,7 @@ package cache.local
 
 import KeyValuePair
 
-interface ILocalScalableCache: ILocalEvictingCache {
+interface IScalableLocalCache: IEvictingCache {
 
     fun initializeCopy(copyRanges: MutableList<Pair<Int, Int>>)
 

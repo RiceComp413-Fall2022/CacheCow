@@ -1,13 +1,14 @@
 package exception
-import exception.base.LocalNodeException
+
+import exception.base.CacheNodeException
 import org.eclipse.jetty.http.HttpStatus
 
-class KeyNotFoundException(key: String): LocalNodeException(HttpStatus.NOT_FOUND_404, "Key $key not found in cache") {
+class InvalidInputException(override val message: String): CacheNodeException(HttpStatus.CONFLICT_409, message) {
 
     /**
      * Returns the exception id unique to the exception type.
      */
     override fun getExceptionID(): Int {
-        return 4
+        return 3
     }
 }

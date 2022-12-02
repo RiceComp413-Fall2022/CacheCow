@@ -2,6 +2,8 @@ package receiver
 
 import cache.distributed.IDistributedCache
 import cache.distributed.ITestableJavalinApp
+import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicReference
 
 /**
  * An interface specifying the behavior of a receiver, which receives request from other
@@ -25,12 +27,36 @@ interface IReceiver: ITestableJavalinApp {
      */
     fun getSystemInfo(): IDistributedCache.SystemInfo
 
+    /**
+     * @return Time spent to perform client requests.
+     */
+    fun getClientRequestTiming(): TotalRequestTiming
+
+    /**
+     * @return Time spent to perform server requests.
+     */
+    fun getServerRequestTiming(): TotalRequestTiming
+
+
 }
 /**
  * Information about what the receiver has done so far
  */
-data class ReceiverUsageInfo(var storeAttempts: Int,
-                             var storeSuccesses: Int,
-                             var fetchAttempts: Int,
-                             var fetchSuccesses: Int,
-                             var invalidRequests: Int)
+data class ReceiverUsageInfo(val storeAttempts: AtomicInteger, val storeSuccesses: AtomicInteger,
+                             val fetchAttempts: AtomicInteger, val fetchSuccesses: AtomicInteger,
+                             val removeAttempts: AtomicInteger, val removeSuccesses: AtomicInteger,
+                             val clearAttempts: AtomicInteger, val clearSuccesses: AtomicInteger,
+                             val invalidRequests: AtomicInteger)
+
+/**
+ * Stores total time spent (in seconds) querying requests.
+ */
+data class TotalRequestTiming(val storeTiming: AtomicReference<Double>,
+                              val fetchTiming: AtomicReference<Double>,
+                              val removeTiming: AtomicReference<Double>,
+                              val clearTiming: AtomicReference<Double>)
+
+/**
+ * Represents a key-version tuple in a HTTP response.
+ */
+data class KeyVersionReply(val key: String, val version: Int)

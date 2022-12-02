@@ -4,12 +4,11 @@ import cache.distributed.ITestableDistributedCache
 import cache.distributed.hasher.ConsistentKeyDistributor
 import cache.distributed.hasher.IKeyDistributor
 import cache.distributed.hasher.NodeHasher
-import cache.distributed.launcher.AWSNodeLauncher
-import cache.distributed.launcher.INodeLauncher
-import cache.distributed.launcher.LocalNodeLauncher
-import cache.local.ILocalScalableCache
-import cache.local.LocalScalableCache
-import exception.KeyNotFoundException
+import node.launcher.AWSNodeLauncher
+import node.launcher.INodeLauncher
+import node.launcher.LocalNodeLauncher
+import cache.local.IScalableLocalCache
+import cache.local.ScalableLocalCache
 import io.javalin.Javalin
 import receiver.IScalableReceiver
 import receiver.ScalableReceiver
@@ -49,7 +48,7 @@ class ScalableDistributedCache(private val nodeId: NodeId, private var nodeList:
     /**
      * Local cache implementation
      */
-    private val cache: ILocalScalableCache = LocalScalableCache(nodeHasher)
+    private val cache: IScalableLocalCache = ScalableLocalCache(nodeHasher)
 
     /**
      * Scalable receiver implementation
@@ -135,7 +134,7 @@ class ScalableDistributedCache(private val nodeId: NodeId, private var nodeList:
     }
 
 
-    override fun fetch(kvPair: KeyVersionPair, senderId: NodeId?): ByteArray {
+    override fun fetch(kvPair: KeyVersionPair): ByteArray? {
 
         val nodeIds = keyDistributor.getPrimaryAndPrevNode(kvPair)
         val primaryNodeId = nodeIds.first
@@ -143,27 +142,21 @@ class ScalableDistributedCache(private val nodeId: NodeId, private var nodeList:
 
         print("SCALABLE CACHE: Primary node id is $primaryNodeId\n")
 
-        val value: ByteArray? =
-            if (!copyInProgress || primaryNodeId != nodeCount - 1 || nodeId != prevNodeId) {
-                // Normal case
-                print("SCALABLE CACHE: Fetch entered normal case\n")
-                if (nodeId == primaryNodeId) cache.fetch(kvPair) else sender.fetchFromNode(
-                    kvPair,
-                    primaryNodeId
-                )
-            } else {
-                // This key is being copied to new node, check both locations
-                print("SCALABLE CACHE: Fetch entered copy case\n")
-                cache.fetch(kvPair) ?: sender.fetchFromNode(kvPair, primaryNodeId)
-            }
-
-        if (value == null) {
-            throw KeyNotFoundException(kvPair.key)
+        return if (!copyInProgress || primaryNodeId != nodeCount - 1 || nodeId != prevNodeId) {
+            // Normal case
+            print("SCALABLE CACHE: Fetch entered normal case\n")
+            if (nodeId == primaryNodeId) cache.fetch(kvPair) else sender.fetchFromNode(
+                kvPair,
+                primaryNodeId
+            )
+        } else {
+            // This key is being copied to new node, check both locations
+            print("SCALABLE CACHE: Fetch entered copy case\n")
+            cache.fetch(kvPair) ?: sender.fetchFromNode(kvPair, primaryNodeId)
         }
-        return value
     }
 
-    override fun store(kvPair: KeyVersionPair, value: ByteArray, senderId: NodeId?) {
+    override fun store(kvPair: KeyVersionPair, value: ByteArray) {
 
         val initPrimaryNodeId = keyDistributor.getPrimaryNode(kvPair)
 
@@ -195,6 +188,37 @@ class ScalableDistributedCache(private val nodeId: NodeId, private var nodeList:
         if (nodeId == initPrimaryNodeId) {
             // Release the previously acquired lock
             redistributeLock.readLock().unlock()
+        }
+    }
+
+    override fun remove(kvPair: KeyVersionPair): ByteArray? {
+        if (scaleInProgress) {
+            print("SCALABLE CACHE: Wait for scaling to complete before removal\n")
+            return null
+        }
+
+        val primaryNodeId = keyDistributor.getPrimaryNode(kvPair)
+
+        return if (nodeId == primaryNodeId) {
+            cache.remove(kvPair)
+        } else {
+            sender.removeFromNode(kvPair,primaryNodeId)
+        }
+    }
+
+    override fun clearAll(isClientRequest: Boolean) {
+        if (scaleInProgress) {
+            print("SCALABLE CACHE: Wait for scaling to complete before clearing\n")
+            return
+        }
+
+        cache.clearAll(isClientRequest)
+        if (isClientRequest) {
+            for (primaryNodeId in nodeList.indices) {
+                if (primaryNodeId != nodeId) {
+                    sender.clearNode(primaryNodeId)
+                }
+            }
         }
     }
 

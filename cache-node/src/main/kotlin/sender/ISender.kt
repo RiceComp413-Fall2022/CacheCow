@@ -2,6 +2,7 @@ package sender
 
 import KeyVersionPair
 import NodeId
+import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * An interface specifying the behavior of a sender, which sends requests to other nodes
@@ -29,6 +30,21 @@ interface ISender {
     fun storeToNode(kvPair: KeyVersionPair, value: ByteArray, destNodeId: NodeId)
 
     /**
+     * Removes a specified element from the node's local cache.
+     * @param kvPair The key-version pair to look up
+     * @param destNodeId The node to which the value should be stored
+     * @return the previous value associated with the key-version pair, or null if there
+     * was no mapping for the key-version pair.
+     */
+    fun removeFromNode(kvPair: KeyVersionPair, destNodeId: NodeId) : ByteArray?
+
+    /**
+     * Clears all elements from the node's local cache.
+     * @param destNodeId The node to which the value should be stored
+     */
+    fun clearNode(destNodeId: NodeId)
+
+    /**
      * Gets the sender usage info
      * @return SenderUsageInfo data type of the info
      */
@@ -38,7 +54,7 @@ interface ISender {
 /**
  * Information about what the sender has done so far
  */
-data class SenderUsageInfo(var storeAttempts: Int,
-                           var storeSuccesses: Int,
-                           var fetchAttempts: Int,
-                           var fetchSuccesses: Int)
+data class SenderUsageInfo(val storeAttempts: AtomicInteger, val storeSuccesses: AtomicInteger,
+                           val fetchAttempts: AtomicInteger, val fetchSuccesses: AtomicInteger,
+                           val removeAttempts: AtomicInteger, val removeSuccesses: AtomicInteger,
+                           val clearAttempts: AtomicInteger, val clearSuccesses: AtomicInteger)

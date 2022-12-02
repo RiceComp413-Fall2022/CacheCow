@@ -1,41 +1,22 @@
 package cache.local
 
-import KeyVersionPair
+import cache.ICache
 
 /**
  * An interface specifying the behavior of a local data cache.
  */
-interface ILocalCache {
+interface ILocalCache: ICache {
 
     /**
-     * Fetch a value from the local cache.
-     *
-     * @param kvPair The key-version pair to look up
-     * @return The value, or null if the lookup fails
+     * @return Cache metrics and performance statistics.
      */
-    fun fetch(kvPair: KeyVersionPair): ByteArray?
-
-    /**
-     * Store a value to the local cache.
-     *
-     * @param kvPair The key-version pair to store
-     * @param value The value to store
-     * @return True if the store succeeded, and false otherwise
-     */
-    fun store(kvPair: KeyVersionPair, value: ByteArray): Boolean
-
-    /**
-     * Check whether the local cache is full.
-     *
-     * @return True if the cache is full, and false otherwise
-     */
-    fun isFull(): Boolean
-
-    fun getCacheInfo(): CacheInfo
+    fun getCacheInfo() : CacheInfo
 
 }
 
-/**
- * Encapsulates information about the cache in this node
- */
-data class CacheInfo(val totalKeys: Int, val kvBytes: Int)
+fun aggregateTableInfo(info1: CacheInfo, info2: CacheInfo): CacheInfo {
+    return CacheInfo(info1.totalKeys + info2.totalKeys,
+        info1.memorySize + info2.memorySize)
+}
+
+data class CacheInfo(val totalKeys: Int, val memorySize: Int)

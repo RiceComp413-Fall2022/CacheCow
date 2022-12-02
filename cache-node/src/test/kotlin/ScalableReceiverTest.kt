@@ -1,4 +1,4 @@
-import cache.distributed.launcher.LocalNodeLauncher
+import node.launcher.LocalNodeLauncher
 import exception.CrossServerException
 import exception.KeyNotFoundException
 import io.javalin.Javalin

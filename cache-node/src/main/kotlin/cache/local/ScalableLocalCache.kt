@@ -4,6 +4,7 @@ import KeyValuePair
 import KeyVersionPair
 import cache.distributed.IDistributedCache
 import cache.distributed.hasher.INodeHasher
+import exception.CacheFullException
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedQueue
@@ -13,25 +14,25 @@ import java.util.concurrent.TimeUnit
 /**
  * A concrete local cache that stores data in a ConcurrentHashMap.
  */
-class LocalScalableCache(private var nodeHasher: INodeHasher, maxCapacity: Int = 100) : ILocalScalableCache {
+class ScalableLocalCache(private var nodeHasher: INodeHasher, maxCapacity: Int = 100) : IScalableLocalCache {
 
     /* A process-safe concurrent hash map that is used to store LRU payload-containing node refferences */
     private val cache: ConcurrentHashMap<KeyVersionPair, LRUNode> = ConcurrentHashMap<KeyVersionPair, LRUNode>(maxCapacity)
 
     /* The LRU queue */
-    var lruCache: ConcurrentLinkedQueue<LRUNode>
+    private var lruCache: ConcurrentLinkedQueue<LRUNode>
 
     /* Store the total size of key and value bytes. Note that HashMap's auxiliary objects are not counted */
     private var kvByteSize = 0
 
     /* The JVM runtime */
-    private var JVMRuntime: Runtime = Runtime.getRuntime()
+    private var runtime: Runtime = Runtime.getRuntime()
 
     /* The current amount of memory (bytes) the cache is storing */
     private var usedMemory: Long = 0
 
     /* The maximum memory capacity (bytes) allotted to the JVM */
-    private var maxMemory: Long = JVMRuntime.maxMemory()
+    private var maxMemory: Long = runtime.maxMemory()
 
     /* The utilization threshold for the JVM */
     private var memoryUtilizationLimit: Float = 0.8F
@@ -69,12 +70,12 @@ class LocalScalableCache(private var nodeHasher: INodeHasher, maxCapacity: Int =
         return null
     }
 
-    override fun store(kvPair: KeyVersionPair, value: ByteArray): Boolean {
+    override fun store(kvPair: KeyVersionPair, value: ByteArray) {
         print("CACHE: Attempting to store (${kvPair.key}, $value)\n")
 
         if (isFull()) {
             print("CACHE: Cache full, unable to store (${kvPair.key}, $value)\n")
-            return false
+            throw CacheFullException()
         }
 
         val hashValue = nodeHasher.primaryHashValue(kvPair)
@@ -94,8 +95,14 @@ class LocalScalableCache(private var nodeHasher: INodeHasher, maxCapacity: Int =
         sortedLocalKeys[hashValue] = kvPair
 
         usedMemory += newNode.size
+    }
 
-        return true
+    override fun remove(kvPair: KeyVersionPair): ByteArray? {
+        TODO("Not yet implemented")
+    }
+
+    override fun clearAll(isClientRequest: Boolean) {
+        TODO("Not yet implemented")
     }
 
     private fun insert(node: LRUNode) {
@@ -112,7 +119,7 @@ class LocalScalableCache(private var nodeHasher: INodeHasher, maxCapacity: Int =
         return IDistributedCache.MemoryUsageInfo(usedMemory, maxMemory, usedMemory/(maxMemory * 1.0))
     }
 
-    override fun isFull(): Boolean {
+    private fun isFull(): Boolean {
         return usedMemory > (maxMemory * memoryUtilizationLimit).toInt()
     }
 
