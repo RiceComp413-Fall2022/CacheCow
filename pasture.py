@@ -7,7 +7,6 @@ import boto3 # pip install "boto3[crt]"
 from fabric import Connection # pip install fabric
 from invoke import Responder
 
-<<<<<<< HEAD
 # USAGE: python3 pasture.py <mode> <number of nodes> [-s]
 
 MAX_NODES = 5
@@ -23,16 +22,6 @@ AWS_CREDS = "rootkey.csv"
 """
 Placeholder
 """
-=======
-# TODO: automatic teardown
-
-port = 7070
-
-num_nodes = int(sys.argv[1])
-
-ec2 = boto3.resource('ec2')
-
->>>>>>> master
 def get_vpc_and_subnet(ec2, zone):
     default_vpc = None
     for vpc in ec2.vpcs.all():
@@ -48,7 +37,6 @@ def get_vpc_and_subnet(ec2, zone):
 
     return default_vpc.id, None
 
-<<<<<<< HEAD
 
 """
 Placeholder
@@ -64,71 +52,6 @@ def connect_retry(host, user, key):
                     "timeout": 5,
                     "banner_timeout": 5,
                     "auth_timeout": 5
-=======
-vpc_id, subnet_id = get_vpc_and_subnet(ec2, 'us-east-1b')
-
-security_group = ec2.create_security_group(
-    GroupName='cachecow-security',
-    Description='Security group for CacheCow',
-    VpcId=vpc_id,
-)
-
-security_group.authorize_ingress(
-    IpPermissions=[
-            {
-                'IpProtocol': 'tcp',
-                'FromPort': 7070,
-                'ToPort': 7070,
-                'IpRanges': [
-                    {
-                        'CidrIp': '0.0.0.0/0'
-                    }
-                ]
-            },
-            {
-                'IpProtocol': 'tcp',
-                'FromPort': 3000,
-                'ToPort': 3000,
-                'IpRanges': [
-                    {
-                        'CidrIp': '0.0.0.0/0'
-                    }
-                ]
-            },
-            {
-                'IpProtocol': 'tcp',
-                'FromPort': 22,
-                'ToPort': 22,
-                'IpRanges': [
-                    {
-                        'CidrIp': '0.0.0.0/0'
-                    }
-                ]
-            }
-        ]
-)
-
-instances = ec2.create_instances(
-    # ImageId='ami-079466db464206b00', # Custom AMI with dependencies preinstalled
-    ImageId='ami-09d3b3274b6c5d4aa', # Amazon Linux 2 Kernel 5.10 AMI 2.0.20221004.0 x86_64 HVM gp2
-    InstanceType='t3.medium', # 2 vCPU, 4 GiB memory
-    KeyName='CacheCow', # keypair for authentication
-    MaxCount=num_nodes,
-    MinCount=num_nodes,
-    Placement={
-        'AvailabilityZone': 'us-east-1b'
-    },
-    SecurityGroups=[
-        'cachecow-security', # security group for firewall
-    ],
-    TagSpecifications=[
-        {
-            'ResourceType': 'instance',
-            'Tags': [
-                {
-                    'Key': 'Name',
-                    'Value': 'CacheCow Node' # instance name
->>>>>>> master
                 },
             )
             c.open()
@@ -150,7 +73,6 @@ def test_node(node):
     return success
 
 
-<<<<<<< HEAD
 """
 Placeholder
 """
@@ -197,31 +119,6 @@ def create_instances(ec2, num_nodes):
             },
         ]
     )
-=======
-node_dns_f = io.StringIO("\n".join(x + f":{port}" for x in node_dns))
-
-def connect_retry(host, user, key):
-    while True:
-        try:
-            c = Connection(
-                host=host,
-                user=user,
-                connect_kwargs={
-                    "key_filename": key,
-                    "timeout": 5,
-                    "banner_timeout": 5,
-                    "auth_timeout": 5
-                },
-            )
-            c.open()
-            return c
-        except Exception as e:
-            print(f"Exception while connecting to host {host}: {e}")
-            time.sleep(5)
-
-for i, node in enumerate(node_dns):
-    c = connect_retry(node, "ec2-user", "CacheCow.pem")
->>>>>>> master
 
 
 """
@@ -262,6 +159,7 @@ def setup_services(c, id, node_dns_f, scaleable, new_node):
 
         print("ACTION: Configuring AWS")
         c.run("aws configure", pty=True, watchers=aws_watchers)
+        c.run("pip3 install --upgrade pip3")
         c.run("pip3 install requests boto3 fabric")
 
     print("ACTION: Starting services")
@@ -275,7 +173,6 @@ def setup_services(c, id, node_dns_f, scaleable, new_node):
     c.run("curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.34.0/install.sh | bash")
     c.run(". ~/.nvm/nvm.sh")
     c.run("nvm install 16")
-<<<<<<< HEAD
 
     c.put(node_dns_f, remote='CacheCow/monitor-node/src/nodes.txt') # TODO: use the same file
     c.run("tmux new-session -d \"cd CacheCow/monitor-node/ && . ~/.nvm/nvm.sh && npm install && npm start\"", asynchronous=True)
@@ -446,11 +343,8 @@ def scale_cluster(num_nodes):
 
     for i, node in enumerate(new_node_dns):
         c = connect_retry(node, SSH_USER, SSH_CREDS)
-
         id = i + instance_count
-
         setup_services(c, id, node_dns_f, True, True)
-
         c.close()
 
     for node in new_node_dns:
@@ -490,81 +384,3 @@ if __name__ == "__main__":
     else:
         # TODO: Add better help message
         print(f"Launch mode {mode} not recognized, only 'create' and 'add' supported")
-=======
-
-    c.put(node_dns_f, remote='CacheCow/monitor-node/src/nodes.txt') # TODO: use the same file
-
-    c.run("tmux new-session -d \"cd CacheCow/monitor-node/ && . ~/.nvm/nvm.sh && npm install && npm start\"", asynchronous=True)
-
-    c.close()
-
-elb = boto3.client('elbv2')
-
-target_group = elb.create_target_group(
-    Name='cachecow-nodes',
-    Protocol='TCP',
-    Port=7070,
-    TargetType='instance',
-    VpcId=vpc_id
-)
-
-target_group_arn = target_group['TargetGroups'][0]['TargetGroupArn']
-
-targets = elb.register_targets(
-    TargetGroupArn=target_group_arn,
-    Targets=[{'Id': x.id, 'Port': 7070} for x in instances]
-)
-
-balancer = elb.create_load_balancer(
-    Name='cachecow-balancer',
-    Subnets=[
-        subnet_id
-    ],
-    Scheme='internet-facing',
-    Type='network',
-    IpAddressType='ipv4'
-)
-
-balancer_arn = balancer['LoadBalancers'][0]['LoadBalancerArn']
-
-listener = elb.create_listener(
-    LoadBalancerArn=balancer_arn,
-    Protocol='TCP',
-    Port=7070,
-    DefaultActions=[
-        {
-            'Type': 'forward',
-            'TargetGroupArn': target_group_arn,
-            'ForwardConfig': {
-                'TargetGroups': [
-                    {
-                        'TargetGroupArn': target_group_arn
-                    },
-                ]
-            }
-        },
-    ],
-)
-
-elb.get_waiter('load_balancer_available').wait(LoadBalancerArns=[balancer_arn])
-
-elb_dns = elb.describe_load_balancers(LoadBalancerArns=[balancer_arn])['LoadBalancers'][0]['DNSName']
-
-def test_node(node):
-    success = True
-    try:
-        requests.get(f"http://{node}:{port}", timeout=5)
-    except:
-        success = False
-    return success
-
-def wait_node(node):
-    print(f"Waiting for {node}")
-    while not test_node(node):
-        time.sleep(5)
-
-for node in node_dns:
-    wait_node(node)
-
-wait_node(elb_dns)
->>>>>>> master
