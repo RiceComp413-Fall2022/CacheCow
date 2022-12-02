@@ -3,6 +3,9 @@ package exception
 import exception.base.CacheNodeException
 import org.eclipse.jetty.http.HttpStatus
 
+/**
+ * Exception indicating that an invalid input to the underlying cache.
+ */
 class InvalidInputException(override val message: String): CacheNodeException(HttpStatus.CONFLICT_409, message) {
 
     /**

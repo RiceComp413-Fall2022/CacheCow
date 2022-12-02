@@ -7,13 +7,16 @@ import ScalableMessageType
 import cache.distributed.IScalableDistributedCache
 import org.eclipse.jetty.http.HttpStatus
 
+/**
+ * A concrete receiver that supports the normal cache endpoints as well as additional
+ * endpoints to support scaling-related message passing.
+ */
 class ScalableReceiver(nodeId: NodeId, count: Int, private val distributedCache: IScalableDistributedCache): Receiver(
     count,
     distributedCache
 ), IScalableReceiver {
 
     init {
-
         /* Handle simple message passing for coordinating scaling process */
         app.post("/v1/inform") { ctx ->
             print("\n*********INFORM REQUEST*********\n")
@@ -100,6 +103,7 @@ class ScalableReceiver(nodeId: NodeId, count: Int, private val distributedCache:
             distributedCache.bulkLocalStore(bulkCopy.values)
         }
 
+        /* Attempt to launch a new node */
         app.post("/v1/launch-node") { ctx ->
             print("SCALABLE RECEIVER: Received request to launch new node\n")
             distributedCache.initiateLaunch()

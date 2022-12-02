@@ -17,16 +17,16 @@ class LocalCache(private var maxCapacity: Int = 100) : ILocalCache {
     private var kvByteSize = AtomicInteger(0)
 
     override fun fetch(kvPair: KeyVersionPair): ByteArray? {
-        print("CACHE: Attempting to fetch ${kvPair.key}\n")
+        print("LOCAL CACHE: Attempting to fetch ${kvPair.key}\n")
         return cache[kvPair]
     }
     override fun store(kvPair: KeyVersionPair, value: ByteArray) {
-        print("CACHE: Attempting to store (${kvPair.key}, $value)\n")
+        print("LOCAL CACHE: Attempting to store (${kvPair.key}, $value)\n")
         if (cache.size >= maxCapacity) {
             print("CACHE: Full\n")
             throw CacheFullException()
         }
-        print("CACHE: Success\n")
+        print("LOCAL CACHE: Success\n")
         val prevVal = cache[kvPair]
         val prevKvByteSize = if (prevVal == null) 0 else (prevVal.size + kvPair.key.length + 4)
         kvByteSize.set(
@@ -42,9 +42,6 @@ class LocalCache(private var maxCapacity: Int = 100) : ILocalCache {
         cache.clear()
     }
 
-    /**
-     * Gets information about the cache at the current moment
-     */
     override fun getCacheInfo(): CacheInfo {
         return CacheInfo(cache.size, kvByteSize.get())
     }

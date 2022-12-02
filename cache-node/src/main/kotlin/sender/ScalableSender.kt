@@ -14,28 +14,15 @@ import java.net.http.HttpResponse
 import java.util.concurrent.CompletableFuture
 import kotlin.streams.asStream
 
+/**
+ * Concrete implementation of a scalable sender.
+ */
 class ScalableSender(private val nodeId: NodeId, private var nodeList: MutableList<String>): Sender(nodeId, nodeList), IScalableSender {
 
     /**
      * Default retry count on all scalable requests, used to make communication more robust.
      */
     private val defaultRetryCount = 3
-
-    private fun scalableErrorHandler(
-        statusCode: Int,
-        destNodeId: NodeId,
-        isFinalTry: Boolean
-    ): Boolean {
-        if (statusCode in 400..499) {
-            throw CrossClientException(destNodeId)
-        } else if (statusCode in 500..599) {
-            if (isFinalTry) {
-                throw CrossServerException(destNodeId)
-            }
-            return true
-        }
-        return false
-    }
 
     override fun sendBulkCopy(kvPairs: BulkCopyRequest, destNodeId: NodeId) {
         val client = HttpClient.newBuilder().build()
@@ -89,6 +76,22 @@ class ScalableSender(private val nodeId: NodeId, private var nodeList: MutableLi
             },
             destNodeId
         )
+    }
+
+    private fun scalableErrorHandler(
+        statusCode: Int,
+        destNodeId: NodeId,
+        isFinalTry: Boolean
+    ): Boolean {
+        if (statusCode in 400..499) {
+            throw CrossClientException(destNodeId)
+        } else if (statusCode in 500..599) {
+            if (isFinalTry) {
+                throw CrossServerException(destNodeId)
+            }
+            return true
+        }
+        return false
     }
 
     private fun retryMessage(

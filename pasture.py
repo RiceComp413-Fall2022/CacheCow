@@ -9,18 +9,24 @@ from invoke import Responder
 
 # USAGE: python3 pasture.py <mode> <number of nodes> [-s]
 
+
+# Maximum number of instances that should be running in cluster
 MAX_NODES = 5
 
+# Cache node port number
 CACHE_PORT = 7070
 
+# Ssh user for node connections
 SSH_USER = "ec2-user"
 
+# Ssh key for noe connections
 SSH_CREDS = "CacheCow.pem"
 
+# AWS credentials file needed for autoscaling
 AWS_CREDS = "rootkey.csv"
 
 """
-Placeholder
+Get the vpc and subnet from ec2.
 """
 def get_vpc_and_subnet(ec2, zone):
     default_vpc = None
@@ -39,7 +45,7 @@ def get_vpc_and_subnet(ec2, zone):
 
 
 """
-Placeholder
+Connect to the given host until successful.
 """
 def connect_retry(host, user, key):
     while True:
@@ -62,7 +68,7 @@ def connect_retry(host, user, key):
 
 
 """
-Placeholder
+Check if the given num_nodese is up and running.
 """
 def test_node(node):
     success = True
@@ -74,7 +80,7 @@ def test_node(node):
 
 
 """
-Placeholder
+Wait until the given node is up and running.
 """
 def wait_node(node):
     print(f"Waiting for {node}")
@@ -83,7 +89,7 @@ def wait_node(node):
 
 
 """
-Placeholder
+Create the provided number of ec2 instances.
 """
 def create_instances(ec2, num_nodes):
     return ec2.create_instances(
@@ -122,7 +128,7 @@ def create_instances(ec2, num_nodes):
 
 
 """
-Placeholder
+Set up the CacheCow services given the node connection.
 """
 def setup_services(c, id, node_dns_f, scaleable, new_node):
     print("ACTION: Cloning Repo")
@@ -134,7 +140,7 @@ def setup_services(c, id, node_dns_f, scaleable, new_node):
 
     c.run("git clone https://github.com/RiceComp413-Fall2022/CacheCow")
     # c.run("cd CacheCow/cache-node/ && git switch ec2-support")
-    c.run("cd CacheCow/cache-node/ && git switch Autoscale-POC")
+    # c.run("cd CacheCow/cache-node/ && git switch Autoscale-POC")
 
     if (scaleable):
         print("ACTION: Setting Up AWS")
@@ -179,7 +185,7 @@ def setup_services(c, id, node_dns_f, scaleable, new_node):
 
 
 """
-Placeholder
+Launch a new ec2 cluster with the given number of nodes.
 """
 def launch_cluster(num_nodes, scaleable):
 
@@ -310,9 +316,10 @@ def launch_cluster(num_nodes, scaleable):
 
 
 """
-Placeholder
+Scale the existing ec2 cluster by adding the given number of nodes.
 """
 def scale_cluster(num_nodes):
+
     ec2 = boto3.resource('ec2')
     vpc_id, subnet_id = get_vpc_and_subnet(ec2, 'us-east-1b')
 
@@ -350,7 +357,9 @@ def scale_cluster(num_nodes):
     for node in new_node_dns:
         wait_node(node)
 
-
+"""
+Tear down the existing ec2 cluster.
+"""
 def teardown_cluster():
     elb = boto3.client('elbv2')
     balancer_arn = elb.describe_load_balancers(Names=['cachecow-balancer'])['LoadBalancers'][0]['LoadBalancerArn']
@@ -359,10 +368,12 @@ def teardown_cluster():
     elb.delete_target_group(TargetGroupArn=target_group_arn)
     ec2 = boto3.resource('ec2')
     instances = list(ec2.instances.filter(Filters=[{'Name': 'tag:Name', 'Values': ['CacheCow Node']}]))
+
     for instance in instances:
         instance.terminate()
     for instance in instances:
         instance.wait_until_terminated()
+
     security_group = list(ec2.security_groups.filter(Filters=[{'Name': 'group-name', 'Values': ['cachecow-security']}]))[0]
     security_group.delete()
 

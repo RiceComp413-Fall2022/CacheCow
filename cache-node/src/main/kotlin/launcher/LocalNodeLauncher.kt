@@ -5,6 +5,10 @@ import java.io.BufferedWriter
 import java.io.File
 import java.io.FileWriter
 
+/**
+ * Concrete node launcher implementation that launches a new node locally using the
+ * appropriate port offset.
+ */
 class LocalNodeLauncher: INodeLauncher {
     override fun launchNode(nodeId: NodeId) {
 

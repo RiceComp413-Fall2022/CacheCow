@@ -11,8 +11,16 @@ import sender.SenderUsageInfo
  */
 interface IDistributedCache: ICache {
 
+    /**
+     * Start the distributed cache on the given port.
+     *
+     * @param port port number on which to run receiver
+     */
     fun start(port: Int)
 
+    /**
+     * Get all information about the usage of this node.
+     */
     fun getSystemInfo(): SystemInfo
 
     /**
@@ -32,7 +40,7 @@ interface IDistributedCache: ICache {
     data class MemoryUsageInfo(val allocated: Long, val max: Long, val usage: Double)
 
     /**
-     * Encapsulates information about the usage of this node into one object
+     * Encapsulates information about the usage of this node into one object.
      */
     data class SystemInfo(
         val nodeId: Int,

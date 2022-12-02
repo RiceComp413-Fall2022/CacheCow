@@ -71,7 +71,6 @@ open class Sender(private val nodeId: NodeId, private val nodeList: List<String>
 
         val client = HttpClient.newBuilder().build()
         val key = URLEncoder.encode(kvPair.key, "UTF-8")
-//         val destUrl = URI.create("http://${nodeList[destNodeId]}/v1/blobs/${kvPair.key}/${kvPair.version}?senderId=${nodeId}")
 
         val destUrl = URI.create("http://${nodeList[destNodeId]}/v1/blobs/${key}/${kvPair.version}?senderId=${nodeId}")
         val request = HttpRequest.newBuilder()

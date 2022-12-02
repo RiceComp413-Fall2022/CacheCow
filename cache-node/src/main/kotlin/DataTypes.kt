@@ -28,6 +28,6 @@ enum class ScalableMessageType {
 data class ScalableMessage(val nodeId: NodeId, val hostName: String, val type: ScalableMessageType)
 
 /**
- * Data packet containing map of key-value pairs to be stored locally
+ * Data packet containing map of key-value pairs to be stored locally.
  */
 data class BulkCopyRequest(val nodeId: NodeId, val values: MutableList<KeyValuePair>)

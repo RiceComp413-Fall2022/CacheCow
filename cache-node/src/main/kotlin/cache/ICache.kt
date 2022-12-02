@@ -5,7 +5,7 @@ import KeyVersionPair
 interface ICache {
 
     /**
-     * Fetch a value from the distributed cache.
+     * Fetches a value from the distributed cache.
      *
      * @param kvPair The key-version pair to look up
      * @return The value if found
@@ -13,7 +13,7 @@ interface ICache {
     fun fetch(kvPair: KeyVersionPair): ByteArray?
 
     /**
-     * Store a value to the distributed cache.
+     * Stores a value to the distributed cache.
      *
      * @param kvPair The key-version pair to store
      * @param value The value to store

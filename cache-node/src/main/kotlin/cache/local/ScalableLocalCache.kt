@@ -57,24 +57,24 @@ class ScalableLocalCache(private var nodeHasher: INodeHasher, maxCapacity: Int =
     }
 
     override fun fetch(kvPair: KeyVersionPair): ByteArray? {
-        print("CACHE: Attempting to fetch ${kvPair.key}\n")
+        print("LOCAL CACHE: Attempting to fetch ${kvPair.key}\n")
         val nullableNode: LRUNode? = cache[kvPair]
         if (nullableNode != null) {
-            print("CACHE: Found value ${cache[kvPair]}\n")
+            print("LOCAL CACHE: Found value ${cache[kvPair]}\n")
             val node: LRUNode = nullableNode
             remove(node)
             insert(node)
             return node.value
         }
-        print("CACHE: Key not found\n")
+        print("LOCAL CACHE: Key not found\n")
         return null
     }
 
     override fun store(kvPair: KeyVersionPair, value: ByteArray) {
-        print("CACHE: Attempting to store (${kvPair.key}, $value)\n")
+        print("LOCAL CACHE: Attempting to store (${kvPair.key}, $value)\n")
 
         if (isFull()) {
-            print("CACHE: Cache full, unable to store (${kvPair.key}, $value)\n")
+            print("LOCAL CACHE: Cache full, unable to store (${kvPair.key}, $value)\n")
             throw CacheFullException()
         }
 
@@ -124,17 +124,17 @@ class ScalableLocalCache(private var nodeHasher: INodeHasher, maxCapacity: Int =
     }
 
     override fun monitorMemoryUsage() {
-        print("Monitoring Memory Usage\n")
+        print("LOCAL CACHE: Monitoring memory usage\n")
 
         if (isFull()) {
-            print("Cache is full\n")
+            print("LOCAL CACHE: Cache is full\n")
             val estimateToRemove = usedMemory - (maxMemory * (memoryUtilizationLimit - 0.2))
-            print("used $usedMemory maximum ${(maxMemory * memoryUtilizationLimit).toInt()} amount to remove $estimateToRemove\n")
+            print("LOCAL CACHE: Used $usedMemory maximum ${(maxMemory * memoryUtilizationLimit).toInt()} amount to remove $estimateToRemove\n")
             var removed: Long = 0
 
             while (removed < estimateToRemove) {
                 removed += removeLRU()
-                print("removed $removed\n")
+                print("LOCAL CACHE: Removed $removed\n")
             }
         }
     }
@@ -164,7 +164,6 @@ class ScalableLocalCache(private var nodeHasher: INodeHasher, maxCapacity: Int =
         for (copyRange in copyRanges) {
             print("LOCAL CACHE: Finding keys to copy in range (${copyRange.first}, ${copyRange.second})\n")
             if (copyRange.first > copyRange.second) {
-                print("CASE 1\n")
                 for (e in sortedLocalKeys.headMap(copyRange.second)) {
                     if (e.key != null) {
                         copyHashes.add(e.key)
@@ -176,7 +175,6 @@ class ScalableLocalCache(private var nodeHasher: INodeHasher, maxCapacity: Int =
                     }
                 }
             } else {
-                print("CASE 2\n")
                 for (e in sortedLocalKeys.subMap(copyRange.first, copyRange.second)) {
                     if (e.key != null) {
                         copyHashes.add(e.key)
@@ -228,12 +226,12 @@ class ScalableLocalCache(private var nodeHasher: INodeHasher, maxCapacity: Int =
         }
     }
 
-//    private fun printCacheContents() {
-//        print("Cache size is ${cache.size}\n")
-//        for (node in cache) {
-//            print("Node: ${node.key} ${node.value.kvPair} ${node.value.value}\n")
-//        }
-//    }
+    private fun printCacheContents() {
+        print("Cache size is ${cache.size}\n")
+        for (node in cache) {
+            print("Node: ${node.key} ${node.value.kvPair} ${node.value.value}\n")
+        }
+    }
 
     /**
      * @param kvPair The key of the node - key of the key-value pair
