@@ -33,7 +33,6 @@ fun main(args: Array<String>) {
         }
     }
 
-<<<<<<< HEAD
     val nodeList = File(nodeListPath).bufferedReader().readLines().toMutableList()
 
     print("CACHE COW: node list is $nodeList\n")
@@ -43,9 +42,6 @@ fun main(args: Array<String>) {
     } else {
         DistributedCache(nodeId, nodeList)
     }
-=======
-    val node = Node(nodeId, File(nodeListPath).bufferedReader().readLines(), port)
->>>>>>> master
 
     distributedCache.start(port)
 }

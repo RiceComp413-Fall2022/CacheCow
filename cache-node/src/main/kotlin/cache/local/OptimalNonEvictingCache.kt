@@ -32,7 +32,7 @@ class OptimalNonEvictingCache : ILocalCache {
         return cache.remove(kvPair)
     }
 
-    override fun clearAll() {
+    override fun clearAll(isClientRequest: Boolean) {
         cache.clear()
     }
 

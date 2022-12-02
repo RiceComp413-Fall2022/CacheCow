@@ -2,7 +2,7 @@ package cache.distributed
 
 import KeyValuePair
 import NodeId
-import node.launcher.INodeLauncher
+import launcher.INodeLauncher
 
 interface IScalableDistributedCache: IDistributedCache {
 

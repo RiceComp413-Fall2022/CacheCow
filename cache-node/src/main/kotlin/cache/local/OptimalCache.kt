@@ -11,7 +11,7 @@ import KeyVersionPair
  * This can be used to measure the overhead of our entire distributed system, separately
  * from the efficiency of our cache.
  */
-class OptimalCache: ILocalCache {
+class OptimalCache : ILocalCache {
 
     override fun fetch(kvPair: KeyVersionPair): ByteArray? {
         return null
@@ -25,7 +25,7 @@ class OptimalCache: ILocalCache {
         return null
     }
 
-    override fun clearAll() {
+    override fun clearAll(isClientRequest: Boolean) {
         return
     }
 

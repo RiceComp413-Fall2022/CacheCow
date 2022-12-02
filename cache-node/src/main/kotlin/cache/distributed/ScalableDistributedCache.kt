@@ -4,9 +4,9 @@ import cache.distributed.ITestableDistributedCache
 import cache.distributed.hasher.ConsistentKeyDistributor
 import cache.distributed.hasher.IKeyDistributor
 import cache.distributed.hasher.NodeHasher
-import node.launcher.AWSNodeLauncher
-import node.launcher.INodeLauncher
-import node.launcher.LocalNodeLauncher
+import launcher.AWSNodeLauncher
+import launcher.INodeLauncher
+import launcher.LocalNodeLauncher
 import cache.local.IScalableLocalCache
 import cache.local.ScalableLocalCache
 import io.javalin.Javalin
@@ -228,7 +228,9 @@ class ScalableDistributedCache(private val nodeId: NodeId, private var nodeList:
             getMemoryUsage(),
             cache.getCacheInfo(),
             receiver.getReceiverUsageInfo(),
-            sender.getSenderUsageInfo()
+            sender.getSenderUsageInfo(),
+            receiver.getClientRequestTiming(),
+            receiver.getServerRequestTiming()
         )
     }
 

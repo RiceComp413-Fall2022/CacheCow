@@ -59,6 +59,7 @@ open class Receiver(
     init {
         /** ENDPOINTS **/
         print("RECEIVER: Initializing Javalin\n")
+        print("RECEIVER: node count is $nodeCount\n")
 
         /* Check if receiver is up and running */
         app.get("/v1/hello-world") { ctx ->

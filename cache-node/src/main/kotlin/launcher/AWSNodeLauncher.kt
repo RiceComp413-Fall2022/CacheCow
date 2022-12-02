@@ -1,4 +1,4 @@
-package node.launcher
+package launcher
 
 import NodeId
 import java.io.File

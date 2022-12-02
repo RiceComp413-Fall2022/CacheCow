@@ -30,7 +30,7 @@ class DistributedCache(private val nodeId: NodeId, private var nodeList: List<St
     /**
      * Receiver implementation
      */
-    private val receiver =  Receiver(nodeId, this)
+    private val receiver =  Receiver(nodeList.size, this)
 
     /**
      * Module used to send all out-going messages (public for testing)
@@ -94,9 +94,12 @@ class DistributedCache(private val nodeId: NodeId, private var nodeList: List<St
             getMemoryUsage(),
             cache.getCacheInfo(),
             receiver.getReceiverUsageInfo(),
-            sender.getSenderUsageInfo()
+            sender.getSenderUsageInfo(),
+            receiver.getClientRequestTiming(),
+            receiver.getServerRequestTiming()
         )
     }
+
     override fun mockSender(mockSender: ISender) {
         sender = mockSender
     }

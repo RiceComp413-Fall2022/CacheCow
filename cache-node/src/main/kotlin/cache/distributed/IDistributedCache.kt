@@ -3,6 +3,7 @@ package cache.distributed
 import cache.ICache
 import cache.local.CacheInfo
 import receiver.ReceiverUsageInfo
+import receiver.TotalRequestTiming
 import sender.SenderUsageInfo
 
 /**
@@ -38,5 +39,8 @@ interface IDistributedCache: ICache {
         val memUsage: MemoryUsageInfo,
         val cacheInfo: CacheInfo,
         var receiverUsageInfo: ReceiverUsageInfo,
-        val senderUsageInfo: SenderUsageInfo)
+        val senderUsageInfo: SenderUsageInfo,
+        val clientRequestTiming: TotalRequestTiming,
+        val serverRequestTiming: TotalRequestTiming
+    )
 }
