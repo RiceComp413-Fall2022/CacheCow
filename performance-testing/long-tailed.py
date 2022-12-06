@@ -12,7 +12,7 @@ import requests
 import time
 
 # Constants
-ROUNDS = 3
+TRIALS = 3 # TODO: Implement this.
 NUM_INITIAL_STORE = 1500 # Should be larger than the max cache size to test cache effectiveness, and speed.
 FETCH_PROPORTION = 1
 NUM_REQUESTS = 500
