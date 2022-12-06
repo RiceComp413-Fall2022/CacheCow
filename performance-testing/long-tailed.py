@@ -11,6 +11,17 @@ import matplotlib.pyplot as plt
 import requests
 import time
 
+# Constants
+ROUNDS = 3
+NUM_INITIAL_STORE = 1500 # Should be larger than the max cache size to test cache effectiveness, and speed.
+FETCH_PROPORTION = 1
+NUM_REQUESTS = 500
+
+STORE_TIMEOUT = 0.5
+FETCH_TIMEOUT = 2
+
+MU, SIGMA = 2, 1
+
 if __name__ == "__main__":
 
     """Argument Parsing"""
@@ -25,7 +36,7 @@ if __name__ == "__main__":
     def fetch(data):
         key, version = str(data), 1 # Unused version
         try:
-            fetched_data = requests.get(url=f'http://{options.url}/v1/blobs/{key}/{version}', timeout=2)
+            fetched_data = requests.get(url=f'http://{options.url}/v1/blobs/{key}/{version}', timeout=FETCH_TIMEOUT)
             value = float(fetched_data.content.decode('ascii'))
             return value == f(key)
         except:
@@ -36,7 +47,7 @@ if __name__ == "__main__":
         value = f(key)
         try:
             requests.post(url=f'http://{options.url}/v1/blobs/{key}/{version}',
-                      data = str(value).encode('ascii'), timeout=0.5)
+                      data = str(value).encode('ascii'), timeout=STORE_TIMEOUT)
             return True
         except:
             return False
@@ -44,11 +55,6 @@ if __name__ == "__main__":
 
     """Initialize Test"""
     np.random.seed(seed=0)
-    MU, SIGMA = 2, 1
-
-    NUM_INITIAL_STORE = 100
-    FETCH_PROPORTION = 1
-    NUM_REQUESTS = 300
 
     initial_store_data = np.random.lognormal(MU, SIGMA, NUM_INITIAL_STORE).astype(int)
     request_data = np.random.lognormal(MU, SIGMA, NUM_REQUESTS).astype(int)
