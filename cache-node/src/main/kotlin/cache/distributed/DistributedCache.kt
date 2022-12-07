@@ -5,7 +5,6 @@ import NodeId
 import cache.distributed.hasher.INodeHasher
 import cache.distributed.hasher.NodeHasher
 import cache.local.ILocalCache
-import cache.local.LocalCache
 import io.javalin.Javalin
 import receiver.Receiver
 import sender.ISender
@@ -14,18 +13,14 @@ import sender.Sender
 /**
  * A concrete distributed cache that assigns keys to nodes using a NodeHasher.
  */
-class DistributedCache(private val nodeId: NodeId, private var nodeList: List<String>): IDistributedCache,
+class DistributedCache(private val nodeId: NodeId, private var nodeList: List<String>,
+                       private var cache: ILocalCache): IDistributedCache,
     ITestableDistributedCache<ISender> {
 
     /**
      * The node hasher used to map keys to nodes
      */
     private val nodeHasher: INodeHasher = NodeHasher(nodeList.size)
-
-    /**
-     * Local cache implementation
-     */
-    private val cache: ILocalCache = LocalCache()
 
     /**
      * Receiver implementation
