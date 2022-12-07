@@ -24,7 +24,7 @@ git clone git@github.com:RiceComp413-Fall2022/CacheCow.git CacheCow
 
 ## Running Locally
 
-1. Download [Node JS](https://nodejs.org/en/download/) if not already installed
+1. Download [Node.js](https://nodejs.org/en/download/) if it's not already installed
 
 2. Set up the monitoring node
 
@@ -57,19 +57,19 @@ curl -X GET "localhost:7070/v1/hello-world"
 
 5. Monitor the cache
 
-- Open localhost:3000 in any browser
+- Open [localhost:3000](http://localhost:3000) in any browser
 
 ## Running on AWS
 
 1. Download [Python 3](https://www.python.org/downloads/) if not already installed
 
-2. Download the [AWS Command Line](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
+2. Download the [AWS Command Line Interface](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
 
-3. Set up AWS security group
+3. Set up an AWS key pair
 
 - Navigate to `EC2 Dashboard` on AWS Management Console
-- Create a new security group
-- Download the keys and save the file `rootkey.csv` to the root CacheCow directory
+- Create a new key pair
+- Download the pair and save the file `rootkey.csv` to the root CacheCow directory
 
 4. Configure the AWS CLI
 
@@ -86,7 +86,7 @@ Default Output Format []: <enter>
 5. Install Python packages
 
 ```sh
-pip3 install requests boto3 fabric
+pip3 install requests "boto3[crt]" fabric
 
 # Note: if boto3 install fails try this
 pip3 install --upgrade pip
@@ -96,6 +96,12 @@ pip3 install --upgrade pip
 
 ```sh
 python3 pasture.py create 2
+```
+
+7. Delete the cluster
+
+```sh
+python3 pasture.py delete 2
 ```
 
 # Sending Requests
