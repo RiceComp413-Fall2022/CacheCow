@@ -110,7 +110,7 @@ Todo
 
 # Performance Testing
 
-There are multiple performance tests. Here, we will run long-tailed.py which uses a heavy-tailed lognormal distribution to simulate cache-aside performance. The test is best performed against a cache which can hold a maximum of 100 keys. The distribution parameters are generated query 995 keys, 408 of which are unique. This ensures that the cache handles eviction appropriately.
+There are multiple performance tests. Here, we will run long-tailed.py which uses a heavy-tailed lognormal distribution to simulate cache-aside performance. The test is best performed against a cache which can hold a maximum of 100 keys. The distribution parameters generate 995 keys, 408 of which are unique. This ensures that the cache handles eviction appropriately.
 
 1. Move into the performance-testing directory
 
