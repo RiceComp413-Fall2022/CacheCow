@@ -14,9 +14,9 @@ import requests
 import time
 
 # Constants
-NUM_INITIAL_STORE = 0 # Should be larger than the max cache size to test cache effectiveness, and speed.
+NUM_INITIAL_STORE = 5 # Should be larger than the max cache size to test cache effectiveness, and speed.
 FETCH_PROPORTION = 1
-NUM_REQUESTS = 300
+NUM_REQUESTS = 995
 
 STORE_TIMEOUT = 0.5
 FETCH_TIMEOUT = 2
@@ -74,15 +74,15 @@ if __name__ == "__main__":
     store_total = NUM_INITIAL_STORE + NUM_REQUESTS - fetch_total
     store_success = 0
 
-    # freq_map = {}
-    # for data in request_data:
-    #     if data in freq_map:
-    #         freq_map[data] += 1
-    #     else:
-    #         freq_map[data] = 1
-    # print(sorted(list(freq_map.values()), reverse=True))
-    #
-    # print("Domain: ", len(set(request_data)), ". Total Data: ", NUM_REQUESTS)
+    freq_map = {}
+    for data in request_data:
+        if data in freq_map:
+            freq_map[data] += 1
+        else:
+            freq_map[data] = 1
+    print(sorted(list(freq_map.values()), reverse=True))
+
+    print("Domain: ", len(set(request_data)), ". Total Data: ", NUM_REQUESTS)
 
     """Run Tests"""
     # Start time
