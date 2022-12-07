@@ -119,23 +119,6 @@ class Table(private val maxCapacity: Int = 100, private val maxMemorySize: Int =
         }
     }
 
-//    override fun clearAll() {
-//        print("Table: clearAll\n")
-//        tableLock.read {
-//            print("Table Valid: ${isValid}\n")
-//            if (isValid) throw ProgramAssumptionException("Table should be invalidated before clearing.")
-//
-//            // Clear Cache
-//            cacheLock.write() {
-//                if (isFull()) {
-//                    print("Table: Full, Cleared!\n")
-//                    cache.clear()
-//                    memorySize = 0
-//                }
-//            }
-//        }
-//    }
-
     override fun clearAll(cleanup: () -> Unit) {
         //print("Table: clearAll\n")
 

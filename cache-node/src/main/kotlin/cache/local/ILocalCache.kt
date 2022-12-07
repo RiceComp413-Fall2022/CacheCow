@@ -15,6 +15,13 @@ interface ILocalCache: ICache {
 
 }
 
+/**
+ * Given the cache info of two different caches, returns the combined cache info.
+ *
+ * @param info1 cache info of first cache
+ * @param info2 cache info of second cache
+ * @return overall cache info
+ */
 fun aggregateTableInfo(info1: CacheInfo, info2: CacheInfo): CacheInfo {
     return CacheInfo(info1.totalKeys + info2.totalKeys,
         info1.memorySize + info2.memorySize)

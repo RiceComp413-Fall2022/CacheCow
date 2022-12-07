@@ -133,10 +133,6 @@ class ScalableDistributedCache(private val nodeId: NodeId, private var nodeList:
         }
     }
 
-    override fun getNodeList(): List<String> {
-        return nodeList
-    }
-
     override fun fetch(kvPair: KeyVersionPair): ByteArray? {
 
         val nodeIds = keyDistributor.getPrimaryAndPrevNode(kvPair)
@@ -194,25 +190,9 @@ class ScalableDistributedCache(private val nodeId: NodeId, private var nodeList:
         }
     }
 
-    override fun remove(kvPair: KeyVersionPair): ByteArray? {
-        if (scaleInProgress) {
-            print("SCALABLE CACHE: Wait for scaling to complete before removal\n")
-            return null
-        }
-
-        val primaryNodeId = keyDistributor.getPrimaryNode(kvPair)
-
-        return if (nodeId == primaryNodeId) {
-            cache.remove(kvPair)
-        } else {
-            sender.removeFromNode(kvPair,primaryNodeId)
-        }
-    }
-
     override fun clearAll(isClientRequest: Boolean) {
         if (scaleInProgress) {
-            print("SCALABLE CACHE: Wait for scaling to complete before clearing\n")
-            return
+            throw UnsupportedScalingException("Wait for scaling to complete before clearing data")
         }
 
         cache.clearAll(isClientRequest)
@@ -228,6 +208,7 @@ class ScalableDistributedCache(private val nodeId: NodeId, private var nodeList:
     override fun getSystemInfo(): SystemInfo {
         return SystemInfo(
             nodeId,
+            nodeList.get(nodeId),
             getMemoryUsage(),
             cache.getCacheInfo(),
             receiver.getReceiverUsageInfo(),
@@ -375,6 +356,7 @@ class ScalableDistributedCache(private val nodeId: NodeId, private var nodeList:
             print("SCALABLE CACHE: Got ${kvPairs.size} key value pairs from stream\n")
             if (kvPairs.size > 0) {
                 sender.sendBulkCopy(BulkCopyRequest(nodeId, kvPairs), nodeCount - 1)
+                cache.cleanupCopyKeys()
             }
         } while (kvPairs.size == copyBatchSize)
         sender.sendScalableMessage(
@@ -384,7 +366,6 @@ class ScalableDistributedCache(private val nodeId: NodeId, private var nodeList:
                 ScalableMessageType.COPY_COMPLETE
             ), nodeCount - 1
         )
-        cache.cleanupCopy()
         copyInProgress = false
     }
 

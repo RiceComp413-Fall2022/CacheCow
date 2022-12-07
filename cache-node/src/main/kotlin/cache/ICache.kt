@@ -21,14 +21,6 @@ interface ICache {
     fun store(kvPair: KeyVersionPair, value: ByteArray)
 
     /**
-     * Removes a specified element from the cache.
-     * @param kvPair The key-version pair to look up
-     * @return the previous value associated with the key-version pair, or null if there
-     * was no mapping for the key-version pair.
-     */
-    fun remove(kvPair: KeyVersionPair): ByteArray?
-
-    /**
      * Clears the entire cache.
      */
     fun clearAll(isClientRequest: Boolean)

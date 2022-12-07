@@ -20,11 +20,6 @@ interface IDistributedCache: ICache {
     fun start(port: Int)
 
     /**
-     * Returns the host names of all nodes in the cluster.
-     */
-    fun getNodeList(): List<String>
-
-    /**
      * Gets all information about the usage of this node.
      */
     fun getSystemInfo(): SystemInfo
@@ -59,6 +54,7 @@ interface IDistributedCache: ICache {
      */
     data class SystemInfo(
         @JsonProperty("nodeId") val nodeId: Int,
+        @JsonProperty("hostName") val hostName: String,
         @JsonProperty("memUsage") val memUsage: MemoryUsageInfo,
         @JsonProperty("cacheInfo") val cacheInfo: CacheInfo,
         @JsonProperty("receiverUsageInfo") var receiverUsageInfo: ReceiverUsageInfo,

@@ -14,10 +14,10 @@ import java.util.concurrent.TimeUnit
 /**
  * A concrete local cache that stores data in a ConcurrentHashMap.
  */
-class ScalableLocalCache(private var nodeHasher: INodeHasher, maxCapacity: Int = 100) : IScalableLocalCache {
+class ScalableLocalCache(private var nodeHasher: INodeHasher, private var maxCapacity: Int = 100) : IScalableLocalCache {
 
-    /* A process-safe concurrent hash map that is used to store LRU payload-containing node refferences */
-    private val cache: ConcurrentHashMap<KeyVersionPair, LRUNode> = ConcurrentHashMap<KeyVersionPair, LRUNode>(maxCapacity)
+    /* A process-safe concurrent hash map that is used to store LRU payload-containing node references */
+    private var cache: ConcurrentHashMap<KeyVersionPair, LRUNode> = ConcurrentHashMap<KeyVersionPair, LRUNode>(maxCapacity)
 
     /* The LRU queue */
     private var lruCache: ConcurrentLinkedQueue<LRUNode>
@@ -47,6 +47,10 @@ class ScalableLocalCache(private var nodeHasher: INodeHasher, maxCapacity: Int =
 
     /* Key value pair copy streaming index */
     private var copyIndex = 0
+
+    /* Previous Key value pair copy streaming index */
+    private var prevCopyIndex = 0
+
 
     init {
         lruCache = ConcurrentLinkedQueue<LRUNode>()
@@ -96,12 +100,19 @@ class ScalableLocalCache(private var nodeHasher: INodeHasher, maxCapacity: Int =
         usedMemory += newNode.size
     }
 
-    override fun remove(kvPair: KeyVersionPair): ByteArray? {
-        TODO("Not yet implemented")
-    }
-
     override fun clearAll(isClientRequest: Boolean) {
-        TODO("Not yet implemented")
+        cache = ConcurrentHashMap<KeyVersionPair, LRUNode>(maxCapacity)
+        lruCache = ConcurrentLinkedQueue<LRUNode>()
+        sortedLocalKeys = Collections.synchronizedSortedMap(
+            TreeMap()
+        )
+
+        kvByteSize = 0
+        usedMemory = 0
+
+        copyHashes = mutableListOf()
+        copyIndex = 0
+        prevCopyIndex = 0
     }
 
     private fun insert(node: LRUNode) {
@@ -196,7 +207,7 @@ class ScalableLocalCache(private var nodeHasher: INodeHasher, maxCapacity: Int =
     }
 
     override fun streamCopyKeys(count: Int): MutableList<KeyValuePair> {
-        // Check bounds here and elsewhere
+        print("LOCAL CACHE: Streaming the next copy keys\n")
         val topIndex = Integer.min(copyIndex + count, copyHashes.count())
         val streamKeys = mutableListOf<KeyValuePair>()
         for (i in copyIndex until topIndex) {
@@ -208,14 +219,17 @@ class ScalableLocalCache(private var nodeHasher: INodeHasher, maxCapacity: Int =
                 }
             }
         }
+
+        // Update the copy indices
+        prevCopyIndex = copyIndex
         copyIndex = topIndex
         return streamKeys
     }
 
-    // TODO: Clean up after each batch completes
-    override fun cleanupCopy() {
+    override fun cleanupCopyKeys() {
         print("LOCAL CACHE: Cleaning up copied keys\n")
-        for (hashValue in copyHashes) {
+        for (i in prevCopyIndex until copyIndex) {
+            val hashValue = copyHashes[i]
             val kvPair = sortedLocalKeys[hashValue]
             val node = cache[kvPair]
             if (node != null) {
@@ -223,8 +237,11 @@ class ScalableLocalCache(private var nodeHasher: INodeHasher, maxCapacity: Int =
                 sortedLocalKeys.remove(hashValue)
             }
         }
-        copyHashes = mutableListOf()
-        copyIndex = 0
+        if (copyIndex == copyHashes.count()) {
+            copyHashes = mutableListOf()
+            copyIndex = 0
+            prevCopyIndex = 0
+        }
     }
 
     private fun printSortedLocalKeys() {

@@ -43,8 +43,6 @@ data class ReceiverUsageInfo(
     @JsonProperty("storeSuccesses") val storeSuccesses: AtomicInteger,
     @JsonProperty("fetchAttempts") val fetchAttempts: AtomicInteger,
     @JsonProperty("fetchSuccesses") val fetchSuccesses: AtomicInteger,
-    @JsonProperty("removeAttempts") val removeAttempts: AtomicInteger,
-    @JsonProperty("removeSuccesses") val removeSuccesses: AtomicInteger,
     @JsonProperty("clearAttempts") val clearAttempts: AtomicInteger,
     @JsonProperty("clearSuccesses") val clearSuccesses: AtomicInteger,
     @JsonProperty("invalidRequests") val invalidRequests: AtomicInteger
@@ -56,7 +54,6 @@ data class ReceiverUsageInfo(
 data class TotalRequestTiming(
     @JsonProperty("storeTiming") val storeTiming: AtomicReference<Double>,
     @JsonProperty("fetchTiming") val fetchTiming: AtomicReference<Double>,
-    @JsonProperty("removeTiming") val removeTiming: AtomicReference<Double>,
     @JsonProperty("clearTiming") val clearTiming: AtomicReference<Double>
 )
 

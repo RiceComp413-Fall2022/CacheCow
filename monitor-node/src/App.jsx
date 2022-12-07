@@ -61,22 +61,13 @@ function getLocalCacheInfo(links, setNodeInfos) {
     });
 }
 
-function getGlobalCacheInfo(link, setNodeInfos) {
+function getGlobalCacheInfo(link, setNodeInfos, setNodeNames) {
   axios
     .get('http://' + link + '/v1/global-cache-info')
     .then((res) => {
-      console.log(res.data);
       setNodeInfos(res.data);
+      setNodeNames(res.data.map((res) => res.hostName));
     })
-    .catch((error) => {
-      console.error(error);
-    });
-}
-
-function getNodeNames(link, setNodeNames) {
-  axios
-    .get('http://' + link + '/v1/node-list')
-    .then((res) => setNodeNames(res.data))
     .catch((error) => {
       console.error(error);
     });
@@ -84,16 +75,13 @@ function getNodeNames(link, setNodeNames) {
 
 function DisplayNodeCharts(props) {
   let [nodeInfos, setNodeInfos] = useState([]);
-
-  let initNodeNames = [];
-  props.links.map((link) => initNodeNames.push(link));
-  let [nodeNames, setNodeNames] = useState(initNodeNames);
+  let [nodeNames, setNodeNames] = useState(props.links);
 
   // Get the initial cache info
   useEffect(() => {
     if (props.links.length > 0) {
       props.global
-        ? getGlobalCacheInfo(props.links[0], setNodeInfos)
+        ? getGlobalCacheInfo(props.links[0], setNodeInfos, setNodeNames)
         : getLocalCacheInfo(props.links, setNodeInfos);
     }
   }, [props.links, props.global]);
@@ -101,24 +89,14 @@ function DisplayNodeCharts(props) {
   // Get the updated cache info
   useEffect(() => {
     let interval = setInterval(() => {
-      if (props.links.length > 0) {
+      if (nodeNames.length > 0) {
         props.global
-          ? getGlobalCacheInfo(props.links[0], setNodeInfos)
-          : getLocalCacheInfo(props.links, setNodeInfos);
+          ? getGlobalCacheInfo(nodeNames[0], setNodeInfos, setNodeNames)
+          : getLocalCacheInfo(nodeNames, setNodeInfos);
       }
     }, 1000);
     return () => clearInterval(interval);
-  }, [props.links, props.global]);
-
-  // Get the updated node list
-  useEffect(() => {
-    let interval = setInterval(() => {
-      if (props.links.length > 0) {
-        getNodeNames(props.links[0], setNodeNames);
-      }
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [props.links, props.global]);
+  }, [nodeNames, props.global]);
 
   let memUsageData = {
     labels: nodeNames,
@@ -248,8 +226,6 @@ function DisplayNodeCharts(props) {
       },
     ],
   };
-
-  console.log(memUsageData);
 
   return (
     <Grid

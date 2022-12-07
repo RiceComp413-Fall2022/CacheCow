@@ -42,10 +42,6 @@ class DistributedCache(private val nodeId: NodeId, private var nodeList: List<St
         receiver.start(port)
     }
 
-    override fun getNodeList(): List<String> {
-        return nodeList
-    }
-
     override fun fetch(kvPair: KeyVersionPair): ByteArray? {
         val primaryNodeId = nodeHasher.primaryHashNode(kvPair)
 
@@ -70,18 +66,6 @@ class DistributedCache(private val nodeId: NodeId, private var nodeList: List<St
         }
     }
 
-    override fun remove(kvPair: KeyVersionPair): ByteArray? {
-        val primaryNodeId = nodeHasher.primaryHashNode(kvPair)
-
-        print("DISTRIBUTED CACHE: Hash value of key ${kvPair.key} is ${primaryNodeId}\n")
-
-        return if (nodeId == primaryNodeId) {
-            cache.remove(kvPair)
-        } else {
-            sender.removeFromNode(kvPair,primaryNodeId)
-        }
-    }
-
     override fun clearAll(isClientRequest: Boolean) {
         cache.clearAll(isClientRequest)
         if (isClientRequest) {
@@ -96,6 +80,7 @@ class DistributedCache(private val nodeId: NodeId, private var nodeList: List<St
     override fun getSystemInfo(): SystemInfo {
         return SystemInfo(
             nodeId,
+            nodeList.get(nodeId),
             getMemoryUsage(),
             cache.getCacheInfo(),
             receiver.getReceiverUsageInfo(),

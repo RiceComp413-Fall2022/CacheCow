@@ -28,10 +28,6 @@ class OptimalNonEvictingCache : ILocalCache {
         cache[kvPair] = value
     }
 
-    override fun remove(kvPair: KeyVersionPair): ByteArray? {
-        return cache.remove(kvPair)
-    }
-
     override fun clearAll(isClientRequest: Boolean) {
         cache.clear()
     }
