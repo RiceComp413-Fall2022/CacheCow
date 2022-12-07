@@ -107,3 +107,23 @@ python3 pasture.py delete 2
 # Sending Requests
 
 Todo
+
+# Performance Testing
+
+1. Move into the performance-testing directory
+
+```sh
+cd CacheCow/performance-testing
+```
+
+2. Run the test script: long-tailed.py
+
+```sh
+python3 long-tailed.py --url <domain name>
+```
+
+For example,
+
+```sh
+python3 long-tailed.py --url localhost:7070
+```
