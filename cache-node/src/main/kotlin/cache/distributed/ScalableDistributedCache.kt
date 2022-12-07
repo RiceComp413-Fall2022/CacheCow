@@ -1,4 +1,4 @@
-import cache.distributed.IDistributedCache
+import cache.distributed.IDistributedCache.SystemInfo
 import cache.distributed.IScalableDistributedCache
 import cache.distributed.ITestableDistributedCache
 import cache.distributed.hasher.ConsistentKeyDistributor
@@ -133,6 +133,9 @@ class ScalableDistributedCache(private val nodeId: NodeId, private var nodeList:
         }
     }
 
+    override fun getNodeList(): List<String> {
+        return nodeList
+    }
 
     override fun fetch(kvPair: KeyVersionPair): ByteArray? {
 
@@ -222,8 +225,8 @@ class ScalableDistributedCache(private val nodeId: NodeId, private var nodeList:
         }
     }
 
-    override fun getSystemInfo(): IDistributedCache.SystemInfo {
-        return IDistributedCache.SystemInfo(
+    override fun getSystemInfo(): SystemInfo {
+        return SystemInfo(
             nodeId,
             getMemoryUsage(),
             cache.getCacheInfo(),
@@ -232,6 +235,18 @@ class ScalableDistributedCache(private val nodeId: NodeId, private var nodeList:
             receiver.getClientRequestTiming(),
             receiver.getServerRequestTiming()
         )
+    }
+
+    override fun getGlobalSystemInfo(): MutableList<SystemInfo> {
+        val globalInfo = mutableListOf<SystemInfo>()
+        for (destNodeId in nodeList.indices) {
+            if (destNodeId == nodeId) {
+                globalInfo.add(getSystemInfo())
+            } else {
+                globalInfo.add(sender.getCacheInfo(destNodeId))
+            }
+        }
+        return globalInfo
     }
 
     override fun handleLaunchRequest(senderId: NodeId): Boolean {

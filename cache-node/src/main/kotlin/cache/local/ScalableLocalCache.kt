@@ -23,7 +23,7 @@ class ScalableLocalCache(private var nodeHasher: INodeHasher, maxCapacity: Int =
     private var lruCache: ConcurrentLinkedQueue<LRUNode>
 
     /* Store the total size of key and value bytes. Note that HashMap's auxiliary objects are not counted */
-    private var kvByteSize = 0
+    private var kvByteSize: Int = 0
 
     /* The JVM runtime */
     private var runtime: Runtime = Runtime.getRuntime()
@@ -80,13 +80,12 @@ class ScalableLocalCache(private var nodeHasher: INodeHasher, maxCapacity: Int =
 
         val hashValue = nodeHasher.primaryHashValue(kvPair)
         val prevVal = cache[kvPair]?.value
-        val prevKvByteSize = if(prevVal == null) 0 else (prevVal.size + kvPair.key.length + 4)
+        val prevKvByteSize = if (prevVal == null) 0 else (prevVal.size + kvPair.key.length + 4)
         kvByteSize += (value.size + kvPair.key.length + 4) - prevKvByteSize
 
         val nullableOldNode: LRUNode? = cache[kvPair]
         if (nullableOldNode != null) {
-            val oldNode: LRUNode = nullableOldNode
-            remove(oldNode)
+            remove(nullableOldNode)
         }
 
         val newNode = LRUNode(kvPair, value)
@@ -113,6 +112,13 @@ class ScalableLocalCache(private var nodeHasher: INodeHasher, maxCapacity: Int =
     private fun remove(node: LRUNode) {
         lruCache.remove(node)
         cache.remove(node.kvPair)
+    }
+
+    private fun removeCopy(node: LRUNode) {
+        remove(node)
+        usedMemory -= node.size
+        kvByteSize -= (node.value.size + node.kvPair.key.length + 4)
+        print("Decreasing kv bytes size by ${node.value.size + node.kvPair.key.length}\n")
     }
 
     override fun fetchJVMUsage(): IDistributedCache.MemoryUsageInfo {
@@ -155,6 +161,7 @@ class ScalableLocalCache(private var nodeHasher: INodeHasher, maxCapacity: Int =
      * Gets information about the cache at the current moment
      */
     override fun getCacheInfo(): CacheInfo {
+        print("LOCAL CACHE: Getting cache info with bytes: $kvByteSize\n")
         return CacheInfo(cache.size, kvByteSize)
     }
 
@@ -205,15 +212,16 @@ class ScalableLocalCache(private var nodeHasher: INodeHasher, maxCapacity: Int =
         return streamKeys
     }
 
+    // TODO: Clean up after each batch completes
     override fun cleanupCopy() {
         print("LOCAL CACHE: Cleaning up copied keys\n")
         for (hashValue in copyHashes) {
             val kvPair = sortedLocalKeys[hashValue]
             val node = cache[kvPair]
             if (node != null) {
-                remove(node)
+                removeCopy(node)
+                sortedLocalKeys.remove(hashValue)
             }
-            sortedLocalKeys.remove(hashValue)
         }
         copyHashes = mutableListOf()
         copyIndex = 0

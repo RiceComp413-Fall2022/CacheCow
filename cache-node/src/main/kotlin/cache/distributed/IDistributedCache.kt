@@ -2,6 +2,7 @@ package cache.distributed
 
 import cache.ICache
 import cache.local.CacheInfo
+import com.fasterxml.jackson.annotation.JsonProperty
 import receiver.ReceiverUsageInfo
 import receiver.TotalRequestTiming
 import sender.SenderUsageInfo
@@ -12,19 +13,29 @@ import sender.SenderUsageInfo
 interface IDistributedCache: ICache {
 
     /**
-     * Start the distributed cache on the given port.
+     * Starts the distributed cache on the given port.
      *
      * @param port port number on which to run receiver
      */
     fun start(port: Int)
 
     /**
-     * Get all information about the usage of this node.
+     * Returns the host names of all nodes in the cluster.
+     */
+    fun getNodeList(): List<String>
+
+    /**
+     * Gets all information about the usage of this node.
      */
     fun getSystemInfo(): SystemInfo
 
     /**
-     * Get memory usage information from JVM runtime.
+     * Gets all information about the usage of this node.
+     */
+    fun getGlobalSystemInfo(): MutableList<SystemInfo>
+
+    /**
+     * Gets memory usage information from JVM runtime.
      */
     fun getMemoryUsage(): MemoryUsageInfo {
         val runtime = Runtime.getRuntime()
@@ -37,18 +48,22 @@ interface IDistributedCache: ICache {
     /**
      * Client response giving memory usage of the JVM.
      */
-    data class MemoryUsageInfo(val allocated: Long, val max: Long, val usage: Double)
+    data class MemoryUsageInfo(
+        @JsonProperty("allocated") val allocated: Long,
+        @JsonProperty("max") val max: Long,
+        @JsonProperty("usage") val usage: Double
+    )
 
     /**
      * Encapsulates information about the usage of this node into one object.
      */
     data class SystemInfo(
-        val nodeId: Int,
-        val memUsage: MemoryUsageInfo,
-        val cacheInfo: CacheInfo,
-        var receiverUsageInfo: ReceiverUsageInfo,
-        val senderUsageInfo: SenderUsageInfo,
-        val clientRequestTiming: TotalRequestTiming,
-        val serverRequestTiming: TotalRequestTiming
+        @JsonProperty("nodeId") val nodeId: Int,
+        @JsonProperty("memUsage") val memUsage: MemoryUsageInfo,
+        @JsonProperty("cacheInfo") val cacheInfo: CacheInfo,
+        @JsonProperty("receiverUsageInfo") var receiverUsageInfo: ReceiverUsageInfo,
+        @JsonProperty("senderUsageInfo") val senderUsageInfo: SenderUsageInfo,
+        @JsonProperty("clientRequestTiming") val clientRequestTiming: TotalRequestTiming,
+        @JsonProperty("serverRequestTiming") val serverRequestTiming: TotalRequestTiming
     )
 }

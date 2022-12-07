@@ -216,14 +216,26 @@ open class Receiver(
             }
         }
 
-        /* Handle Node Information */
-        app.get("/v1/node-info") { ctx ->
+        /* Get Local Cache Information */
+        app.get("/v1/local-cache-info") { ctx ->
             print("\n*********NODE INFO REQUEST*********\n")
-            ctx.json(getSystemInfo()).status(HttpStatus.OK_200)
+            ctx.json(distributedCache.getSystemInfo()).status(HttpStatus.OK_200)
+        }
+
+        /* Get Global Cache Information */
+        app.get("/v1/global-cache-info") { ctx ->
+            print("\n*********NODE INFO REQUEST*********\n")
+            ctx.json(distributedCache.getGlobalSystemInfo()).status(HttpStatus.OK_200)
+        }
+
+        app.get("/v1/node-list") { ctx ->
+            print("\n*********NODE LIST REQUEST*********\n")
+            ctx.json(distributedCache.getNodeList()).status(HttpStatus.OK_200)
         }
 
         /** ERROR HANDLING **/
 
+        /* Catch and process any internal cache errors */
         app.exception(CacheNodeException::class.java) { e, ctx ->
             print("RECEIVER: Caught cache node exception with id ${e.getExceptionID()}\n")
             ctx.result(e.message).status(e.status)
@@ -271,12 +283,6 @@ open class Receiver(
 
     override fun getReceiverUsageInfo(): ReceiverUsageInfo {
         return receiverUsageInfo
-    }
-
-    override fun getSystemInfo(): IDistributedCache.SystemInfo {
-        val systemInfo = distributedCache.getSystemInfo()
-        systemInfo.receiverUsageInfo = getReceiverUsageInfo()
-        return systemInfo
     }
 
     override fun getClientRequestTiming(): TotalRequestTiming {

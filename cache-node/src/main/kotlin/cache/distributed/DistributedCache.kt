@@ -2,6 +2,7 @@ package cache.distributed
 
 import KeyVersionPair
 import NodeId
+import cache.distributed.IDistributedCache.SystemInfo
 import cache.distributed.hasher.INodeHasher
 import cache.distributed.hasher.NodeHasher
 import cache.local.ILocalCache
@@ -39,6 +40,10 @@ class DistributedCache(private val nodeId: NodeId, private var nodeList: List<St
 
     override fun start(port: Int) {
         receiver.start(port)
+    }
+
+    override fun getNodeList(): List<String> {
+        return nodeList
     }
 
     override fun fetch(kvPair: KeyVersionPair): ByteArray? {
@@ -88,8 +93,8 @@ class DistributedCache(private val nodeId: NodeId, private var nodeList: List<St
         }
     }
 
-    override fun getSystemInfo(): IDistributedCache.SystemInfo {
-        return IDistributedCache.SystemInfo(
+    override fun getSystemInfo(): SystemInfo {
+        return SystemInfo(
             nodeId,
             getMemoryUsage(),
             cache.getCacheInfo(),
@@ -98,6 +103,18 @@ class DistributedCache(private val nodeId: NodeId, private var nodeList: List<St
             receiver.getClientRequestTiming(),
             receiver.getServerRequestTiming()
         )
+    }
+
+    override fun getGlobalSystemInfo(): MutableList<SystemInfo> {
+        val globalInfo = mutableListOf<SystemInfo>()
+        for (destNodeId in nodeList.indices) {
+            if (destNodeId == nodeId) {
+                globalInfo.add(getSystemInfo())
+            } else {
+                globalInfo.add(sender.getCacheInfo(destNodeId))
+            }
+        }
+        return globalInfo
     }
 
     override fun mockSender(mockSender: ISender) {
