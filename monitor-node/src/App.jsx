@@ -227,6 +227,75 @@ function DisplayNodeCharts(props) {
     ],
   };
 
+  let clientRequestTimingData = {
+    labels: nodeNames,
+    datasets: [
+      {
+        label: 'ClearTiming',
+        backgroundColor: '#98A8F8',
+        borderColor: 'rgba(0,0,0,1)',
+        borderWidth: 0,
+        data: nodeInfos.map(nodeInfo => nodeInfo.clientRequestTiming.clearTiming)
+      },
+      {
+        label: 'FetchTiming',
+        backgroundColor: '#E1FFB1',
+        borderColor: 'rgba(0,0,0,1)',
+        borderWidth: 0,
+        data: nodeInfos.map(nodeInfo => nodeInfo.clientRequestTiming.fetchTiming)
+      },
+      {
+        label: 'RemoveTiming',
+        backgroundColor: '#CDFCF6',
+        borderColor: 'rgba(0,0,0,1)',
+        borderWidth: 0,
+        data: nodeInfos.map(nodeInfo => nodeInfo.clientRequestTiming.removeTiming)
+      },
+      {
+        label: 'StoreTiming',
+        backgroundColor: '#BCE29E',
+        borderColor: 'rgba(0,0,0,1)',
+        borderWidth: 0,
+        data: nodeInfos.map(nodeInfo => nodeInfo.clientRequestTiming.storeTiming)
+      }
+    ]
+  };
+
+  let serverRequestTimingData = {
+    labels: nodeNames,
+    datasets: [
+      {
+        label: 'ClearTiming',
+        backgroundColor: '#98A8F8',
+        borderColor: 'rgba(0,0,0,1)',
+        borderWidth: 0,
+        data: nodeInfos.map(nodeInfo => nodeInfo.serverRequestTiming.clearTiming)
+      },
+      {
+        label: 'FetchTiming',
+        backgroundColor: '#E1FFB1',
+        borderColor: 'rgba(0,0,0,1)',
+        borderWidth: 0,
+        data: nodeInfos.map(nodeInfo => nodeInfo.serverRequestTiming.fetchTiming)
+      },
+      {
+        label: 'RemoveTiming',
+        backgroundColor: '#CDFCF6',
+        borderColor: 'rgba(0,0,0,1)',
+        borderWidth: 0,
+        data: nodeInfos.map(nodeInfo => nodeInfo.serverRequestTiming.removeTiming)
+      },
+      {
+        label: 'StoreTiming',
+        backgroundColor: '#BCE29E',
+        borderColor: 'rgba(0,0,0,1)',
+        borderWidth: 0,
+        data: nodeInfos.map(nodeInfo => nodeInfo.serverRequestTiming.storeTiming)
+      }
+    ]
+  };
+
+
   return (
     <Grid
       container
@@ -262,20 +331,36 @@ function DisplayNodeCharts(props) {
           displayLegend={false}
         />
       </Grid>
-      <Grid item xs={3} md={5}>
-        <BasicBarChart
-          data={receiverInfoData}
-          backgroundColor='white'
-          chartTitle='Receiver Info'
-          displayLegend={true}
+      <Grid item xs={3} md={4}>
+        <BasicBarChart 
+          data = {receiverInfoData}
+          backgroundColor = 'white'
+          chartTitle = 'Receiver Info'
+          displayLegend = {true}
         />
       </Grid>
-      <Grid item xs={3} md={5}>
-        <BasicBarChart
-          data={senderInfoData}
-          backgroundColor='white'
-          chartTitle='Sender Info'
-          displayLegend={true}
+      <Grid item xs={3} md={4}>
+        <BasicBarChart 
+          data = {senderInfoData}
+          backgroundColor = 'white'
+          chartTitle = 'Sender Info'
+          displayLegend = {true}
+        />
+      </Grid>
+      <Grid item xs={3} md={4}>
+        <BasicBarChart 
+          data = {clientRequestTimingData}
+          backgroundColor = 'white'
+          chartTitle = 'Client Request Timing'
+          displayLegend = {true}
+        />
+      </Grid>
+      <Grid item xs={3} md={4}>
+        <BasicBarChart 
+          data = {serverRequestTimingData}
+          backgroundColor = 'white'
+          chartTitle = 'Server Request Timing'
+          displayLegend = {true}
         />
       </Grid>
     </Grid>
