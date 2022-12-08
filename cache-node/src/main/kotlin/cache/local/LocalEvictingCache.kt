@@ -101,13 +101,22 @@ class LocalEvictingCache(private var maxCapacity: Int = 100) : ILocalEvictingCac
     }
 
     override fun isFull(): Boolean {
+        return keysFull() && JVMFull()
+    }
+
+    fun keysFull(): Boolean {
+        return LRUCache.size > maxCapacity
+    }
+
+    fun JVMFull(): Boolean {
         return usedMemory > (maxMemory * memoryUtilizationLimit).toInt()
     }
 
-    override fun monitorMemoryUsage() {
-        print("Monitoring Memory Usage\n")
 
-        if (isFull()) {
+    override fun monitorMemoryUsage() {
+        // print("Monitoring Memory Usage\n")
+
+        if (JVMFull()) {
             print("Cache is full\n")
             val estimateToRemove = usedMemory - (maxMemory * (memoryUtilizationLimit - 0.2))
             print("used $usedMemory maximum ${(maxMemory * memoryUtilizationLimit).toInt()} amount to remove $estimateToRemove\n")
@@ -116,6 +125,15 @@ class LocalEvictingCache(private var maxCapacity: Int = 100) : ILocalEvictingCac
             while (removed < estimateToRemove) {
                 removed += removeLRU()
                 print("removed $removed\n")
+            }
+        }
+        if (keysFull()) {
+            print("Cache is full\n")
+            val KVPToRemove = (maxCapacity * 0.1).toInt()
+            print("used all ${LRUCache.size} key. Will now evict ${(maxCapacity * 0.1).toInt()} keys.\n")
+
+            for (i in 1..KVPToRemove) {
+                removeLRU()
             }
         }
     }
