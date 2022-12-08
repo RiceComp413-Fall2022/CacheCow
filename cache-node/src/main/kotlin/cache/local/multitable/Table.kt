@@ -16,7 +16,7 @@ import kotlin.concurrent.write
  *
  * This is thread-safe!
  */
-class Table(private val maxCapacity: Int = 100, private val maxMemorySize: Int = 5000): ITable {
+class Table(private val maxCapacity: Int = 33, private val maxMemorySize: Int = 5000): ITable {
 
     /** Entire Table-wise Variables **/
 
@@ -84,7 +84,7 @@ class Table(private val maxCapacity: Int = 100, private val maxMemorySize: Int =
                     }
                 }
                 if (isFull()) {
-                    //print("Store Error: Full!\n")
+//                    print("Store Error: Full!\n")
                     return Status.FULL
                 }
 

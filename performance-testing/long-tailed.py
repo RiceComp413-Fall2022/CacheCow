@@ -14,11 +14,11 @@ import requests
 import time
 
 # Constants
-NUM_INITIAL_STORE = 0 # Should be larger than the max cache size to test cache effectiveness, and speed.
+NUM_INITIAL_STORE = 5 # Should be larger than the max cache size to test cache effectiveness, and speed.
 FETCH_PROPORTION = 1
-NUM_REQUESTS = 300
+NUM_REQUESTS = 995
 
-STORE_TIMEOUT = 0.5
+STORE_TIMEOUT = 1
 FETCH_TIMEOUT = 2
 
 MU, SIGMA = 3, 5
@@ -51,6 +51,7 @@ if __name__ == "__main__":
                       data = str(value).encode('ascii'), timeout=STORE_TIMEOUT)
             return True
         except:
+            print("Store Timed Out: ", data)
             return False
 
 

@@ -1,5 +1,6 @@
 import cache.distributed.DistributedCache
 import cache.distributed.IDistributedCache
+import cache.local.LocalCache
 import java.io.File
 
 const val nodeListPath = "nodes.txt"
@@ -40,7 +41,7 @@ fun main(args: Array<String>) {
     val distributedCache: IDistributedCache = if (scalable) {
         ScalableDistributedCache(nodeId, nodeList, isAWS, isNewNode)
     } else {
-        DistributedCache(nodeId, nodeList)
+        DistributedCache(nodeId, nodeList, LocalCache())
     }
 
     distributedCache.start(port)
