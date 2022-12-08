@@ -2,6 +2,8 @@ package sender
 
 import KeyVersionPair
 import NodeId
+import cache.distributed.IDistributedCache.SystemInfo
+import com.fasterxml.jackson.core.JsonProcessingException
 import com.fasterxml.jackson.databind.ObjectMapper
 import exception.ConnectionRefusedException
 import exception.CrossServerException
@@ -149,13 +151,49 @@ open class Sender(private val nodeId: NodeId, private val nodeList: List<String>
             throw ConnectionRefusedException(destNodeId)
         }
 
-        print("SENDER: Got clear response with status code ${response.statusCode()}")
+        print("SENDER: Got clear response with status code ${response.statusCode()}\n")
 
         if (response.statusCode() != 204) {
             throw CrossServerException(destNodeId)
         }
 
         senderUsageInfo.clearSuccesses.getAndIncrement()
+    }
+
+    override fun getCacheInfo(destNodeId: NodeId): SystemInfo {
+        print("SENDER: Fetching the local cache info from node $destNodeId\n")
+
+        val client = HttpClient.newBuilder().build()
+        val destUrl = URI.create("http://${nodeList[destNodeId]}/v1/local-cache-info?senderId=${nodeId}")
+        val request = HttpRequest.newBuilder()
+            .uri(destUrl)
+            .GET()
+            .build()
+
+        print("SENDER: Sending cache info request to $destUrl\n")
+
+        val response: HttpResponse<String>
+        try {
+            response = client.send(request, HttpResponse.BodyHandlers.ofString())
+        } catch (e: ConnectException) {
+            print("SENDER: Caught connection refused exception\n")
+            throw ConnectionRefusedException(destNodeId)
+        }
+
+        print("SENDER: Got cache info response with status code ${response.statusCode()}\n")
+
+        if (response.statusCode() != 200) {
+            throw CrossServerException(destNodeId)
+        }
+
+        val systemInfo: SystemInfo
+        try {
+            systemInfo = mapper.treeToValue(mapper.readTree(response.body()), SystemInfo::class.java)
+        } catch (e: JsonProcessingException) {
+            print("SENDER: Caught JSON processing exception: ${e.message}\n")
+            throw CrossServerException(destNodeId)
+        }
+        return systemInfo
     }
 
     override fun getSenderUsageInfo(): SenderUsageInfo {

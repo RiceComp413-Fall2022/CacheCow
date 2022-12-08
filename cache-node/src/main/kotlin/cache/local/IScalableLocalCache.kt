@@ -27,5 +27,5 @@ interface IScalableLocalCache: IEvictingCache {
     /**
      * Cleans up the copying process.
      */
-    fun cleanupCopy()
+    fun cleanupCopyKeys()
 }

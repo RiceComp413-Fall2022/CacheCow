@@ -2,6 +2,7 @@ package cache.distributed
 
 import KeyVersionPair
 import NodeId
+import cache.distributed.IDistributedCache.SystemInfo
 import cache.distributed.hasher.INodeHasher
 import cache.distributed.hasher.NodeHasher
 import cache.local.ILocalCache
@@ -60,18 +61,6 @@ class DistributedCache(private val nodeId: NodeId, private var nodeList: List<St
         }
     }
 
-    override fun remove(kvPair: KeyVersionPair): ByteArray? {
-        val primaryNodeId = nodeHasher.primaryHashNode(kvPair)
-
-        print("DISTRIBUTED CACHE: Hash value of key ${kvPair.key} is ${primaryNodeId}\n")
-
-        return if (nodeId == primaryNodeId) {
-            cache.remove(kvPair)
-        } else {
-            sender.removeFromNode(kvPair,primaryNodeId)
-        }
-    }
-
     override fun clearAll(isClientRequest: Boolean) {
         cache.clearAll(isClientRequest)
         if (isClientRequest) {
@@ -83,9 +72,10 @@ class DistributedCache(private val nodeId: NodeId, private var nodeList: List<St
         }
     }
 
-    override fun getSystemInfo(): IDistributedCache.SystemInfo {
-        return IDistributedCache.SystemInfo(
+    override fun getSystemInfo(): SystemInfo {
+        return SystemInfo(
             nodeId,
+            nodeList.get(nodeId),
             getMemoryUsage(),
             cache.getCacheInfo(),
             receiver.getReceiverUsageInfo(),
@@ -93,6 +83,18 @@ class DistributedCache(private val nodeId: NodeId, private var nodeList: List<St
             receiver.getClientRequestTiming(),
             receiver.getServerRequestTiming()
         )
+    }
+
+    override fun getGlobalSystemInfo(): MutableList<SystemInfo> {
+        val globalInfo = mutableListOf<SystemInfo>()
+        for (destNodeId in nodeList.indices) {
+            if (destNodeId == nodeId) {
+                globalInfo.add(getSystemInfo())
+            } else {
+                globalInfo.add(sender.getCacheInfo(destNodeId))
+            }
+        }
+        return globalInfo
     }
 
     override fun mockSender(mockSender: ISender) {

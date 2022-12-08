@@ -21,10 +21,6 @@ class OptimalCache : ILocalCache {
         return
     }
 
-    override fun remove(kvPair: KeyVersionPair): ByteArray? {
-        return null
-    }
-
     override fun clearAll(isClientRequest: Boolean) {
         return
     }

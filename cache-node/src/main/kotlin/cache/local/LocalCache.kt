@@ -34,12 +34,9 @@ class LocalCache(private var maxCapacity: Int = 100) : ILocalCache {
         cache[kvPair] = value
     }
 
-    override fun remove(kvPair: KeyVersionPair): ByteArray? {
-        return cache.remove(kvPair)
-    }
-
     override fun clearAll(isClientRequest: Boolean) {
         cache.clear()
+        kvByteSize = AtomicInteger(0)
     }
 
     override fun getCacheInfo(): CacheInfo {

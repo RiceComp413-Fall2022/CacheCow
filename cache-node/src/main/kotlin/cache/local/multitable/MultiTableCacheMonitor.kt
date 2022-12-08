@@ -112,10 +112,6 @@ class MultiTableCacheMonitor(private val numTables: Int = 3) : ILocalCache {
         }
     }
 
-    override fun remove(kvPair: KeyVersionPair): ByteArray? {
-        TODO("Not yet implemented")
-    }
-
     override fun clearAll(isClientRequest: Boolean) {
         multiTableLock.write {
             //print("MultiTableCacheMonitor: ClearAll\n")

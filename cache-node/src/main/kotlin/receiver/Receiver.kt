@@ -40,21 +40,21 @@ open class Receiver(
     private var receiverUsageInfo: ReceiverUsageInfo = ReceiverUsageInfo(
         AtomicInteger(0), AtomicInteger(0), AtomicInteger(0),
         AtomicInteger(0), AtomicInteger(0), AtomicInteger(0),
-        AtomicInteger(0), AtomicInteger(0), AtomicInteger(0))
+        AtomicInteger(0))
 
     /**
      * Time spent (in seconds) to perform client requests.
      */
     private var clientRequestTiming: TotalRequestTiming = TotalRequestTiming(
         AtomicReference<Double>(0.0), AtomicReference<Double>(0.0),
-        AtomicReference<Double>(0.0), AtomicReference<Double>(0.0))
+        AtomicReference<Double>(0.0))
 
     /**
      * Time spent (in seconds) to perform server requests.
      */
     private var serverRequestTiming: TotalRequestTiming = TotalRequestTiming(
         AtomicReference<Double>(0.0), AtomicReference<Double>(0.0),
-        AtomicReference<Double>(0.0), AtomicReference<Double>(0.0))
+        AtomicReference<Double>(0.0))
 
     init {
         /** ENDPOINTS **/
@@ -143,47 +143,6 @@ open class Receiver(
             }
         }
 
-        /* Handle Remove Requests */
-        app.delete("/v1/blobs/{key}/{version}") { ctx ->
-            print("\n*********REMOVE REQUEST*********\n")
-            receiverUsageInfo.removeAttempts.getAndIncrement()
-
-            // Handle Request
-            var isClientRequest = false
-            val requestTime = 1/1000.0 * measureTimeMillis {
-                // Parse Path
-                val key = ctx.pathParam("key")
-                val version = ctx.pathParamAsClass("version", Int::class.java)
-                    .check({ it >= 0 }, "Version number cannot be negative")
-                    .get()
-                val senderNum = if (ctx.queryParam("senderId") == null) null else
-                    ctx.queryParamAsClass("senderId", Int::class.java)
-                        .check(
-                            { it in 0 until nodeCount },
-                            "Sender id must be in range (0, ${nodeCount - 1})"
-                        )
-                        .get()
-                isClientRequest = senderNum == null
-
-                // Remove Data
-                val value = distributedCache.remove(KeyVersionPair(key, version))
-
-                if (value != null) {
-                    ctx.status(HttpStatus.NO_CONTENT_204)
-                } else {
-                    ctx.status(HttpStatus.NOT_FOUND_404)
-                }
-            }
-
-            // Increment node statistics
-            receiverUsageInfo.removeSuccesses.getAndIncrement()
-            if (isClientRequest) {
-                clientRequestTiming.removeTiming.accumulateAndGet(requestTime) { a: Double, b: Double -> a + b }
-            } else {
-                serverRequestTiming.removeTiming.accumulateAndGet(requestTime) { a: Double, b: Double -> a + b }
-            }
-        }
-
         /* Handle Clear Requests */
         app.delete("/v1/clear") { ctx ->
             print("\n*********CLEAR REQUEST*********\n")
@@ -216,14 +175,21 @@ open class Receiver(
             }
         }
 
-        /* Handle Node Information */
-        app.get("/v1/node-info") { ctx ->
+        /* Get Local Cache Information */
+        app.get("/v1/local-cache-info") { ctx ->
             print("\n*********NODE INFO REQUEST*********\n")
-            ctx.json(getSystemInfo()).status(HttpStatus.OK_200)
+            ctx.json(distributedCache.getSystemInfo()).status(HttpStatus.OK_200)
+        }
+
+        /* Get Global Cache Information */
+        app.get("/v1/global-cache-info") { ctx ->
+            print("\n*********NODE INFO REQUEST*********\n")
+            ctx.json(distributedCache.getGlobalSystemInfo()).status(HttpStatus.OK_200)
         }
 
         /** ERROR HANDLING **/
 
+        /* Catch and process any internal cache errors */
         app.exception(CacheNodeException::class.java) { e, ctx ->
             print("RECEIVER: Caught cache node exception with id ${e.getExceptionID()}\n")
             ctx.result(e.message).status(e.status)
@@ -271,12 +237,6 @@ open class Receiver(
 
     override fun getReceiverUsageInfo(): ReceiverUsageInfo {
         return receiverUsageInfo
-    }
-
-    override fun getSystemInfo(): IDistributedCache.SystemInfo {
-        val systemInfo = distributedCache.getSystemInfo()
-        systemInfo.receiverUsageInfo = getReceiverUsageInfo()
-        return systemInfo
     }
 
     override fun getClientRequestTiming(): TotalRequestTiming {

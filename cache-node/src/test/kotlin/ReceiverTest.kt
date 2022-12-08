@@ -1,4 +1,5 @@
 import cache.distributed.DistributedCache
+import cache.local.LocalCache
 import exception.CrossServerException
 import exception.KeyNotFoundException
 import io.javalin.Javalin
@@ -23,7 +24,7 @@ class ReceiverTest {
     @BeforeTest
     fun beforeAll() {
         val nodeList = mutableListOf("localhost:7070", "localhost:7071")
-        distributedCache = DistributedCache(0, nodeList)
+        distributedCache = DistributedCache(0, nodeList, LocalCache())
         app = distributedCache.getJavalinApp()
     }
 

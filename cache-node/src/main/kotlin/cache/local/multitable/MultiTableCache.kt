@@ -137,25 +137,6 @@ class MultiTableCache(private val numTables: Int = 3) : ILocalCache {
         }
     }
 
-    override fun remove(kvPair: KeyVersionPair): ByteArray? {
-//        multiTableLock.read() {
-//            if (!isValid) return null
-//
-//            // Query Element
-//            var value: ByteArray?
-//            for (index in 0 until numTables - 1) {
-//                val tableIndex = (baseIndex + numTables - index) % numTables
-//                value = tables[tableIndex].fetch(kvPair)
-//                if (value != null) break
-//            }
-//
-//            //update(kvPair, null)
-//            return null
-//
-//        }
-        TODO("Not yet implemented")
-    }
-
     override fun clearAll(isClientRequest: Boolean) {
         if (!invalidate()) return // Other process already clearing multi table
 

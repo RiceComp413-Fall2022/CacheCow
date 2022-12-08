@@ -1,7 +1,7 @@
 package receiver
 
-import cache.distributed.IDistributedCache
 import cache.distributed.ITestableJavalinApp
+import com.fasterxml.jackson.annotation.JsonProperty
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
 
@@ -24,11 +24,6 @@ interface IReceiver: ITestableJavalinApp {
     fun getReceiverUsageInfo(): ReceiverUsageInfo
 
     /**
-     * Get system info for distributed cache, including memory usage.
-     */
-    fun getSystemInfo(): IDistributedCache.SystemInfo
-
-    /**
      * Returns the time spent to perform client requests.
      */
     fun getClientRequestTiming(): TotalRequestTiming
@@ -43,19 +38,24 @@ interface IReceiver: ITestableJavalinApp {
 /**
  * Information about what the receiver has done so far.
  */
-data class ReceiverUsageInfo(val storeAttempts: AtomicInteger, val storeSuccesses: AtomicInteger,
-                             val fetchAttempts: AtomicInteger, val fetchSuccesses: AtomicInteger,
-                             val removeAttempts: AtomicInteger, val removeSuccesses: AtomicInteger,
-                             val clearAttempts: AtomicInteger, val clearSuccesses: AtomicInteger,
-                             val invalidRequests: AtomicInteger)
+data class ReceiverUsageInfo(
+    @JsonProperty("storeAttempts") val storeAttempts: AtomicInteger,
+    @JsonProperty("storeSuccesses") val storeSuccesses: AtomicInteger,
+    @JsonProperty("fetchAttempts") val fetchAttempts: AtomicInteger,
+    @JsonProperty("fetchSuccesses") val fetchSuccesses: AtomicInteger,
+    @JsonProperty("clearAttempts") val clearAttempts: AtomicInteger,
+    @JsonProperty("clearSuccesses") val clearSuccesses: AtomicInteger,
+    @JsonProperty("invalidRequests") val invalidRequests: AtomicInteger
+)
 
 /**
  * The total time spent (in seconds) querying requests.
  */
-data class TotalRequestTiming(val storeTiming: AtomicReference<Double>,
-                              val fetchTiming: AtomicReference<Double>,
-                              val removeTiming: AtomicReference<Double>,
-                              val clearTiming: AtomicReference<Double>)
+data class TotalRequestTiming(
+    @JsonProperty("storeTiming") val storeTiming: AtomicReference<Double>,
+    @JsonProperty("fetchTiming") val fetchTiming: AtomicReference<Double>,
+    @JsonProperty("clearTiming") val clearTiming: AtomicReference<Double>
+)
 
 /**
  * Represents a key-version tuple in a HTTP response

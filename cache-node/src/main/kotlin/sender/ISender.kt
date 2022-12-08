@@ -2,6 +2,8 @@ package sender
 
 import KeyVersionPair
 import NodeId
+import cache.distributed.IDistributedCache.SystemInfo
+import com.fasterxml.jackson.annotation.JsonProperty
 import java.util.concurrent.atomic.AtomicInteger
 
 /**
@@ -45,6 +47,14 @@ interface ISender {
     fun clearNode(destNodeId: NodeId)
 
     /**
+     * Get the local cache info from the destination node.
+     *
+     * @param destNodeId The node whose cache info we are fetching
+     * @return The current cache info of the destination node
+     */
+    fun getCacheInfo(destNodeId: NodeId): SystemInfo
+
+    /**
      * Gets the sender usage info
      * @return SenderUsageInfo data type of the info
      */
@@ -54,7 +64,13 @@ interface ISender {
 /**
  * Information about what the sender has done so far.
  */
-data class SenderUsageInfo(val storeAttempts: AtomicInteger, val storeSuccesses: AtomicInteger,
-                           val fetchAttempts: AtomicInteger, val fetchSuccesses: AtomicInteger,
-                           val removeAttempts: AtomicInteger, val removeSuccesses: AtomicInteger,
-                           val clearAttempts: AtomicInteger, val clearSuccesses: AtomicInteger)
+data class SenderUsageInfo(
+    @JsonProperty("storeAttempts") val storeAttempts: AtomicInteger,
+    @JsonProperty("storeSuccesses") val storeSuccesses: AtomicInteger,
+    @JsonProperty("fetchAttempts") val fetchAttempts: AtomicInteger,
+    @JsonProperty("fetchSuccesses") val fetchSuccesses: AtomicInteger,
+    @JsonProperty("removeAttempts") val removeAttempts: AtomicInteger,
+    @JsonProperty("removeSuccesses") val removeSuccesses: AtomicInteger,
+    @JsonProperty("clearAttempts") val clearAttempts: AtomicInteger,
+    @JsonProperty("clearSuccesses") val clearSuccesses: AtomicInteger
+)
