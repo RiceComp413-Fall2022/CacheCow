@@ -139,7 +139,7 @@ curl -X GET "localhost:7070/v1/blobs/{key}/{version}"
 curl -X DELETE "localhost:7070/v1/clear"
 ```
 
-4. Launch Node Request (Note: cluster must be running in scalable mode)
+4. Scale cluster (Note: cluster must be running in scalable mode)
 
 ```sh
 curl -X POST "localhost:7070/v1/launch-node"
