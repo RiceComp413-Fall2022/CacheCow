@@ -6,6 +6,8 @@ CacheCow is a distributed in-memory cache service that consists of a graph of in
 
 Helpful Links: [Google Drive](https://drive.google.com/drive/u/0/folders/14yXw_k74cJNPWMZYnpjWMDIvtp1FH8T9), [Design Document](https://docs.google.com/document/d/1lT3F6lsjmoETbyx3xtu-MgMmEzld4PASVc9IrKrWGbw/)
 
+Authors: Eliot Solomon, Halit Ozkaya, Mark Pepperl, Nadav Levanoni, Ryan Huckleberry
+
 # File Structure
 
 - cache-node: Javalin project to run cache node instance
