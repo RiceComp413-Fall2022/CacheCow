@@ -6,7 +6,9 @@ Helpful Links: [Google Drive](https://drive.google.com/drive/u/0/folders/14yXw_k
 
 # File Structure
 
-Todo
+- cache-node: Javalin project to run cache node instance
+- monitor-node: React project to run monitor node instance
+- performance-testing: Performance testing scripts to test cache metrics
 
 # Set Up
 
@@ -46,6 +48,11 @@ cd cache-node
 ./gradlew run --args 'local 0 7070'
 ./gradlew run --args 'local 1 7071'
 ./gradlew run --args 'local 2 7072'
+
+# Note: use the -s flag to run in scalable mode
+./gradlew run --args 'local 0 7070 -s'
+./gradlew run --args 'local 1 7071 -s'
+./gradlew run --args 'local 2 7072 -s'
 ```
 
 4. Check that the nodes are running
@@ -95,7 +102,11 @@ pip3 install --upgrade pip
 6. Launch a cluster on AWS
 
 ```sh
+# Crate a cluster with 2 nodes
 python3 pasture.py create 2
+
+# Note: use the -s flag to run in scalable mode
+python3 pasture.py create 2 -s
 ```
 
 7. Delete the cluster
@@ -106,7 +117,29 @@ python3 pasture.py delete 2
 
 # Sending Requests
 
-Todo
+1. Store a key-value pair
+
+```sh
+curl -X POST -H "Content-Type: text/plain" --data "<value>" "localhost:7070/v1/blobs/{key}/{version}"
+```
+
+2. Fetch a value
+
+```sh
+curl -X GET "localhost:7070/v1/blobs/{key}/{version}"
+```
+
+3. Clear all key-value pairs
+
+```sh
+curl -X DELETE "localhost:7070/v1/clear"
+```
+
+4. Launch Node Request (Note: cluster must be running in scalable mode)
+
+```sh
+curl -X POST "localhost:7070/v1/launch-node"
+```
 
 # Performance Testing
 

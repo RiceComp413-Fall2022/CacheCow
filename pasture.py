@@ -377,21 +377,29 @@ def teardown_cluster():
     security_group = list(ec2.security_groups.filter(Filters=[{'Name': 'group-name', 'Values': ['cachecow-security']}]))[0]
     security_group.delete()
 
-# Program entry point
-if __name__ == "__main__":
+
+def start():
     mode = sys.argv[1]
+
+    if mode == "delete":
+        teardown_cluster()
+        return
+    
     num_nodes = int(sys.argv[2])
 
-    scaleable = False
-    if len(sys.argv) == 4 and sys.argv[3] == "-s":
-        scaleable = True
-
-    if (mode == "create"):
-        launch_cluster(num_nodes, scaleable)
-    elif (mode == "add"):
+    if mode == "add":
         scale_cluster(num_nodes)
-    elif (mode == "delete"):
-        teardown_cluster()
-    else:
-        # TODO: Add better help message
-        print(f"Launch mode {mode} not recognized, only 'create' and 'add' supported")
+        return
+
+    if mode == "create":
+        scaleable = False
+        if len(sys.argv) == 4 and sys.argv[3] == "-s":
+            scaleable = True
+        launch_cluster(num_nodes, scaleable)
+        return
+
+    print(f"Launch mode {mode} not recognized, only 'create', 'add', and 'delete' supported")
+
+# Program entry point
+if __name__ == "__main__":
+    start()
