@@ -1,5 +1,8 @@
 # CacheCow
 
+CacheCow is a distributed in-memory cache service that consists of a graph of intercommunicating nodes. Each node assumes the role of a generic endpoint to process client requests that handles and redirects client requests and as a fragment of the distributed cache store.
+
+
 ![CacheCow](https://github.com/RiceComp413-Fall2022/CacheCow/actions/workflows/ci.yml/badge.svg)
 
 Helpful Links: [Google Drive](https://drive.google.com/drive/u/0/folders/14yXw_k74cJNPWMZYnpjWMDIvtp1FH8T9), [Design Document](https://docs.google.com/document/d/1lT3F6lsjmoETbyx3xtu-MgMmEzld4PASVc9IrKrWGbw/)
